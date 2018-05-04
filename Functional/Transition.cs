@@ -1,6 +1,6 @@
 using System;
 
-namespace Functional
+namespace Luger.Functional
 {
     public delegate (T, S) Transition<S, T>(S state);
 

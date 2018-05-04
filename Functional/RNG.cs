@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace Functional
+namespace Luger.Functional
 {
     public static class IntExt
     {
@@ -177,19 +179,7 @@ namespace Functional
             => from value in NextNBits(8)
                 select (byte) value;
 
-        public static Transition<RNGState, byte[]> NextBytes(uint count)
-        => state =>
-        {
-            var buffer = new byte[count];
-            byte value;
-
-            for (var i = 0u; i < count; i++)
-            {
-                (value, state) = NextByte()(state);
-                buffer[i] = value;
-            }
-
-            return (buffer, state);
-        };
+        public static Transition<RNGState, IEnumerable<byte>> NextBytes(int count)
+            => Enumerable.Range(0, count).TraverseM(_ => NextByte());
     }
 }
