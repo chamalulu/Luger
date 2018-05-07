@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Luger.Functional;
 
-namespace Luger.Functional
+namespace Luger.Utilities
 {
     public static class IntExt
     {
