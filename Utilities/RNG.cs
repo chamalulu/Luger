@@ -33,17 +33,10 @@ namespace Luger.Utilities
                         = xl * yl + xl * (yh << 32) + (xh << 32) * yl + (xh << 32) * (yh << 32) >> 64
             */
             var acc1 = (xl * yl >> 32) + xl * yh;   // No risk of overflow
-            var hexacc1 = acc1.ToString("X");
             var xhyl = xh * yl;
-            var hexxhyl = xhyl.ToString("X");
             var acc2 = acc1 + xhyl; // Risk of overflow
-            var hexacc2 = acc2.ToString("X");
             var carry = (acc1 ^ ((acc1 ^ xhyl) & (xhyl ^ acc2))) >> 31 & ~LoMask;
-            var hexcarry = carry.ToString("X");
-            var retval = (acc2 >> 32) + carry + xh * yh;  // No risk of overflow
-            var hexretval = retval.ToString("X");
-
-            return retval;
+            return (acc2 >> 32) + carry + xh * yh;  // No risk of overflow
         }
     }
 
