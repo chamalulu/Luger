@@ -57,16 +57,16 @@ namespace Luger.Utilities.Tests
 
         private const uint PT_Iterations = 10000000;
 
-        [Fact(Skip="")]
+        [Fact(Skip = "")]
         public void Mul64HiPerformanceTest()
         {
             var step = ulong.MaxValue / PT_Iterations;
 
             DateTime startTime = DateTime.Now;
 
-            for(ulong i = 1; i <= PT_Iterations; i++)
+            for (ulong i = 1; i <= PT_Iterations; i++)
             {
-                var v = i*step;
+                var v = i * step;
                 var p = v;
             }
 
@@ -75,9 +75,9 @@ namespace Luger.Utilities.Tests
 
             startTime = DateTime.Now;
 
-            for(ulong i = 1; i <= PT_Iterations; i++)
+            for (ulong i = 1; i <= PT_Iterations; i++)
             {
-                var v = i*step;
+                var v = i * step;
                 var p = IntExt.Mul64Hi(v, v);
             }
 
@@ -86,12 +86,12 @@ namespace Luger.Utilities.Tests
 
             startTime = DateTime.Now;
 
-            for(ulong i = 0; i < PT_Iterations; i++)
+            for (ulong i = 0; i < PT_Iterations; i++)
             {
-                var v = i*step;
+                var v = i * step;
                 var biv1 = (BigInteger)v;
                 var biv2 = (BigInteger)v;
-                var p = (ulong)(biv1*biv2 >> 64);
+                var p = (ulong)(biv1 * biv2 >> 64);
             }
 
             var biTime = DateTime.Now - startTime - noTime;
@@ -105,9 +105,7 @@ namespace Luger.Utilities.Tests
     public class RNGTests
     {
         [Fact]
-        public void Test1()
-        {
-
-        }
+        public void RNGStateCtorNegative()
+            => Assert.Throws<ArgumentOutOfRangeException>("seed", () => new RNGState(0));
     }
 }

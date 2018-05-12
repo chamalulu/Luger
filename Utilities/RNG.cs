@@ -53,7 +53,9 @@ namespace Luger.Utilities
 
         public RNGState(ulong seed, ulong buffer = 0, int freshBits = 0)
         {
-            Seed = seed;
+            Seed = seed > 0
+                ? seed
+                : throw new ArgumentOutOfRangeException(nameof(seed), "Seed must not be 0.");
             Buffer = buffer;
             FreshBits = freshBits;
         }
@@ -92,7 +94,7 @@ namespace Luger.Utilities
         {
             var mask = ((1ul << width) - 1) << offset;
             
-            return target & ~mask | (source & mask);
+            return target & ~mask | source & mask;
         }
 
         private static ulong CopyBits(ulong target, ulong source, int target_offset, int source_offset, int width)
