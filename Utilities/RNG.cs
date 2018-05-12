@@ -20,6 +20,11 @@ namespace Luger.Utilities
         /// <summary>
         /// Calculates high qword of product of two qwords.
         /// </summary>
+        /// <remarks>
+        /// This method was interesting to implement and
+        ///  it is >10 times faster than using BigInteger (on my hardware) but
+        ///  readability vs. performance should be taken into account in usages.
+        /// </remarks>
         public static ulong Mul64Hi(ulong x, ulong y)
         {
             /*
@@ -32,11 +37,11 @@ namespace Luger.Utilities
             x * y >> 64 = (xl + (xh << 32)) * (yl + (yh << 32)) >> 64
                         = xl * yl + xl * (yh << 32) + (xh << 32) * yl + (xh << 32) * (yh << 32) >> 64
             */
-            var acc1 = (xl * yl >> 32) + xl * yh;   // No risk of overflow
+            var acc1 = (xl * yl >> 32) + xl * yh;   // Can not overflow
             var xhyl = xh * yl;
-            var acc2 = acc1 + xhyl; // Risk of overflow
+            var acc2 = acc1 + xhyl; // Can overflow
             var carry = (acc1 ^ ((acc1 ^ xhyl) & (xhyl ^ acc2))) >> 31 & ~LoMask;
-            return (acc2 >> 32) + carry + xh * yh;  // No risk of overflow
+            return (acc2 >> 32) + carry + xh * yh;  // Can not overflow
         }
     }
 

@@ -3,11 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Luger.Utilities.Tests
 {
     public class IntExtTests
     {
+        private ITestOutputHelper _output;
+
+        public IntExtTests(ITestOutputHelper output) => _output = output;
+
         private static (ulong, long)[] as_testdata = new[]
         {
             (0x0000_0000_0000_0000UL, 0),
@@ -40,9 +45,6 @@ namespace Luger.Utilities.Tests
                let bia = bix * biy >> 64
                select ((ulong)bix, (ulong)biy, (ulong)bia);
 
-        // private static IEnumerable<(ulong, ulong, ulong)> mul_testdata()
-        //     => new [] {(ulong.MaxValue, ulong.MaxValue, ulong.MaxValue-1)};
-
         [Fact]
         public void Mul64HiTest()
         {
@@ -51,6 +53,52 @@ namespace Luger.Utilities.Tests
                 var a = IntExt.Mul64Hi(x, y);
                 Assert.True(a == p);
             }
+        }
+
+        private const uint PT_Iterations = 10000000;
+
+        [Fact(Skip="")]
+        public void Mul64HiPerformanceTest()
+        {
+            var step = ulong.MaxValue / PT_Iterations;
+
+            DateTime startTime = DateTime.Now;
+
+            for(ulong i = 1; i <= PT_Iterations; i++)
+            {
+                var v = i*step;
+                var p = v;
+            }
+
+            var noTime = DateTime.Now - startTime;
+            _output.WriteLine("{0:N0} iterations over nothing took {1} time.", PT_Iterations, noTime);
+
+            startTime = DateTime.Now;
+
+            for(ulong i = 1; i <= PT_Iterations; i++)
+            {
+                var v = i*step;
+                var p = IntExt.Mul64Hi(v, v);
+            }
+
+            var mul64hiTime = DateTime.Now - startTime - noTime;
+            _output.WriteLine("{0:N0} iterations over Mul64Hi took {1} time.", PT_Iterations, mul64hiTime);
+
+            startTime = DateTime.Now;
+
+            for(ulong i = 0; i < PT_Iterations; i++)
+            {
+                var v = i*step;
+                var biv1 = (BigInteger)v;
+                var biv2 = (BigInteger)v;
+                var p = (ulong)(biv1*biv2 >> 64);
+            }
+
+            var biTime = DateTime.Now - startTime - noTime;
+            _output.WriteLine("{0:N0} iterations over BigInteger took {1} time.", PT_Iterations, biTime);
+
+            var mulsPerBIs = biTime / mul64hiTime;
+            _output.WriteLine("Mul64Hi is {0:N2} times faster than BigInteger.", mulsPerBIs);
         }
     }
 
