@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Luger.Functional;
+using PRNG = Luger.Functional.Transition<ulong, ulong>;
 
 namespace Luger.Utilities
 {
@@ -66,7 +67,7 @@ namespace Luger.Utilities
     public static class RNG
     {
         // PRNG functions reimplemented from https://en.wikipedia.org/wiki/Xorshift
-        public static Transition<ulong, ulong> xorshift64star
+        public static PRNG xorshift64star
         => s =>
         {
             s ^= s >> 12;
@@ -107,8 +108,10 @@ namespace Luger.Utilities
                 return CopyBits(target, source, target_offset, width);
         }
 
-        public static Transition<RNGState, ulong> NextNBits(int n)
+        public static Transition<RNGState, ulong> NextNBits(int n, PRNG prng = null)
         {
+            prng = prng ?? xorshift64star;
+
             if (n < 1 || n > 64)
                 throw new ArgumentOutOfRangeException(nameof(n));
             
@@ -128,7 +131,7 @@ namespace Luger.Utilities
                     
                     n -= state.FreshBits;
                     
-                    var (buffer, seed) = xorshift64star(state.Seed);
+                    var (buffer, seed) = prng(state.Seed);
                     state = new RNGState(seed, buffer, 64);
                 }
 
@@ -145,51 +148,55 @@ namespace Luger.Utilities
             };
         }
 
-        public static Transition<RNGState, ulong> Next64Bits()
-            => state =>
+        public static Transition<RNGState, ulong> Next64Bits(PRNG prng = null)
+        {
+            prng = prng ?? xorshift64star;
+
+            return state =>
             {
-                var (value, seed) = xorshift64star(state.Seed);
+                var (value, seed) = prng(state.Seed);
                 return (value, new RNGState(seed, state.Buffer, state.FreshBits));
             };
+        }
 
-        public static Transition<RNGState, ulong> NextUInt64() => NextNBits(64);
+        public static Transition<RNGState, ulong> NextUInt64(PRNG prng = null) => NextNBits(64, prng);
 
 
-        public static Transition<RNGState, ulong> NextUInt64(ulong maxValue)
+        public static Transition<RNGState, ulong> NextUInt64(ulong maxValue, PRNG prng = null)
         {
             if (maxValue == 0)
                 throw new ArgumentOutOfRangeException(nameof(maxValue));
             
             return
-                from value in NextUInt64()
+                from value in NextUInt64(prng)
                 select IntExt.Mul64Hi(value, maxValue);
         }
         
-        public static Transition<RNGState, ulong> NextUInt64(ulong minValue, ulong maxValue)
+        public static Transition<RNGState, ulong> NextUInt64(ulong minValue, ulong maxValue, PRNG prng = null)
         {
             if (maxValue <= minValue)
                 throw new ArgumentException($"{nameof(maxValue)} <= {nameof(minValue)}");
             
             return
-                from value in NextUInt64(maxValue - minValue)
+                from value in NextUInt64(maxValue - minValue, prng)
                 select value + minValue;
         }
 
-        public static Transition<RNGState, long> NextInt64()
-            => from value in NextUInt64()
+        public static Transition<RNGState, long> NextInt64(PRNG prng = null)
+            => from value in NextUInt64(prng)
                 select value.AsInt64();
         
         private const double MaxUInt64 = (double) ulong.MaxValue;
 
-        public static Transition<RNGState, double> NextDouble()
-            => from value in NextUInt64()
+        public static Transition<RNGState, double> NextDouble(PRNG prng = null)
+            => from value in NextUInt64(prng)
                 select value / MaxUInt64;
         
-        public static Transition<RNGState, byte> NextByte()
-            => from value in NextNBits(8)
+        public static Transition<RNGState, byte> NextByte(PRNG prng = null)
+            => from value in NextNBits(8, prng)
                 select (byte) value;
 
-        public static Transition<RNGState, IEnumerable<byte>> NextBytes(int count)
-            => Enumerable.Range(0, count).TraverseM(_ => NextByte());
+        public static Transition<RNGState, IEnumerable<byte>> NextBytes(int count, PRNG prng = null)
+            => Enumerable.Range(0, count).TraverseM(_ => NextByte(prng));
     }
 }

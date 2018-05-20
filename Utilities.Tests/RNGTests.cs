@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Luger.Functional;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -107,5 +108,33 @@ namespace Luger.Utilities.Tests
         [Fact]
         public void RNGStateCtorNegative()
             => Assert.Throws<ArgumentOutOfRangeException>("seed", () => new RNGState(0));
+        
+        [Fact]
+        public void NextNBits_FreshBitsUsed_Test()
+        {
+            Transition<ulong, ulong> prng = s => (0, s + 1);
+
+            var state = new RNGState(1, 0x123_4567_89AB_CDEF, 32);
+            var (next, newState) = RNG.NextNBits(16, prng)(state);
+
+            Assert.True(next == 0x89AB);
+            Assert.True(newState.Seed == 1);
+            Assert.True(newState.Buffer == 0x123_4567_89AB_CDEF);
+            Assert.True(newState.FreshBits == 16);
+        }
+        
+        [Fact]
+        public void NextNBits_FreshBitsInsufficient_Test()
+        {
+            Transition<ulong, ulong> prng = s => (0, s + 1);
+
+            var state = new RNGState(1, 0x123_4567_89AB_CDEF, 16);
+            var (next, newState) = RNG.NextNBits(32, prng)(state);
+
+            Assert.True(next == 0xCDEF_0000);
+            Assert.True(newState.Seed == 2);
+            Assert.True(newState.Buffer == 0);
+            Assert.True(newState.FreshBits == 48);
+        }
     }
 }
