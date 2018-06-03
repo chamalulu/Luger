@@ -11,10 +11,10 @@ namespace Luger.Utilities
         private const ulong SignMask = 0x8000_0000_0000_0000;
 
         public static long AsInt64(this ulong value)
-            => (long) (value & ~SignMask) | (value >= SignMask ? long.MinValue : 0);
-        
+            => (long)(value & ~SignMask) | (value >= SignMask ? long.MinValue : 0);
+
         public static ulong AsUInt64(this long value)
-            => (ulong) (value & long.MaxValue) | (value < 0 ? SignMask : 0);
+            => (ulong)(value & long.MaxValue) | (value < 0 ? SignMask : 0);
 
         private const ulong LoMask = 0x0000_0000_FFFF_FFFF;
 
@@ -94,7 +94,7 @@ namespace Luger.Utilities
         private static ulong CopyBits(ulong target, ulong source, int offset, int width)
         {
             var mask = ((1ul << width) - 1) << offset;
-            
+
             return target & ~mask | source & mask;
         }
 
@@ -108,94 +108,116 @@ namespace Luger.Utilities
                 return CopyBits(target, source, target_offset, width);
         }
 
+        /// <summary>
+        /// Return next random UInt64 in range [0 .. 2^n)
+        /// </summary>
         public static Transition<RNGState, ulong> NextNBits(int n, PRNG prng = null)
         {
             prng = prng ?? xorshift64star;
 
             if (n < 1 || n > 64)
                 throw new ArgumentOutOfRangeException(nameof(n));
-            
-            return state =>
-            {
-                var next = 0ul;
 
-                if (n > state.FreshBits)
+            if (n == 64)
+                return state =>
                 {
-                    next = CopyBits(
-                        target: next,
-                        source: state.Buffer,
-                        target_offset: n - state.FreshBits,
-                        source_offset: 0,
-                        width: state.FreshBits
+                    var (value, seed) = prng(state.Seed);
+                    return (value, new RNGState(seed, state.Buffer, state.FreshBits));
+                };
+            else
+                return state =>
+                {
+                    var next = 0ul;
+
+                    if (n > state.FreshBits)
+                    {
+                        next = CopyBits(
+                            target: next,
+                            source: state.Buffer,
+                            target_offset: n - state.FreshBits,
+                            source_offset: 0,
+                            width: state.FreshBits
+                        );
+
+                        n -= state.FreshBits;
+
+                        var (buffer, seed) = prng(state.Seed);
+                        state = new RNGState(seed, buffer, 64);
+                    }
+
+                    return (
+                        CopyBits(
+                            target: next,
+                            source: state.Buffer,
+                            target_offset: 0,
+                            source_offset: state.FreshBits - n,
+                            width: n
+                        ),
+                        new RNGState(state.Seed, state.Buffer, state.FreshBits - n)
                     );
-                    
-                    n -= state.FreshBits;
-                    
-                    var (buffer, seed) = prng(state.Seed);
-                    state = new RNGState(seed, buffer, 64);
-                }
-
-                return (
-                    CopyBits(
-                        target: next,
-                        source: state.Buffer,
-                        target_offset: 0,
-                        source_offset: state.FreshBits - n,
-                        width: n
-                    ),
-                    new RNGState(state.Seed, state.Buffer, state.FreshBits - n)
-                );
-            };
+                };
         }
 
-        public static Transition<RNGState, ulong> Next64Bits(PRNG prng = null)
-        {
-            prng = prng ?? xorshift64star;
-
-            return state =>
-            {
-                var (value, seed) = prng(state.Seed);
-                return (value, new RNGState(seed, state.Buffer, state.FreshBits));
-            };
-        }
-
+        /// <summary>
+        /// Return next random ulong
+        /// </summary>
         public static Transition<RNGState, ulong> NextUInt64(PRNG prng = null) => NextNBits(64, prng);
 
-
+        /// <summary>
+        /// Return next random ulong in range [0 .. maxValue)
+        /// </summary>
         public static Transition<RNGState, ulong> NextUInt64(ulong maxValue, PRNG prng = null)
         {
             if (maxValue == 0)
                 throw new ArgumentOutOfRangeException(nameof(maxValue));
-            
+
             return
                 from value in NextUInt64(prng)
                 select IntExt.Mul64Hi(value, maxValue);
         }
-        
+
+        /// <summary>
+        /// Return next random ulong in range [minValue .. maxValue)
+        /// </summary>
         public static Transition<RNGState, ulong> NextUInt64(ulong minValue, ulong maxValue, PRNG prng = null)
         {
             if (maxValue <= minValue)
                 throw new ArgumentException($"{nameof(maxValue)} <= {nameof(minValue)}");
-            
+
             return
                 from value in NextUInt64(maxValue - minValue, prng)
                 select value + minValue;
         }
 
+        /// <summary>
+        /// Return next random long
+        /// </summary>
         public static Transition<RNGState, long> NextInt64(PRNG prng = null)
             => from value in NextUInt64(prng)
-                select value.AsInt64();
-        
-        private const double MaxUInt64 = (double) ulong.MaxValue;
+               select value.AsInt64();
 
+        private const double MaxUInt64 = (double)ulong.MaxValue;
+
+        /// <summary>
+        /// Return next random double
+        /// </summary>
         public static Transition<RNGState, double> NextDouble(PRNG prng = null)
             => from value in NextUInt64(prng)
-                select value / MaxUInt64;
-        
+               select value / MaxUInt64;
+
+        /// <summary>
+        /// Return next random byte
+        /// </summary>
         public static Transition<RNGState, byte> NextByte(PRNG prng = null)
             => from value in NextNBits(8, prng)
-                select (byte) value;
+               select (byte)value;
 
+        /// <summary>
+        /// Return next count random bytes
+        /// </summary>
+        /// <remarks>
+        /// This is terribly slow. TODO implement an optimized version.
+        /// </remarks>
         public static Transition<RNGState, IEnumerable<byte>> NextBytes(int count, PRNG prng = null)
             => Enumerable.Range(0, count).TraverseM(_ => NextByte(prng));
     }
