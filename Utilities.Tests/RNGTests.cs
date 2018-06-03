@@ -108,33 +108,80 @@ namespace Luger.Utilities.Tests
         [Fact]
         public void RNGStateCtorNegative()
             => Assert.Throws<ArgumentOutOfRangeException>("seed", () => new RNGState(0));
-        
+
+        private const ulong BufferValue = 0x123_4567_89AB_CDEF;
+
+        private static Transition<ulong, ulong> MockPRNG(ulong buffer = BufferValue)
+            => state => (buffer, state + 1);
+
+        [Fact]
+        public void NextNBits_64_Test()
+        {
+            var prng = MockPRNG(0);
+            var state = new RNGState(1, BufferValue, 64);
+            var (next, newState) = RNG.NextNBits(64, prng)(state);
+
+            Assert.True(next == 0);
+            Assert.True(newState.Seed == 2);
+            Assert.True(newState.Buffer == BufferValue);
+            Assert.True(newState.FreshBits == 64);
+        }
+
         [Fact]
         public void NextNBits_FreshBitsUsed_Test()
         {
-            Transition<ulong, ulong> prng = s => (0, s + 1);
-
-            var state = new RNGState(1, 0x123_4567_89AB_CDEF, 32);
+            var prng = MockPRNG();
+            var state = new RNGState(1, BufferValue, 32);
             var (next, newState) = RNG.NextNBits(16, prng)(state);
 
             Assert.True(next == 0x89AB);
             Assert.True(newState.Seed == 1);
-            Assert.True(newState.Buffer == 0x123_4567_89AB_CDEF);
+            Assert.True(newState.Buffer == BufferValue);
             Assert.True(newState.FreshBits == 16);
         }
         
         [Fact]
         public void NextNBits_FreshBitsInsufficient_Test()
         {
-            Transition<ulong, ulong> prng = s => (0, s + 1);
-
-            var state = new RNGState(1, 0x123_4567_89AB_CDEF, 16);
+            var prng = MockPRNG();
+            var state = new RNGState(1, BufferValue, 16);
             var (next, newState) = RNG.NextNBits(32, prng)(state);
 
-            Assert.True(next == 0xCDEF_0000);
+            Assert.True(next == 0xCDEF_0123);
             Assert.True(newState.Seed == 2);
-            Assert.True(newState.Buffer == 0);
+            Assert.True(newState.Buffer == BufferValue);
             Assert.True(newState.FreshBits == 48);
+        }
+
+        [Fact]
+        public void NextUInt64_maxValue_Test()
+        {
+            var prng = MockPRNG(ulong.MaxValue);
+            var state = new RNGState(1, BufferValue, 0);
+            var (next, newState) = RNG.NextUInt64(100, prng)(state);
+
+            Assert.True(next == 99);
+            Assert.True(newState.Seed == 2);
+        }
+
+        [Fact]
+        public void NextUInt64_minValue_maxValue_Test()
+        {
+            var prng = MockPRNG(ulong.MaxValue);
+            var state = new RNGState(1, BufferValue, 0);
+            var (next, newState) = RNG.NextUInt64(100, 200, prng)(state);
+
+            Assert.True(next == 199);
+            Assert.True(newState.Seed == 2);
+        }
+
+        [Fact]
+        public void NextBytes_100_Test()
+        {
+            var state = new RNGState(DateTime.Now.Ticks.AsUInt64());
+            var (next, newState) = RNG.NextBytes(100)(state);
+
+            Assert.True(next.Count() == 100);
         }
     }
 }
