@@ -3,15 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Functional", "Functional\Functional.csproj", "{5F78CCB2-CD11-40D3-8302-4F388D00A1A0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Functional", "src\Functional\Functional.csproj", "{5F78CCB2-CD11-40D3-8302-4F388D00A1A0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Examples", "Examples\Examples.csproj", "{ACA14429-856C-4B3D-B9EE-8DCEFE5FBE2B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Examples", "src\Examples\Examples.csproj", "{ACA14429-856C-4B3D-B9EE-8DCEFE5FBE2B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Functional.Tests", "Functional.Tests\Functional.Tests.csproj", "{787B2399-2FE2-4293-99DB-778E2854F3AC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Functional.Tests", "tests\Functional.Tests\Functional.Tests.csproj", "{787B2399-2FE2-4293-99DB-778E2854F3AC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utilities", "Utilities\Utilities.csproj", "{3968F07D-7489-4FF8-8C78-BD2F112F44F4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utilities", "src\Utilities\Utilities.csproj", "{3968F07D-7489-4FF8-8C78-BD2F112F44F4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utilities.Tests", "Utilities.Tests\Utilities.Tests.csproj", "{B9BC0529-BEA4-4E96-876F-79E4B14645D8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utilities.Tests", "tests\Utilities.Tests\Utilities.Tests.csproj", "{B9BC0529-BEA4-4E96-876F-79E4B14645D8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
