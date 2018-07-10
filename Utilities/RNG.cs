@@ -46,51 +46,8 @@ namespace Luger.Utilities
         }
     }
 
-    public struct RNGState
+    public static class OldRNG
     {
-        public readonly ulong Seed;
-        public readonly ulong Buffer;
-        public readonly int FreshBits;
-
-        public RNGState(ulong seed, ulong buffer = 0, int freshBits = 0)
-        {
-            Seed = seed > 0
-                ? seed
-                : throw new ArgumentOutOfRangeException(nameof(seed), "Seed must not be 0.");
-            Buffer = buffer;
-            FreshBits = freshBits;
-        }
-
-        public static RNGState FromClock() => new RNGState(DateTime.Now.Ticks.AsUInt64());
-    }
-
-    public static class RNG
-    {
-        // PRNG functions reimplemented from https://en.wikipedia.org/wiki/Xorshift
-        public static PRNG xorshift64star
-        => s =>
-        {
-            s ^= s >> 12;
-            s ^= s << 25;
-            s ^= s >> 27;
-
-            return (s * 0x2545_F491_4F6C_DD1D, s);
-        };
-
-        // public static Transition<(int pos, ulong[] seed), ulong> xorshift1024star
-        // => s =>
-        // {
-        //     var s0 = s.seed[s.pos++];
-        //     var s1 = s.seed[s.pos &= 0xF];
-
-        //     s1 ^= s1 << 31;
-        //     s1 ^= s1 >> 11;
-        //     s1 ^= s0 ^ (s0 >> 30);
-        //     s.seed[s.pos] = s1;
-
-        //     return (s1 * 0x1066_89d4_5497_fdb5, s);
-        // };
-
         private static ulong CopyBits(ulong target, ulong source, int offset, int width)
         {
             var mask = ((1ul << width) - 1) << offset;
@@ -107,118 +64,174 @@ namespace Luger.Utilities
             else
                 return CopyBits(target, source, target_offset, width);
         }
+    }
+
+    public interface IRNGState
+    {
+        ulong NextUInt64();
+        IEnumerable<byte> NextBytes(int count);
+    }
+
+    public static class RNG
+    {
+        /// <summary>
+        /// Return next random ulong
+        /// </summary>
+        public static Transition<IRNGState, ulong> NextUInt64() => state => (state.NextUInt64(), state);
 
         /// <summary>
         /// Return next random UInt64 in range [0 .. 2^n)
         /// </summary>
-        public static Transition<RNGState, ulong> NextNBits(int n, PRNG prng = null)
-        {
-            prng = prng ?? xorshift64star;
-
-            if (n < 1 || n > 64)
-                throw new ArgumentOutOfRangeException(nameof(n));
-
-            if (n == 64)
-                return state =>
-                {
-                    var (value, seed) = prng(state.Seed);
-                    return (value, new RNGState(seed, state.Buffer, state.FreshBits));
-                };
-            else
-                return state =>
-                {
-                    var next = 0ul;
-
-                    if (n > state.FreshBits)
-                    {
-                        next = CopyBits(
-                            target: next,
-                            source: state.Buffer,
-                            target_offset: n - state.FreshBits,
-                            source_offset: 0,
-                            width: state.FreshBits
-                        );
-
-                        n -= state.FreshBits;
-
-                        var (buffer, seed) = prng(state.Seed);
-                        state = new RNGState(seed, buffer, 64);
-                    }
-
-                    return (
-                        CopyBits(
-                            target: next,
-                            source: state.Buffer,
-                            target_offset: 0,
-                            source_offset: state.FreshBits - n,
-                            width: n
-                        ),
-                        new RNGState(state.Seed, state.Buffer, state.FreshBits - n)
-                    );
-                };
-        }
-
-        /// <summary>
-        /// Return next random ulong
-        /// </summary>
-        public static Transition<RNGState, ulong> NextUInt64(PRNG prng = null) => NextNBits(64, prng);
-
-        /// <summary>
-        /// Return next random ulong in range [0 .. maxValue)
-        /// </summary>
-        public static Transition<RNGState, ulong> NextUInt64(ulong maxValue, PRNG prng = null)
-        {
-            if (maxValue == 0)
-                throw new ArgumentOutOfRangeException(nameof(maxValue));
-
-            return
-                from value in NextUInt64(prng)
-                select IntExt.Mul64Hi(value, maxValue);
-        }
-
-        /// <summary>
-        /// Return next random ulong in range [minValue .. maxValue)
-        /// </summary>
-        public static Transition<RNGState, ulong> NextUInt64(ulong minValue, ulong maxValue, PRNG prng = null)
-        {
-            if (maxValue <= minValue)
-                throw new ArgumentException($"{nameof(maxValue)} <= {nameof(minValue)}");
-
-            return
-                from value in NextUInt64(maxValue - minValue, prng)
-                select value + minValue;
-        }
-
-        /// <summary>
-        /// Return next random long
-        /// </summary>
-        public static Transition<RNGState, long> NextInt64(PRNG prng = null)
-            => from value in NextUInt64(prng)
-               select value.AsInt64();
-
-        private const double MaxUInt64 = (double)ulong.MaxValue;
-
-        /// <summary>
-        /// Return next random double
-        /// </summary>
-        public static Transition<RNGState, double> NextDouble(PRNG prng = null)
-            => from value in NextUInt64(prng)
-               select value / MaxUInt64;
-
-        /// <summary>
-        /// Return next random byte
-        /// </summary>
-        public static Transition<RNGState, byte> NextByte(PRNG prng = null)
-            => from value in NextNBits(8, prng)
-               select (byte)value;
+        /// <param name="n">
+        /// Number of significant bits in result.
+        /// </param>
+        public static Transition<IRNGState, ulong> NextNBits(int n)
+            => (n - 1 & ~0x1F) == 0
+                ? from value in NextUInt64() select value & (1ul << n) - 1
+                : throw new ArgumentOutOfRangeException(nameof(n));
 
         /// <summary>
         /// Return next count random bytes
         /// </summary>
-        /// <remarks>
-        /// This is terribly slow. TODO implement an optimized version.
-        /// </remarks>
-        public static Transition<RNGState, IEnumerable<byte>> NextBytes(int count, PRNG prng = null)
-            => Enumerable.Range(0, count).TraverseM(_ => NextByte(prng));
+        public static Transition<IRNGState, IEnumerable<byte>> NextBytes(int count)
+            => count >= 0
+                ? new Transition<IRNGState, IEnumerable<byte>>(state => (state.NextBytes(count), state))
+                : throw new ArgumentOutOfRangeException(nameof(count));
+
+        /// <summary>
+        /// Return next random ulong in range [0 .. maxValue)
+        /// </summary>
+        public static Transition<IRNGState, ulong> NextUInt64(ulong maxValue)
+            => maxValue > 0
+                ? from value in NextUInt64() select IntExt.Mul64Hi(value, maxValue)
+                : throw new ArgumentOutOfRangeException(nameof(maxValue));
+
+        /// <summary>
+        /// Return next random ulong in range [minValue .. maxValue)
+        /// </summary>
+        public static Transition<IRNGState, ulong> NextUInt64(ulong minValue, ulong maxValue)
+            => maxValue > minValue
+                ? from value in NextUInt64(maxValue - minValue) select value + minValue
+                : throw new ArgumentException($"{nameof(maxValue)} <= {nameof(minValue)}");
+
+        /// <summary>
+        /// Return next random long
+        /// </summary>
+        public static Transition<IRNGState, long> NextInt64()
+            => from value in NextUInt64() select value.AsInt64();
+
+        private const double MaxUInt64 = (double)ulong.MaxValue;
+
+        /// <summary>
+        /// Return next random double in range [0.0 .. 1.0)
+        /// </summary>
+        public static Transition<IRNGState, double> NextDouble()
+            => from value in NextUInt64() select value / MaxUInt64;
+    }
+
+    public class RandomRNGState : IRNGState
+    {
+        private readonly Random _random;
+        private readonly byte[] _buffer;
+        private int _freshBytes;
+
+        public RandomRNGState(Random random = null, int bufferLength = 0x1000)
+        {
+            _random = random ?? new Random();
+
+            if (bufferLength < sizeof(ulong))
+                throw new ArgumentOutOfRangeException(nameof(bufferLength));
+
+            _buffer = new byte[bufferLength];
+        }
+
+        private void FillBuffer()
+        {
+            _random.NextBytes(_buffer);
+            _freshBytes = _buffer.Length;
+        }
+
+        public ulong NextUInt64()
+        {
+            if (_freshBytes < sizeof(ulong))
+                FillBuffer();
+
+            var startIndex = _buffer.Length - _freshBytes;
+
+            _freshBytes -= sizeof(ulong);
+
+            return BitConverter.ToUInt64(_buffer, startIndex);
+        }
+
+        public IEnumerable<byte> NextBytes(int count)
+        {
+            for (int c = 0; c < count; c++)
+            {
+                if (_freshBytes == 0)
+                    FillBuffer();
+
+                yield return _buffer[_buffer.Length - _freshBytes--];
+            }
+        }
+
+        public static implicit operator RandomRNGState(Random random) => new RandomRNGState(random);
+    }
+
+    public class UInt64TransitionRNGState : IRNGState
+    {
+        private readonly Transition<ulong, ulong> _prng;
+        private ulong _seed;
+
+        public UInt64TransitionRNGState(ulong seed, Transition<ulong, ulong> prng)
+        {
+            _prng = prng ?? throw new ArgumentNullException(nameof(prng));
+            _seed = seed;
+        }
+
+        public ulong NextUInt64()
+        {
+            var (value, seed) = _prng(_seed);
+
+            _seed = seed;
+            
+            return value;
+        }
+
+        public IEnumerable<byte> NextBytes(int count)
+        {
+            if (count < 0)
+                throw new ArgumentOutOfRangeException(nameof(count));
+
+            IEnumerable<byte> GetBytes(IEnumerable<ulong> qwords) => qwords.Bind(BitConverter.GetBytes);
+
+            var (bytes, seed) = Enumerable.Range(0, (count - 1) / sizeof(ulong) + 1).TraverseM(_ => _prng).Map(GetBytes)(_seed);
+
+            _seed = seed;
+
+            return bytes.Take(count);
+        }
+    }
+
+    public class XorShift64StarRNGState : UInt64TransitionRNGState
+    {
+        // PRNG function reimplemented from https://en.wikipedia.org/wiki/Xorshift
+        private static Transition<ulong, ulong> xorshift64star
+        => s =>
+        {
+            s ^= s >> 12;
+            s ^= s << 25;
+            s ^= s >> 27;
+
+            return (s * 0x2545_F491_4F6C_DD1D, s);
+        };
+
+        public XorShift64StarRNGState(ulong seed) : base(seed, xorshift64star)
+        {
+            if (seed == 0)
+                throw new ArgumentOutOfRangeException(nameof(seed), "Seed must not be 0.");
+        }
+
+        // Don't run this on exactly midnight, January 1, 0001 :)
+        public static XorShift64StarRNGState FromClock() => new XorShift64StarRNGState(DateTime.Now.Ticks.AsUInt64());
     }
 }

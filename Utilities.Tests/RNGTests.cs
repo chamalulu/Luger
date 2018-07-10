@@ -14,51 +14,40 @@ namespace Luger.Utilities.Tests
 
         public IntExtTests(ITestOutputHelper output) => _output = output;
 
-        private static (ulong, long)[] as_testdata = new[]
+        public static IEnumerable<object[]> as_testdata = new[]
         {
-            (0x0000_0000_0000_0000UL, 0),
-            (0x7FFF_FFFF_FFFF_FFFFUL, long.MaxValue),
-            (0x8000_0000_0000_0000UL, long.MinValue),
-            (0xFFFF_FFFF_FFFF_FFFFUL, -1)
+            new object[] { 0x0000_0000_0000_0000UL, 0 },
+            new object[] { 0x7FFF_FFFF_FFFF_FFFFUL, long.MaxValue },
+            new object[] { 0x8000_0000_0000_0000UL, long.MinValue },
+            new object[] { 0xFFFF_FFFF_FFFF_FFFFUL, -1 }
         };
 
-        [Fact]
-        public void AsInt64Test()
-        {
-            foreach (var (ul, l) in as_testdata)
-                Assert.True(ul.AsInt64() == l);
-        }
+        [Theory]
+        [MemberData(nameof(as_testdata))]
+        public void AsInt64Test(ulong ul, long l) => Assert.Equal(ul.AsInt64(), l);
 
-        [Fact]
-        public void AsUInt64Test()
-        {
-            foreach (var (ul, l) in as_testdata)
-                Assert.True(l.AsUInt64() == ul);
-        }
+        [Theory]
+        [MemberData(nameof(as_testdata))]
+        public void AsUInt64Test(ulong ul, long l) => Assert.Equal(l.AsUInt64(), ul);
 
         private const int multestlimit = 100;
 
-        private static IEnumerable<(ulong, ulong, ulong)> mul_testdata()
+        public static IEnumerable<object[]> mul_testdata()
             => from x in Enumerable.Range(0, multestlimit)
                from y in Enumerable.Range(0, multestlimit)
                let bix = ((BigInteger)x << 64) / multestlimit
                let biy = ((BigInteger)y << 64) / multestlimit
                let bia = bix * biy >> 64
-               select ((ulong)bix, (ulong)biy, (ulong)bia);
+               select new object[] { (ulong)bix, (ulong)biy, (ulong)bia };
 
-        [Fact]
-        public void Mul64HiTest()
-        {
-            foreach (var (x, y, p) in mul_testdata())
-            {
-                var a = IntExt.Mul64Hi(x, y);
-                Assert.True(a == p);
-            }
-        }
+        [Theory]
+        [MemberData(nameof(mul_testdata))]
+        public void Mul64HiTest(ulong x, ulong y, ulong a) => Assert.Equal(IntExt.Mul64Hi(x, y), a);
 
         private const uint PT_Iterations = 10000000;
 
-        [Fact(Skip = "")]
+        // TODO: Put performance test in another test list
+        [Fact]
         public void Mul64HiPerformanceTest()
         {
             var step = ulong.MaxValue / PT_Iterations;
@@ -105,83 +94,149 @@ namespace Luger.Utilities.Tests
 
     public class RNGTests
     {
-        [Fact]
-        public void RNGStateCtorNegative()
-            => Assert.Throws<ArgumentOutOfRangeException>("seed", () => new RNGState(0));
+        private const ulong MockUInt64 = 0x123_4567_89AB_CDEF;
+        private const byte MockByte = 42;
 
-        private const ulong BufferValue = 0x123_4567_89AB_CDEF;
-
-        private static Transition<ulong, ulong> MockPRNG(ulong buffer = BufferValue)
-            => state => (buffer, state + 1);
-
-        [Fact]
-        public void NextNBits_64_Test()
+        private class MockRNGState : IRNGState
         {
-            var prng = MockPRNG(0);
-            var state = new RNGState(1, BufferValue, 64);
-            var (next, newState) = RNG.NextNBits(64, prng)(state);
+            private readonly Func<ulong> _nextUInt64;
+            private readonly Func<int, IEnumerable<byte>> _nextBytes;
 
-            Assert.True(next == 0);
-            Assert.True(newState.Seed == 2);
-            Assert.True(newState.Buffer == BufferValue);
-            Assert.True(newState.FreshBits == 64);
+            private MockRNGState(Func<ulong> nextUInt64, Func<int, IEnumerable<byte>> nextBytes)
+            {
+                _nextUInt64 = nextUInt64 ?? new Func<ulong>(() => MockUInt64);
+                _nextBytes = nextBytes ?? new Func<int, IEnumerable<byte>>(count => Enumerable.Repeat(MockByte, count));
+            }
+
+            public MockRNGState() : this(null, null) { }
+
+            public MockRNGState(ulong nextUInt64) : this(() => nextUInt64, null) { }
+
+            public MockRNGState(IEnumerable<byte> nextBytes) : this(null, _ => nextBytes) { }
+
+            public MockRNGState(Func<ulong> nextUInt64) : this(nextUInt64, null) { }
+
+            public MockRNGState(Func<int, IEnumerable<byte>> nextBytes) : this(null, nextBytes) { }
+
+            public ulong NextUInt64() => _nextUInt64();
+
+            public IEnumerable<byte> NextBytes(int count) => _nextBytes(count);
         }
 
         [Fact]
-        public void NextNBits_FreshBitsUsed_Test()
+        public void NextUInt64_Test()
         {
-            var prng = MockPRNG();
-            var state = new RNGState(1, BufferValue, 32);
-            var (next, newState) = RNG.NextNBits(16, prng)(state);
+            var state = new MockRNGState();
+            var (next, newState) = RNG.NextUInt64()(state);
 
-            Assert.True(next == 0x89AB);
-            Assert.True(newState.Seed == 1);
-            Assert.True(newState.Buffer == BufferValue);
-            Assert.True(newState.FreshBits == 16);
-        }
-        
-        [Fact]
-        public void NextNBits_FreshBitsInsufficient_Test()
-        {
-            var prng = MockPRNG();
-            var state = new RNGState(1, BufferValue, 16);
-            var (next, newState) = RNG.NextNBits(32, prng)(state);
-
-            Assert.True(next == 0xCDEF_0123);
-            Assert.True(newState.Seed == 2);
-            Assert.True(newState.Buffer == BufferValue);
-            Assert.True(newState.FreshBits == 48);
+            Assert.Equal(MockUInt64, next);
+            Assert.Equal(state, newState);
         }
 
-        [Fact]
-        public void NextUInt64_maxValue_Test()
-        {
-            var prng = MockPRNG(ulong.MaxValue);
-            var state = new RNGState(1, BufferValue, 0);
-            var (next, newState) = RNG.NextUInt64(100, prng)(state);
+        public static IEnumerable<object[]> ValidNextNBitsData => from v in Enumerable.Range(1, 64) select new object[] { v };
 
-            Assert.True(next == 99);
-            Assert.True(newState.Seed == 2);
+        [Theory]
+        [MemberData(nameof(ValidNextNBitsData))]
+        public void NextNBits_Positive_Test(int n)
+        {
+            var state = new MockRNGState();
+            var (next, _) = RNG.NextNBits(n)(state);
+
+            Assert.Equal(MockUInt64 & (1ul << n) - 1, next);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(65)]
+        public void NextNBits_Negative_Test(int n) => Assert.Throws<ArgumentOutOfRangeException>(() => RNG.NextNBits(n));
+
+        [Theory]
+        [InlineData(100)]
+        public void NextBytes_Positive_Test(int count)
+        {
+            var state = new MockRNGState();
+            var (next, _) = RNG.NextBytes(count)(state);
+
+            Assert.Equal(count, next.Count());
+        }
+
+        [Theory]
+        [InlineData(-1)]
+        public void NextBytes_Negative_Test(int count) => Assert.Throws<ArgumentOutOfRangeException>(() => RNG.NextBytes(count));
+
+        [Theory]
+        [InlineData(ulong.MinValue, 100, 0)]
+        [InlineData(ulong.MaxValue, 100, 99)]
+        public void NextUInt64_maxValue_Positive_Test(ulong nextUInt64, ulong maxValue, ulong expected)
+        {
+            var state = new MockRNGState(nextUInt64);
+            var (next, _) = RNG.NextUInt64(maxValue)(state);
+
+            Assert.Equal(expected, next);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        public void NextUInt64_maxValue_Negative_Test(ulong maxValue) => Assert.Throws<ArgumentOutOfRangeException>(() => RNG.NextUInt64(maxValue));
+
+        [Theory]
+        [InlineData(ulong.MinValue, 100, 200, 100)]
+        [InlineData(ulong.MaxValue, 100, 200, 199)]
+        public void NextUInt64_minValue_maxValue_Positive_Test(ulong nextUInt64, ulong minValue, ulong maxValue, ulong expected)
+        {
+            var state = new MockRNGState(nextUInt64);
+            var (next, _) = RNG.NextUInt64(minValue, maxValue)(state);
+
+            Assert.Equal(expected, next);
+        }
+
+        [Theory]
+        [InlineData(200, 100)]
+        public void NextUInt64_minValue_maxValue_Negative_Test(ulong minValue, ulong maxValue)
+            => Assert.Throws<ArgumentException>(() => RNG.NextUInt64(minValue, maxValue));
+
+        [Theory]
+        [InlineData(ulong.MinValue, 0L)]
+        [InlineData(0x7FFF_FFFF_FFFF_FFFFUL, long.MaxValue)]
+        [InlineData(0x8000_0000_0000_0000UL, long.MinValue)]
+        [InlineData(ulong.MaxValue, -1L)]
+        public void NextInt64(ulong nextUInt64, long expected)
+        {
+            var state = new MockRNGState(nextUInt64);
+            var (next, _) = RNG.NextInt64()(state);
+
+            Assert.Equal(expected, next);
+        }
+
+        [Theory]
+        [InlineData(ulong.MinValue, 0d)]
+        [InlineData(ulong.MaxValue, 1d)]
+        public void NextDouble_Test(ulong nextUInt64, double expected)
+        {
+            var state = new MockRNGState(nextUInt64);
+            var (next, _) = RNG.NextDouble()(state);
+
+            Assert.Equal(expected, next);
+        }
+    }
+
+    public class RandomRNGStateTests
+    {
+        [Theory]
+        [InlineData(0, 0ul)]
+        public void NextUInt64_Test(int seed, ulong expected)
+        {
+            var state = new RandomRNGState(new Random(seed), sizeof(ulong));
+
+            Assert.Equal(expected, state.NextUInt64());
         }
 
         [Fact]
-        public void NextUInt64_minValue_maxValue_Test()
+        public void NextBytes_Test()
         {
-            var prng = MockPRNG(ulong.MaxValue);
-            var state = new RNGState(1, BufferValue, 0);
-            var (next, newState) = RNG.NextUInt64(100, 200, prng)(state);
+            var state = new RandomRNGState(bufferLength: 32);
 
-            Assert.True(next == 199);
-            Assert.True(newState.Seed == 2);
-        }
-
-        [Fact]
-        public void NextBytes_100_Test()
-        {
-            var state = new RNGState(DateTime.Now.Ticks.AsUInt64());
-            var (next, newState) = RNG.NextBytes(100)(state);
-
-            Assert.True(next.Count() == 100);
+            Assert.Equal(48, state.NextBytes(48).Count());
         }
     }
 }
