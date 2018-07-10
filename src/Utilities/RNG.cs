@@ -86,7 +86,7 @@ namespace Luger.Utilities
         /// Number of significant bits in result.
         /// </param>
         public static Transition<IRNGState, ulong> NextNBits(int n)
-            => (n - 1 & ~0x1F) == 0
+            => (n - 1 & ~0x3F) == 0
                 ? from value in NextUInt64() select value & (1ul << n) - 1
                 : throw new ArgumentOutOfRangeException(nameof(n));
 

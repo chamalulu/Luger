@@ -30,13 +30,13 @@ namespace Luger.Utilities.Tests
         [MemberData(nameof(as_testdata))]
         public void AsUInt64Test(ulong ul, long l) => Assert.Equal(l.AsUInt64(), ul);
 
-        private const int multestlimit = 100;
+        private const int multestcount = 3;
 
         public static IEnumerable<object[]> mul_testdata()
-            => from x in Enumerable.Range(0, multestlimit)
-               from y in Enumerable.Range(0, multestlimit)
-               let bix = ((BigInteger)x << 64) / multestlimit
-               let biy = ((BigInteger)y << 64) / multestlimit
+            => from x in Enumerable.Range(0, multestcount)
+               from y in Enumerable.Range(0, multestcount)
+               let bix = ((BigInteger)x << 64) / multestcount
+               let biy = ((BigInteger)y << 64) / multestcount
                let bia = bix * biy >> 64
                select new object[] { (ulong)bix, (ulong)biy, (ulong)bia };
 
@@ -223,7 +223,7 @@ namespace Luger.Utilities.Tests
     public class RandomRNGStateTests
     {
         [Theory]
-        [InlineData(0, 0ul)]
+        [InlineData(0, 15628745651041733658ul)]
         public void NextUInt64_Test(int seed, ulong expected)
         {
             var state = new RandomRNGState(new Random(seed), sizeof(ulong));
