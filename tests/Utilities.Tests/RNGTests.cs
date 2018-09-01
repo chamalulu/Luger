@@ -125,7 +125,7 @@ namespace Luger.Utilities.Tests
 
         [Theory]
         [InlineData(ulong.MinValue, 0d)]
-        [InlineData(ulong.MaxValue, 1d)]
+        [InlineData(ulong.MaxValue, 1d)]    // If precision allowed, expected would be < 1
         public void NextDouble_Test(ulong nextUInt64, double expected)
         {
             var state = new MockRNGState(nextUInt64);

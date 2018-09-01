@@ -59,13 +59,14 @@ namespace Luger.Utilities
         public static Transition<IRNGState, long> NextInt64()
             => from value in NextUInt64() select value.AsInt64();
 
-        private const double MaxUInt64 = (double)ulong.MaxValue;
+        // Set RangeUInt64 to IEEE 754 binary64 representation of exactly 2^64
+        private static readonly double RangeUInt64 = BitConverter.Int64BitsToDouble(0x43F0_0000_0000_0000);
 
         /// <summary>
-        /// Return next random double in range [0.0 .. 1.0)
+        /// Return next random double in range [0..1]
         /// </summary>
         public static Transition<IRNGState, double> NextDouble()
-            => from value in NextUInt64() select value / MaxUInt64;
+            => from value in NextUInt64() select value / RangeUInt64;
     }
 
     public class RandomRNGState : IRNGState
@@ -170,7 +171,7 @@ namespace Luger.Utilities
                 throw new ArgumentOutOfRangeException(nameof(seed), "Seed must not be 0.");
         }
 
-        // Don't run this on exactly midnight, January 1, 0001 :)
+        // Don't run this just around midnight, January 1, 0001 :)
         public static XorShift64StarRNGState FromClock() => new XorShift64StarRNGState(DateTime.Now.Ticks.AsUInt64());
     }
 }
