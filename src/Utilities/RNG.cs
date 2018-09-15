@@ -59,7 +59,7 @@ namespace Luger.Utilities
         public static Transition<IRNGState, long> NextInt64()
             => from value in NextUInt64() select value.AsInt64();
 
-        // Set RangeUInt64 to IEEE 754 binary64 representation of exactly 2^64
+        // Set RangeUInt64 to IEEE 754 binary64 representation of exactly 2^64. (exponent + 1023) << 52 | (mantissa - 1) * 2^52
         private static readonly double RangeUInt64 = BitConverter.Int64BitsToDouble(0x43F0_0000_0000_0000);
 
         /// <summary>
@@ -67,6 +67,9 @@ namespace Luger.Utilities
         /// </summary>
         public static Transition<IRNGState, double> NextDouble()
             => from value in NextUInt64() select value / RangeUInt64;
+
+        public static Transition<IRNGState, double> NextDoubleBC()
+            => from value in NextUInt64() select BitConverter.Int64BitsToDouble((long)(value >> 12) | 0x3FF0_0000_0000_0000) - 1;
     }
 
     public class RandomRNGState : IRNGState
@@ -133,7 +136,7 @@ namespace Luger.Utilities
             var (value, seed) = _prng(_seed);
 
             _seed = seed;
-            
+
             return value;
         }
 
