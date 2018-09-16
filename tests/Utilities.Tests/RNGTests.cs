@@ -41,68 +41,77 @@ namespace Luger.Utilities.Tests
         [Fact]
         public void NextUInt64_Test()
         {
+            var target = RNG.NextUInt64();
             var state = new MockRNGState();
-            var (next, newState) = RNG.NextUInt64()(state);
+            var (actual, newState) = target(state);
 
-            Assert.Equal(MockUInt64, next);
+            Assert.Equal(MockUInt64, actual);
             Assert.Equal(state, newState);
         }
 
-        public static IEnumerable<object[]> ValidNextNBitsData => from v in Enumerable.Range(1, 64) select new object[] { v };
+        public static IEnumerable<object[]> ValidNextNBitsData
+            => from v in Enumerable.Range(1, 64) select new object[] { v };
 
         [Theory]
         [MemberData(nameof(ValidNextNBitsData))]
         public void NextNBits_Positive_Test(int n)
         {
+            var target = RNG.NextNBits(n);
             var state = new MockRNGState();
-            var (next, _) = RNG.NextNBits(n)(state);
+            var actual = target.Run(state);
 
-            Assert.Equal(MockUInt64 & (1ul << n) - 1, next);
+            Assert.Equal(MockUInt64 & (1ul << n) - 1, actual);
         }
 
         [Theory]
         [InlineData(0)]
         [InlineData(65)]
-        public void NextNBits_Negative_Test(int n) => Assert.Throws<ArgumentOutOfRangeException>(() => RNG.NextNBits(n));
+        public void NextNBits_Negative_Test(int n)
+            => Assert.Throws<ArgumentOutOfRangeException>(() => RNG.NextNBits(n));
 
         [Theory]
         [InlineData(100)]
         public void NextBytes_Positive_Test(int count)
         {
+            var target = RNG.NextBytes(count);
             var state = new MockRNGState();
-            var (next, _) = RNG.NextBytes(count)(state);
+            var actual = target.Run(state);
 
-            Assert.Equal(count, next.Count());
+            Assert.Equal(count, actual.Count());
         }
 
         [Theory]
         [InlineData(-1)]
-        public void NextBytes_Negative_Test(int count) => Assert.Throws<ArgumentOutOfRangeException>(() => RNG.NextBytes(count));
+        public void NextBytes_Negative_Test(int count)
+            => Assert.Throws<ArgumentOutOfRangeException>(() => RNG.NextBytes(count));
 
         [Theory]
         [InlineData(ulong.MinValue, 100, 0)]
         [InlineData(ulong.MaxValue, 100, 99)]
         public void NextUInt64_maxValue_Positive_Test(ulong nextUInt64, ulong maxValue, ulong expected)
         {
+            var target = RNG.NextUInt64(maxValue);
             var state = new MockRNGState(nextUInt64);
-            var (next, _) = RNG.NextUInt64(maxValue)(state);
+            var actual = target.Run(state);
 
-            Assert.Equal(expected, next);
+            Assert.Equal(expected, actual);
         }
 
         [Theory]
         [InlineData(0)]
-        public void NextUInt64_maxValue_Negative_Test(ulong maxValue) => Assert.Throws<ArgumentOutOfRangeException>(() => RNG.NextUInt64(maxValue));
+        public void NextUInt64_maxValue_Negative_Test(ulong maxValue)
+            => Assert.Throws<ArgumentOutOfRangeException>(() => RNG.NextUInt64(maxValue));
 
         [Theory]
         [InlineData(ulong.MinValue, 100, 200, 100)]
         [InlineData(ulong.MaxValue, 100, 200, 199)]
         public void NextUInt64_minValue_maxValue_Positive_Test(ulong nextUInt64, ulong minValue, ulong maxValue, ulong expected)
         {
+            var target = RNG.NextUInt64(minValue, maxValue);
             var state = new MockRNGState(nextUInt64);
-            var (next, _) = RNG.NextUInt64(minValue, maxValue)(state);
+            var actual = target.Run(state);
 
-            Assert.Equal(expected, next);
+            Assert.Equal(expected, actual);
         }
 
         [Theory]
@@ -117,10 +126,11 @@ namespace Luger.Utilities.Tests
         [InlineData(ulong.MaxValue, -1L)]
         public void NextInt64(ulong nextUInt64, long expected)
         {
+            var target = RNG.NextInt64();
             var state = new MockRNGState(nextUInt64);
-            var (next, _) = RNG.NextInt64()(state);
+            var actual = target.Run(state);
 
-            Assert.Equal(expected, next);
+            Assert.Equal(expected, actual);
         }
 
         [Theory]
@@ -128,10 +138,23 @@ namespace Luger.Utilities.Tests
         [InlineData(ulong.MaxValue, 1d)]    // If precision allowed, expected would be < 1
         public void NextDouble_Test(ulong nextUInt64, double expected)
         {
+            var target = RNG.NextDouble();
             var state = new MockRNGState(nextUInt64);
-            var (next, _) = RNG.NextDouble()(state);
+            var actual = target.Run(state);
 
-            Assert.Equal(expected, next);
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [InlineData(ulong.MinValue, 0d)]
+        [InlineData(ulong.MaxValue, 0.999999999999999777955395074969d)]
+        public void NextDoubleBC_Test(ulong nextUInt64, double expected)
+        {
+            var target = RNG.NextDoubleBC();
+            var state = new MockRNGState(nextUInt64);
+            var actual = target.Run(state);
+
+            Assert.Equal(expected, actual);
         }
     }
 
