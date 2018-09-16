@@ -2,10 +2,21 @@ using System;
 
 namespace Luger.Functional
 {
-    public delegate (T, S) Transition<S, T>(S state);
+    public delegate (T Value, S State) Transition<S, T>(S state);
 
     public static class Transition
     {
+        /// <summary>
+        /// Run a transition with given state (discarding end state)
+        /// </summary>
+        /// <typeparam name="S">Type of state</typeparam>
+        /// <typeparam name="T">Type of value</typeparam>
+        /// <param name="transition">The transition to run</param>
+        /// <param name="state">The state to run over</param>
+        /// <returns>Return value of transition run over state</returns>
+        public static T Run<S, T>(this Transition<S, T> transition, S state)
+            => transition(state).Value;
+
         /// <summary>
         /// Map function over Transition
         /// </summary>
