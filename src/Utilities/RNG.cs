@@ -65,9 +65,20 @@ namespace Luger.Utilities
         /// <summary>
         /// Return next random double in range [0..1]
         /// </summary>
+        /// <remarks>
+        /// Because IEEE 754 cast of 2^64-1 is rounding to 2^64 the greatest value is equal to 1
+        /// </remarks>
         public static Transition<IRNGState, double> NextDouble()
             => from value in NextUInt64() select value / RangeUInt64;
 
+        /// <summary>
+        /// Return next random double in range [0..1)
+        /// </summary>
+        /// <remarks>
+        /// Because IEEE 754 subtraction of greatest IEEE 754 number &lt; 2 by 1 is shifting a 
+        /// clear bit into the mantissa the greatest value is 0.999999999999999777955395074969
+        /// which is not the greatest IEEE 754 number &lt; 1 (0.999999999999999888977697537484)
+        /// </remarks>
         public static Transition<IRNGState, double> NextDoubleBC()
             => from value in NextUInt64() select BitConverter.Int64BitsToDouble((long)(value >> 12) | 0x3FF0_0000_0000_0000) - 1;
     }
