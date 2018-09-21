@@ -17,7 +17,7 @@ namespace Luger.Utilities.Tests
             private readonly Func<ulong> _nextUInt64;
             private readonly Func<int, IEnumerable<byte>> _nextBytes;
 
-            private MockRNGState(Func<ulong> nextUInt64, Func<int, IEnumerable<byte>> nextBytes)
+            public MockRNGState(Func<ulong> nextUInt64, Func<int, IEnumerable<byte>> nextBytes)
             {
                 _nextUInt64 = nextUInt64 ?? new Func<ulong>(() => MockUInt64);
                 _nextBytes = nextBytes ?? new Func<int, IEnumerable<byte>>(count => Enumerable.Repeat(MockByte, count));
