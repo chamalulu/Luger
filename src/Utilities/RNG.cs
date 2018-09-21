@@ -26,7 +26,8 @@ namespace Luger.Utilities
         /// </param>
         public static Transition<IRNGState, ulong> NextNBits(int n)
             => (n - 1 & ~0x3F) == 0
-                ? from value in NextUInt64() select value & (1ul << n) - 1
+                ? from value in NextUInt64()
+                  select value & (1ul << n) - 1
                 : throw new ArgumentOutOfRangeException(nameof(n));
 
         /// <summary>
@@ -42,7 +43,8 @@ namespace Luger.Utilities
         /// </summary>
         public static Transition<IRNGState, ulong> NextUInt64(ulong maxValue)
             => maxValue > 0
-                ? from value in NextUInt64() select IntExt.Mul64Hi(value, maxValue)
+                ? from value in NextUInt64()
+                  select IntExt.Mul64Hi(value, maxValue)
                 : throw new ArgumentOutOfRangeException(nameof(maxValue));
 
         /// <summary>
@@ -50,14 +52,16 @@ namespace Luger.Utilities
         /// </summary>
         public static Transition<IRNGState, ulong> NextUInt64(ulong minValue, ulong maxValue)
             => maxValue > minValue
-                ? from value in NextUInt64(maxValue - minValue) select value + minValue
+                ? from value in NextUInt64(maxValue - minValue)
+                  select value + minValue
                 : throw new ArgumentException($"{nameof(maxValue)} <= {nameof(minValue)}");
 
         /// <summary>
         /// Return next random long
         /// </summary>
         public static Transition<IRNGState, long> NextInt64()
-            => from value in NextUInt64() select value.AsInt64();
+            => from value in NextUInt64()
+               select value.AsInt64();
 
         // Set RangeUInt64 to IEEE 754 binary64 representation of exactly 2^64. (exponent + 1023) << 52 | (mantissa - 1) * 2^52
         private static readonly double RangeUInt64 = BitConverter.Int64BitsToDouble(0x43F0_0000_0000_0000);
@@ -69,7 +73,8 @@ namespace Luger.Utilities
         /// Because IEEE 754 cast of 2^64-1 is rounding to 2^64 the greatest value is equal to 1
         /// </remarks>
         public static Transition<IRNGState, double> NextDouble()
-            => from value in NextUInt64() select value / RangeUInt64;
+            => from value in NextUInt64()
+               select value / RangeUInt64;
 
         /// <summary>
         /// Return next random double in range [0..1)
@@ -80,7 +85,9 @@ namespace Luger.Utilities
         /// which is not the greatest IEEE 754 number &lt; 1 (0.999999999999999888977697537484)
         /// </remarks>
         public static Transition<IRNGState, double> NextDoubleBC()
-            => from value in NextUInt64() select BitConverter.Int64BitsToDouble((long)(value >> 12) | 0x3FF0_0000_0000_0000) - 1;
+            => from value in NextUInt64()
+               let bits = (long)(value >> 12) | 0x3FF0_0000_0000_0000
+               select BitConverter.Int64BitsToDouble(bits) - 1;
     }
 
     public class RandomRNGState : IRNGState
@@ -158,7 +165,10 @@ namespace Luger.Utilities
 
             IEnumerable<byte> GetBytes(IEnumerable<ulong> qwords) => qwords.Bind(BitConverter.GetBytes);
 
-            var (bytes, seed) = Enumerable.Range(0, (count - 1) / sizeof(ulong) + 1).TraverseM(_ => _prng).Map(GetBytes)(_seed);
+            var (bytes, seed) = Enumerable
+                .Range(0, (count - 1) / sizeof(ulong) + 1)
+                .TraverseM(_ => _prng)
+                .Map(GetBytes)(_seed);
 
             _seed = seed;
 
@@ -186,6 +196,7 @@ namespace Luger.Utilities
         }
 
         // Don't run this just around midnight, January 1, 0001 :)
-        public static XorShift64StarRNGState FromClock() => new XorShift64StarRNGState(DateTime.Now.Ticks.AsUInt64());
+        public static XorShift64StarRNGState FromClock()
+            => new XorShift64StarRNGState(DateTime.Now.Ticks.AsUInt64());
     }
 }
