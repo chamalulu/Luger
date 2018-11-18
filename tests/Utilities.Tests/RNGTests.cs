@@ -15,12 +15,12 @@ namespace Luger.Utilities.Tests
         private class MockRNGState : IRNGState
         {
             private readonly Func<ulong> _nextUInt64;
-            private readonly Func<int, IEnumerable<byte>> _nextBytes;
+            private readonly Func<uint, IEnumerable<byte>> _nextBytes;
 
-            public MockRNGState(Func<ulong> nextUInt64, Func<int, IEnumerable<byte>> nextBytes)
+            public MockRNGState(Func<ulong> nextUInt64, Func<uint, IEnumerable<byte>> nextBytes)
             {
                 _nextUInt64 = nextUInt64 ?? new Func<ulong>(() => MockUInt64);
-                _nextBytes = nextBytes ?? new Func<int, IEnumerable<byte>>(count => Enumerable.Repeat(MockByte, count));
+                _nextBytes = nextBytes ?? new Func<uint, IEnumerable<byte>>(count => EnumerableExt.Repeat(MockByte, count));
             }
 
             public MockRNGState() : this(null, null) { }
@@ -31,11 +31,11 @@ namespace Luger.Utilities.Tests
 
             public MockRNGState(Func<ulong> nextUInt64) : this(nextUInt64, null) { }
 
-            public MockRNGState(Func<int, IEnumerable<byte>> nextBytes) : this(null, nextBytes) { }
+            public MockRNGState(Func<uint, IEnumerable<byte>> nextBytes) : this(null, nextBytes) { }
 
             public ulong NextUInt64() => _nextUInt64();
 
-            public IEnumerable<byte> NextBytes(int count) => _nextBytes(count);
+            public IEnumerable<byte> NextBytes(uint count) => _nextBytes(count);
         }
 
         [Fact]
@@ -50,7 +50,7 @@ namespace Luger.Utilities.Tests
         }
 
         public static IEnumerable<object[]> ValidNextNBitsData
-            => from v in Enumerable.Range(1, 64) select new object[] { v };
+            => from v in System.Linq.Enumerable.Range(1, 64) select new object[] { v };
 
         [Theory]
         [MemberData(nameof(ValidNextNBitsData))]
@@ -60,7 +60,8 @@ namespace Luger.Utilities.Tests
             var state = new MockRNGState();
             var actual = target.Run(state);
 
-            Assert.Equal(MockUInt64 & (1ul << n) - 1, actual);
+            var mask = ~((1ul << n - 1) - 1) << 1;
+            Assert.True((actual & mask) == 0);
         }
 
         [Theory]
@@ -71,19 +72,14 @@ namespace Luger.Utilities.Tests
 
         [Theory]
         [InlineData(100)]
-        public void NextBytes_Positive_Test(int count)
+        public void NextBytes_Positive_Test(uint count)
         {
             var target = RNG.NextBytes(count);
             var state = new MockRNGState();
             var actual = target.Run(state);
 
-            Assert.Equal(count, actual.Count());
+            Assert.Equal(count, EnumerableExt.Count(actual));
         }
-
-        [Theory]
-        [InlineData(-1)]
-        public void NextBytes_Negative_Test(int count)
-            => Assert.Throws<ArgumentOutOfRangeException>(() => RNG.NextBytes(count));
 
         [Theory]
         [InlineData(ulong.MinValue, 100, 0)]
@@ -124,7 +120,7 @@ namespace Luger.Utilities.Tests
         [InlineData(0x7FFF_FFFF_FFFF_FFFFUL, long.MaxValue)]
         [InlineData(0x8000_0000_0000_0000UL, long.MinValue)]
         [InlineData(ulong.MaxValue, -1L)]
-        public void NextInt64(ulong nextUInt64, long expected)
+        public void NextInt64_Test(ulong nextUInt64, long expected)
         {
             var target = RNG.NextInt64();
             var state = new MockRNGState(nextUInt64);
@@ -135,7 +131,7 @@ namespace Luger.Utilities.Tests
 
         [Theory]
         [InlineData(ulong.MinValue, 0d)]
-        [InlineData(ulong.MaxValue, 1d)]    // If precision allowed, expected would be < 1
+        [InlineData(ulong.MaxValue, 1d)]
         public void NextDouble_Test(ulong nextUInt64, double expected)
         {
             var target = RNG.NextDouble();
@@ -169,12 +165,13 @@ namespace Luger.Utilities.Tests
             Assert.Equal(expected, state.NextUInt64());
         }
 
-        [Fact]
-        public void NextBytes_Test()
+        [Theory]
+        [InlineData(32, 48)]
+        public void NextBytes_Test(uint bufferLength, uint count)
         {
-            var state = new RandomRNGState(bufferLength: 32);
+            var state = new RandomRNGState(bufferLength: bufferLength);
 
-            Assert.Equal(48, state.NextBytes(48).Count());
+            Assert.Equal(count, EnumerableExt.Count(state.NextBytes(count)));
         }
     }
 }

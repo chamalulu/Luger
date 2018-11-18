@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Luger.Functional;
 
 namespace Luger.Utilities
@@ -8,7 +7,7 @@ namespace Luger.Utilities
     public interface IRNGState
     {
         ulong NextUInt64();
-        IEnumerable<byte> NextBytes(int count);
+        IEnumerable<byte> NextBytes(uint count);
     }
 
     public static class RNG
@@ -22,21 +21,19 @@ namespace Luger.Utilities
         /// Return next random UInt64 in range [0 .. 2^n)
         /// </summary>
         /// <param name="n">
-        /// Number of significant bits in result.
+        /// Number of significant bits in result. [1 .. 64]
         /// </param>
         public static Transition<IRNGState, ulong> NextNBits(int n)
             => (n - 1 & ~0x3F) == 0
                 ? from value in NextUInt64()
-                  select value & (1ul << n) - 1
+                  select value >> 64 - n
                 : throw new ArgumentOutOfRangeException(nameof(n));
 
         /// <summary>
         /// Return next count random bytes
         /// </summary>
-        public static Transition<IRNGState, IEnumerable<byte>> NextBytes(int count)
-            => count >= 0
-                ? new Transition<IRNGState, IEnumerable<byte>>(state => (state.NextBytes(count), state))
-                : throw new ArgumentOutOfRangeException(nameof(count));
+        public static Transition<IRNGState, IEnumerable<byte>> NextBytes(uint count)
+            => new Transition<IRNGState, IEnumerable<byte>>(state => (state.NextBytes(count), state));
 
         /// <summary>
         /// Return next random ulong in range [0 .. maxValue)
@@ -96,11 +93,8 @@ namespace Luger.Utilities
         private readonly byte[] _buffer;
         private int _freshBytes;
 
-        public RandomRNGState(Random random = null, int bufferLength = 0x1000)
+        public RandomRNGState(Random random = null, uint bufferLength = 0x1000)
         {
-            if (bufferLength < sizeof(ulong))
-                throw new ArgumentOutOfRangeException(nameof(bufferLength));
-
             _random = random ?? new Random();
 
             _buffer = new byte[bufferLength];
@@ -124,9 +118,9 @@ namespace Luger.Utilities
             return BitConverter.ToUInt64(_buffer, startIndex);
         }
 
-        public IEnumerable<byte> NextBytes(int count)
+        public IEnumerable<byte> NextBytes(uint count)
         {
-            for (int c = 0; c < count; c++)
+            for (uint c = 0; c < count; c++)
             {
                 if (_freshBytes == 0)
                     FillBuffer();
@@ -158,21 +152,25 @@ namespace Luger.Utilities
             return value;
         }
 
-        public IEnumerable<byte> NextBytes(int count)
+        public IEnumerable<byte> NextBytes(uint count)
         {
-            if (count < 0)
-                throw new ArgumentOutOfRangeException(nameof(count));
-
             IEnumerable<byte> GetBytes(IEnumerable<ulong> qwords) => qwords.Bind(BitConverter.GetBytes);
 
-            var (bytes, seed) = Enumerable
-                .Range(0, (count - 1) / sizeof(ulong) + 1)
-                .TraverseM(_ => _prng)
-                .Map(GetBytes)(_seed);
+            if (count == 0)
+                return System.Linq.Enumerable.Empty<byte>();
+            else
+            {
+                var ulongCount = (count - 1) / sizeof(ulong) + 1;
 
-            _seed = seed;
+                var (bytes, seed) = EnumerableExt
+                    .RangeUInt32(ulongCount)
+                    .TraverseM(_ => _prng)
+                    .Map(GetBytes)(_seed);
 
-            return bytes.Take(count);
+                _seed = seed;
+
+                return bytes.Take(count);
+            }
         }
     }
 
