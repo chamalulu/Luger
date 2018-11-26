@@ -65,20 +65,5 @@ namespace Luger.Functional
         {
             while (true) yield return f();
         }
-
-        public static Task<T> ExponentialBackoff<T>(
-            this Func<Task<T>> f,
-            Random rng,
-            int retries = 8,
-            int delayMs = 100
-        )
-            => retries == 0
-                ? f()
-                : f().OrElse(() =>
-                    from _ in Task.Delay((int) ((rng.NextDouble() + 0.5) * delayMs)).AsVoidTask()
-                    from t in ExponentialBackoff(f, rng, retries - 1, delayMs << 1)
-                    select t
-                );
-
     }
 }

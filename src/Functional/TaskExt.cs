@@ -19,7 +19,7 @@ namespace Luger.Functional
 
         public static Task<TR> Select<T, TR>(this Task<T> task, Func<T, TR> f)
             => Map(task, f);
-        
+
         public static Task<TR> SelectMany<T, TR>(this Task<T> task, Func<T, Task<TR>> f)
             => Bind(task, f);
 
@@ -31,27 +31,41 @@ namespace Luger.Functional
 
         #endregion
 
-
-        public static async Task<T> OrElse<T>(this Task<T> task, Func<Task<T>> fallback)
+        public static async Task<T> OrElse<T>(this Task<T> task, Func<Task<T>, Task<T>> fallback)
         {
-            try
-            {
-                return await task;
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch
-            {
-                return await fallback();
-            }
+            try { return await task; }
+            catch (OperationCanceledException) { throw; }
+            catch { return await fallback(task); }
         }
+
+        public static async Task<T> OrElse<T>(this Task<T> task, Func<Exception, Task<T>> fallback)
+        {
+            try { return await task; }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex) { return await fallback(ex); }
+        }
+
+        public static Task<T> OrElse<T>(this Task<T> task, Func<Task<T>> fallback)
+            => task.OrElse((Task<T> _) => fallback());
 
         public static async Task<Void> AsVoidTask(this Task task)
         {
             await task;
             return default;
         }
+
+        public static Task<T> ExponentialBackoff<T>(
+            this Func<Task<T>> f,
+            Random rng,
+            uint retries = 8,
+            uint delayMs = 100
+        )
+            => retries == 0
+                ? f()
+                : f().OrElse(() =>
+                    from _ in Task.Delay((int)((rng.NextDouble() + 0.5) * delayMs)).AsVoidTask()
+                    from t in ExponentialBackoff(f, rng, retries - 1, delayMs << 1)
+                    select t
+                );
     }
 }

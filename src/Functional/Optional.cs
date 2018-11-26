@@ -35,10 +35,7 @@ namespace Luger.Functional
     {
         private readonly T _value;
 
-        private Some(T value)
-        {
-            _value = value ?? throw new ArgumentNullException(nameof(value));
-        }
+        private Some(T value) => _value = value ?? throw new ArgumentNullException(nameof(value));
 
         public static explicit operator Some<T>(T value) => new Some<T>(value);
 
