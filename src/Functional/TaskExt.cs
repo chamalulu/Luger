@@ -11,6 +11,12 @@ namespace Luger.Functional
 
         public static async Task<TR> Apply<T, TR>(this Task<Func<T, TR>> tf, Task<T> tt)
             => (await tf)(await tt);
+        
+        public static Task<Func<T2, TR>> Apply<T1, T2, TR>(this Task<Func<T1, T2, TR>> tf, Task<T1> tt)
+            => Apply(tf.Map(FuncExt.Curry), tt);
+
+        public static Task<Func<T2, T3, TR>> Apply<T1, T2, T3, TR>(this Task<Func<T1, T2, T3, TR>> tf, Task<T1> tt)
+            => Apply(tf.Map(FuncExt.CurryFirst), tt); 
 
         public static async Task<TR> Bind<T, TR>(this Task<T> task, Func<T, Task<TR>> f)
             => await f(await task);

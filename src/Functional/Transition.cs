@@ -4,6 +4,11 @@ namespace Luger.Functional
 {
     public delegate (T Value, S State) Transition<S, T>(S state);
 
+    public static class Transition<S>
+    {
+        public static Transition<S, T> Return<T>(T value) => s => (value, s);
+    }
+
     public static class Transition
     {
         /// <summary>

@@ -32,6 +32,9 @@ namespace Luger.Functional
 
         public static Func<T1, Func<T2, Func<T3, TR>>> Curry<T1, T2, T3, TR>(this Func<T1, T2, T3, TR> f)
             => p1 => p2 => p3 => f(p1, p2, p3);
+        
+        public static Func<T1, Func<T2, T3, TR>> CurryFirst<T1, T2, T3, TR>(this Func<T1, T2, T3, TR> f)
+            => p1 => (p2, p3) => f(p1, p2, p3);
 
         #endregion
 
