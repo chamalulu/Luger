@@ -156,21 +156,17 @@ namespace Luger.Utilities
         {
             IEnumerable<byte> GetBytes(IEnumerable<ulong> qwords) => qwords.Bind(BitConverter.GetBytes);
 
-            if (count == 0)
-                return System.Linq.Enumerable.Empty<byte>();
-            else
-            {
-                var ulongCount = (count - 1) / sizeof(ulong) + 1;
+            var ulongCount = (count - 1) / sizeof(ulong) + 1;
 
-                var (bytes, seed) = EnumerableExt
-                    .RangeUInt32(ulongCount)
-                    .TraverseM(_ => _prng)
-                    .Map(GetBytes)(_seed);
+            var bytesGenerator = EnumerableExt.RangeUInt32(ulongCount)
+                .TraverseM(_ => _prng)
+                .Map(GetBytes);
 
-                _seed = seed;
+            var (bytes, seed) = bytesGenerator(_seed);
 
-                return bytes.Take(count);
-            }
+            _seed = seed;
+
+            return bytes.Take(count);
         }
     }
 
