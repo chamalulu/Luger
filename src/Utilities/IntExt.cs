@@ -1,3 +1,5 @@
+using System;
+
 namespace Luger.Utilities
 {
     public static class IntExt
@@ -45,19 +47,53 @@ namespace Luger.Utilities
             return (acc2 >> 32) + carry + xh * yh;  // Can not overflow
         }
 
-        public static ulong CopyBits(ulong target, ulong source, int offset, int width)
+        public struct UInt6
         {
-            var mask = ((1ul << width) - 1) << offset;
+            readonly int _value;
 
-            return target & ~mask | source & mask;
+            private UInt6(int value)
+                => _value =
+                    ((value & ~0x3F) == 0)
+                        ? value
+                        : (byte)(value & 0x3F | 0x100);   // Preserve low bits and force OverflowException if checking enabled.
+
+            public static implicit operator int(UInt6 value) => value._value;
+            public static explicit operator UInt6(int value) => new UInt6(value);
+
+            public static UInt6 operator +(UInt6 addend1, UInt6 addend2) =>
+                new UInt6(addend1._value + addend2._value);
+
+            public static UInt6 operator -(UInt6 minuend, UInt6 subtrahend) =>
+                new UInt6(minuend._value - subtrahend._value);
         }
 
-        public static ulong CopyBits(ulong target, ulong source, int target_offset, int source_offset, int width)
+        public static ulong RotateLeft(ulong value, UInt6 n) => value << n | value >> 64 - n;
+
+        public static ulong RotateRight(ulong value, UInt6 n) => value >> n | value << 64 - n;
+
+        public static ulong CopyBits(ulong target, ulong source, UInt6 offset, byte width)
+        {
+            if (width > 64)
+                throw new ArgumentOutOfRangeException(nameof(width));
+
+            switch (width)
+            {
+                case 0:
+                    return target;
+                case 64:
+                    return source;
+                default:
+                    var mask = RotateLeft((1ul << width) - 1, offset);
+                    return target & ~mask | source & mask;
+            }
+        }
+
+        public static ulong CopyBits(ulong target, ulong source, UInt6 target_offset, UInt6 source_offset, byte width)
         {
             if (target_offset < source_offset)
-                return CopyBits(target, source >> (source_offset - target_offset), target_offset, width);
+                return CopyBits(target, RotateRight(source, source_offset - target_offset), target_offset, width);
             else if (target_offset > source_offset)
-                return CopyBits(target, source << (target_offset - source_offset), target_offset, width);
+                return CopyBits(target, RotateLeft(source, target_offset - source_offset), target_offset, width);
             else
                 return CopyBits(target, source, target_offset, width);
         }

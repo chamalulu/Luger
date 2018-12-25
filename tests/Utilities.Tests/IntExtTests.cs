@@ -5,6 +5,7 @@ using System.Numerics;
 using Luger.Functional;
 using Xunit;
 using Xunit.Abstractions;
+using static Luger.Utilities.IntExt;
 
 namespace Luger.Utilities.Tests
 {
@@ -75,5 +76,23 @@ namespace Luger.Utilities.Tests
             var mulsPerBIs = (biTime - noTime) / (mul64hiTime - noTime);
             _output.WriteLine($"Mul64Hi is {mulsPerBIs:N2} times faster than BigInteger.");
         }
+
+
+        private const ulong CBT_Target = 0x5555_5555_5555_5555UL, CBT_Source = 0x0123_4567_89AB_CDEFUL;
+
+        [Theory]
+        [InlineData(0, 32, 0x5555_5555_89AB_CDEFUL)]
+        [InlineData(0, 64, CBT_Source)]
+        [InlineData(32, 32, 0x0123_4567_5555_5555UL)]
+        [InlineData(48, 32, 0x0123_5555_5555_CDEFUL)]
+        public void CopyBitsTest(int offset, int width, ulong expected)
+            => Assert.Equal(expected, IntExt.CopyBits(CBT_Target, CBT_Source, (UInt6) offset, (byte) width));
+        
+        [Theory]
+        [InlineData(0, 32, 32, 0x5555_5555_0123_4567UL)]
+        [InlineData(32, 0, 32, 0x89AB_CDEF_5555_5555UL)]
+        [InlineData(16, 16, 32, 0x5555_4567_89AB_5555UL)]
+        public void CopyBitsShiftTest(int target_offset, int source_offset, int width, ulong expected)
+            => Assert.Equal(expected, IntExt.CopyBits(CBT_Target, CBT_Source, (UInt6) target_offset, (UInt6) source_offset, (byte) width));
     }
 }
