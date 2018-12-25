@@ -28,6 +28,7 @@ namespace Luger.Functional
     /// </summary>
     /// <remarks>
     /// Transition<S, R> is not an applicative functor so only Monadic and Sequential traverse is implemented.
+    /// (An implementation of Apply for Transition<S, R> wouldn't know which order to thread the state.)
     /// </remarks>
     public static class EnumerableTransitionTraversal
     {
