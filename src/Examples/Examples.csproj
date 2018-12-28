@@ -1,12 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Luger.Examples</AssemblyName>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>false</IsTestProject>
+    <Version>1.0.0</Version>
+    <Authors>Henrik Lundberg</Authors>
+    <Company>C.A.G MER Consulting</Company>
+  </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Functional\Functional.csproj" />
   </ItemGroup>
 
-  <PropertyGroup>
-    <GenerateFullPaths>true</GenerateFullPaths>
-    <TargetFramework>netstandard2.0</TargetFramework>
-  </PropertyGroup>
 
 </Project>
