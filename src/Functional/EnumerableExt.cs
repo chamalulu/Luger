@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -77,32 +78,34 @@ namespace Luger.Functional
                 .Map(t => t?.GetHashCode() ?? 0)
                 .Aggregate(0, (acc, hashcode) => acc << LShift ^ acc >> RShift ^ hashcode);
 
-        public static int GetHashCode(params object[] args) => GetHashCode(args.AsEnumerable());
+        public static int GetHashCode(params object[] args)
+            => GetHashCode(args.AsEnumerable());
 
-        public static IEnumerable<(T value, uint index)> WithIndex<T>(this IEnumerable<T> ts)
+        public static IEnumerable<(T value, uint index)> WithUInt32Index<T>(this IEnumerable<T> ts)
         {
             var index = 0U;
 
             foreach (var t in ts)
-                yield return (t, index++);
+                yield return (t, checked(index++));
         }
 
-        public static IEnumerable<(T value, ulong index)> WithLongIndex<T>(this IEnumerable<T> ts)
+        public static IEnumerable<(T value, ulong index)> WithUInt64Index<T>(this IEnumerable<T> ts)
         {
             var index = 0UL;
 
             foreach (var t in ts)
-                yield return (t, index++);
+                yield return (t, checked(index++));
         }
 
         public static IEnumerable<T> EveryNth<T>(this IEnumerable<T> ts, ulong n)
             => n > 0
-                ? from t in ts.WithLongIndex()
-                  where t.index % n == 0
-                  select t.value
+                ? from ti in ts.WithUInt64Index()
+                  where ti.index % n == 0
+                  select ti.value
                 : throw new ArgumentOutOfRangeException(nameof(n));
 
-        public static IEnumerable<T> EveryOther<T>(this IEnumerable<T> ts) => ts.EveryNth(2);
+        public static IEnumerable<T> EveryOther<T>(this IEnumerable<T> ts)
+            => ts.EveryNth(2);
 
         public static IEnumerable<(T first, T second)> Pairwise<T>(this IEnumerable<T> ts)
         {
@@ -132,28 +135,59 @@ namespace Luger.Functional
                 }
         }
 
-        public static uint Count<T>(this IEnumerable<T> sequence)
-            => sequence.Aggregate(0U, (c, _) => c + 1);
+        public static uint UInt32Count<T>(this IEnumerable<T> sequence)
+        {
+            switch (sequence)
+            {
+                case ICollection<T> collection:
+                    return (uint)collection.Count;
+                case ICollection collection:
+                    return (uint)collection.Count;
+                default:
+                    var i = 0U;
+                    using (var etor = sequence.GetEnumerator())
+                        while (etor.MoveNext())
+                            checked { i++; }
 
-        public static ulong LongCount<T>(this IEnumerable<T> sequence)
-            => sequence.Aggregate(0UL, (c, _) => c + 1);
+                    return i;
+            }
+        }
+
+        public static ulong UInt64Count<T>(this IEnumerable<T> sequence)
+        {
+            switch (sequence)
+            {
+                case ICollection<T> collection:
+                    return (ulong)collection.Count;
+                case ICollection collection:
+                    return (ulong)collection.Count;
+                default:
+                    var i = 0UL;
+                    using (var etor = sequence.GetEnumerator())
+                        while (etor.MoveNext())
+                            checked { i++; }
+
+                    return i;
+            }
+        }
 
         public static IEnumerable<uint> RangeUInt32()
         {
-            for (var i = uint.MinValue; i < uint.MaxValue; i++)
-                yield return i;
+            var i = uint.MinValue;
 
-            yield return uint.MaxValue;
+            do
+                yield return i++;
+            while (i > uint.MinValue);
         }
 
         public static IEnumerable<uint> RangeUInt32(uint count)
             => RangeUInt32().Take(count);
 
         public static IEnumerable<uint> RangeUInt32(uint start, uint count)
-            => start + count - 1 >= start
-                ? RangeUInt32(count).Map(e => e + start)
-                : count == 0
-                    ? System.Linq.Enumerable.Empty<uint>()
-                    : throw new ArgumentException("start + count > uint.MaxValue");
+            => count == 0
+                ? System.Linq.Enumerable.Empty<uint>()
+                : count - 1 <= uint.MaxValue - start
+                    ? RangeUInt32(count).Map(i => i + start)
+                    : throw new ArgumentException("start + count - 1 > uint.MaxValue");
     }
 }

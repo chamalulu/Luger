@@ -78,7 +78,7 @@ namespace Luger.Utilities.Tests
             var state = new MockRNGState();
             var actual = target.Run(state);
 
-            Assert.Equal(count, EnumerableExt.Count(actual));
+            Assert.Equal(count, actual.UInt32Count());
         }
 
         [Theory]
@@ -171,7 +171,7 @@ namespace Luger.Utilities.Tests
         {
             var state = new RandomRNGState(bufferLength: bufferLength);
 
-            Assert.Equal(count, EnumerableExt.Count(state.NextBytes(count)));
+            Assert.Equal(count, state.NextBytes(count).UInt32Count());
         }
     }
 }
