@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Luger.Functional;
 
 namespace Luger.Utilities
@@ -154,9 +155,13 @@ namespace Luger.Utilities
 
         public IEnumerable<byte> NextBytes(uint count)
         {
-            IEnumerable<byte> GetBytes(IEnumerable<ulong> qwords) => qwords.Bind(BitConverter.GetBytes);
+            if (count == 0)
+                return Enumerable.Empty<byte>();
 
+            // This expression would work for signed count even when count is 0.
             var ulongCount = (count - 1) / sizeof(ulong) + 1;
+
+            IEnumerable<byte> GetBytes(IEnumerable<ulong> qwords) => qwords.Bind(BitConverter.GetBytes);
 
             var bytesGenerator = EnumerableExt.RangeUInt32(ulongCount)
                 .TraverseM(_ => _prng)

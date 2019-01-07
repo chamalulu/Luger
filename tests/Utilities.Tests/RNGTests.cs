@@ -174,4 +174,54 @@ namespace Luger.Utilities.Tests
             Assert.Equal(count, state.NextBytes(count).UInt32Count());
         }
     }
+
+    public class UInt64TransitionRNGStateTests
+    {
+        [Fact]
+        public void Ctor_ANEX_Test() =>
+            Assert.Throws<ArgumentNullException>("prng", () => new UInt64TransitionRNGState(default, null));
+
+        [Theory]
+        [InlineData(0UL, 0UL)]
+        public void NextUInt64_Test(ulong seed, ulong expected)
+        {
+            var state = new UInt64TransitionRNGState(seed, s => (s, s));
+
+            Assert.Equal(expected, state.NextUInt64());
+        }
+
+        [Theory]
+        [InlineData(0, 0)]
+        [InlineData(1, 1)]
+        [InlineData(8, 1)]
+        [InlineData(9, 2)]
+        public void NextBytes_Test(uint count, uint calls)
+        {
+            var mockPrng = new FuncMock<ulong, (ulong, ulong)>(s => (s, s));
+            
+            var state = new UInt64TransitionRNGState(0, mockPrng.Invoke);
+
+            var actual = state.NextBytes(count).ToList();
+
+            Assert.Equal(count, actual.UInt32Count());
+            Assert.Equal(calls, mockPrng.Calls.UInt32Count());
+        }
+    }
+
+    public class XorShift64StarRNGStateTests
+    {
+        [Fact]
+        public void Ctor_AOOREX_Test() =>
+            Assert.Throws<ArgumentOutOfRangeException>("seed", () => new XorShift64StarRNGState(0));
+
+        [Theory]
+        [InlineData(1UL, 5180492295206395165UL)]
+        [InlineData(ulong.MaxValue, 17954947803125907456UL)]
+        public void NextUInt64_Test(ulong seed, ulong expected)
+        {
+            var state = new XorShift64StarRNGState(seed);
+
+            Assert.Equal(expected, state.NextUInt64());
+        }
+    }
 }

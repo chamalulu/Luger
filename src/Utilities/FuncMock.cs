@@ -25,7 +25,7 @@ namespace Luger.Utilities
 
         private readonly List<Call> _calls;
 
-        protected IEnumerable<Call> Calls => _calls;
+        public IEnumerable<Call> Calls => _calls;
 
         private Func<T, TR> Intercept(Func<T, TR> f)
             => args =>
@@ -47,35 +47,31 @@ namespace Luger.Utilities
     {
         public FuncMock(Func<TR> func)
             : base(_ => func()) { }
-
-        public Func<TR> AsFunc
-            => () => this.Func(default);
+        
+        public TR Invoke() => base.Func(default);
     }
 
     public sealed class FuncMock<T, TR> : FuncMockBase<T, TR>
     {
         public FuncMock(Func<T, TR> func)
             : base(func) { }
-
-        public Func<T, TR> AsFunc
-            => this.Func;
+        
+        public TR Invoke(T arg) => base.Func(arg);
     }
 
     public sealed class FuncMock<T1, T2, TR> : FuncMockBase<(T1, T2), TR>
     {
         public FuncMock(Func<T1, T2, TR> func)
             : base(args => func(args.Item1, args.Item2)) { }
-
-        public Func<T1, T2, TR> AsFunc
-            => (arg1, arg2) => this.Func((arg1, arg2));
+        
+        public TR Invoke(T1 arg1, T2 arg2) => base.Func((arg1, arg2));
     }
 
     public sealed class FuncMock<T1, T2, T3, TR> : FuncMockBase<(T1, T2, T3), TR>
     {
         public FuncMock(Func<T1, T2, T3, TR> func)
             : base(args => func(args.Item1, args.Item2, args.Item3)) { }
-
-        public Func<T1, T2, T3, TR> AsFunc
-            => (arg1, arg2, arg3) => this.Func((arg1, arg2, arg3));
+        
+        public TR Invoke(T1 arg1, T2 arg2, T3 arg3) => base.Func((arg1, arg2, arg3));
     }
 }
