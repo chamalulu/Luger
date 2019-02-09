@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Luger.Functional
 {
@@ -10,10 +9,10 @@ namespace Luger.Functional
 
         public static Func<T2, TR> Apply<T1, T2, TR>(this Func<T1, T2, TR> f, T1 p)
             => p2 => f(p, p2);
-        
+
         public static Func<T2, T3, TR> Apply<T1, T2, T3, TR>(this Func<T1, T2, T3, TR> f, T1 p)
             => (p2, p3) => f(p, p2, p3);
-        
+
         #endregion
 
         #region Func type inference helpers
@@ -32,7 +31,7 @@ namespace Luger.Functional
 
         public static Func<T1, Func<T2, Func<T3, TR>>> Curry<T1, T2, T3, TR>(this Func<T1, T2, T3, TR> f)
             => p1 => p2 => p3 => f(p1, p2, p3);
-        
+
         public static Func<T1, Func<T2, T3, TR>> CurryFirst<T1, T2, T3, TR>(this Func<T1, T2, T3, TR> f)
             => p1 => (p2, p3) => f(p1, p2, p3);
 
@@ -61,7 +60,7 @@ namespace Luger.Functional
                 var t = ft();
                 return p(t, f(t)());
             };
-        
+
         #endregion
 
         public static IEnumerable<T> Repeat<T>(this Func<T> f)
