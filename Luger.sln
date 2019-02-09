@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26124.0
@@ -12,6 +12,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utilities", "src\Utilities\Utilities.csproj", "{3968F07D-7489-4FF8-8C78-BD2F112F44F4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utilities.Tests", "tests\Utilities.Tests\Utilities.Tests.csproj", "{B9BC0529-BEA4-4E96-876F-79E4B14645D8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{FDBAACCA-C0C6-452B-B2E2-8C282ECD6FD6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnightsFate", "src\KnightsFate\KnightsFate.csproj", "{EF727D92-3986-4B37-9D2D-53B35D19E9A5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -86,5 +90,20 @@ Global
 		{B9BC0529-BEA4-4E96-876F-79E4B14645D8}.Release|x64.Build.0 = Release|x64
 		{B9BC0529-BEA4-4E96-876F-79E4B14645D8}.Release|x86.ActiveCfg = Release|x86
 		{B9BC0529-BEA4-4E96-876F-79E4B14645D8}.Release|x86.Build.0 = Release|x86
+		{EF727D92-3986-4B37-9D2D-53B35D19E9A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF727D92-3986-4B37-9D2D-53B35D19E9A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF727D92-3986-4B37-9D2D-53B35D19E9A5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EF727D92-3986-4B37-9D2D-53B35D19E9A5}.Debug|x64.Build.0 = Debug|Any CPU
+		{EF727D92-3986-4B37-9D2D-53B35D19E9A5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EF727D92-3986-4B37-9D2D-53B35D19E9A5}.Debug|x86.Build.0 = Debug|Any CPU
+		{EF727D92-3986-4B37-9D2D-53B35D19E9A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF727D92-3986-4B37-9D2D-53B35D19E9A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF727D92-3986-4B37-9D2D-53B35D19E9A5}.Release|x64.ActiveCfg = Release|Any CPU
+		{EF727D92-3986-4B37-9D2D-53B35D19E9A5}.Release|x64.Build.0 = Release|Any CPU
+		{EF727D92-3986-4B37-9D2D-53B35D19E9A5}.Release|x86.ActiveCfg = Release|Any CPU
+		{EF727D92-3986-4B37-9D2D-53B35D19E9A5}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{EF727D92-3986-4B37-9D2D-53B35D19E9A5} = {FDBAACCA-C0C6-452B-B2E2-8C282ECD6FD6}
 	EndGlobalSection
 EndGlobal
