@@ -4,20 +4,6 @@ namespace Luger.Utilities
 {
     public static class IntExt
     {
-        private const ulong SignMask = 0x8000_0000_0000_0000;
-
-        /// <summary>
-        /// Bitwise copy from UInt64 to Int64
-        /// </summary>
-        public static long AsInt64(this ulong value)
-            => (long)(value & ~SignMask) | (value >= SignMask ? long.MinValue : 0);
-
-        /// <summary>
-        /// Bitwise copy from Int64 to UInt64
-        /// </summary>
-        public static ulong AsUInt64(this long value)
-            => (ulong)(value & long.MaxValue) | (value < 0 ? SignMask : 0);
-
         private const ulong LoMask = 0x0000_0000_FFFF_FFFF;
 
         /// <summary>
@@ -42,7 +28,7 @@ namespace Luger.Utilities
             */
             var acc1 = (xl * yl >> 32) + xl * yh;   // Can not overflow
             var xhyl = xh * yl;
-            var acc2 = acc1 + xhyl; // Can overflow
+            var acc2 = unchecked(acc1 + xhyl); // Can overflow
             var carry = (acc1 ^ ((acc1 ^ xhyl) & (xhyl ^ acc2))) >> 31 & ~LoMask;
             return (acc2 >> 32) + carry + xh * yh;  // Can not overflow
         }

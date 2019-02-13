@@ -15,22 +15,6 @@ namespace Luger.Utilities.Tests
 
         public IntExtTests(ITestOutputHelper output) => _output = output;
 
-        public static IEnumerable<object[]> as_testdata = new[]
-        {
-            new object[] { 0x0000_0000_0000_0000UL, 0 },
-            new object[] { 0x7FFF_FFFF_FFFF_FFFFUL, long.MaxValue },
-            new object[] { 0x8000_0000_0000_0000UL, long.MinValue },
-            new object[] { 0xFFFF_FFFF_FFFF_FFFFUL, -1 }
-        };
-
-        [Theory]
-        [MemberData(nameof(as_testdata))]
-        public void AsInt64Test(ulong ul, long l) => Assert.Equal(ul.AsInt64(), l);
-
-        [Theory]
-        [MemberData(nameof(as_testdata))]
-        public void AsUInt64Test(ulong ul, long l) => Assert.Equal(l.AsUInt64(), ul);
-
         private const uint multestcount = 3;
 
         public static IEnumerable<object[]> mul_testdata()
@@ -87,7 +71,7 @@ namespace Luger.Utilities.Tests
         [InlineData(48, 32, 0x0123_5555_5555_CDEFUL)]
         public void CopyBitsTest(int offset, int width, ulong expected)
             => Assert.Equal(expected, IntExt.CopyBits(CBT_Target, CBT_Source, (UInt6) offset, (byte) width));
-        
+
         [Theory]
         [InlineData(0, 32, 32, 0x5555_5555_0123_4567UL)]
         [InlineData(32, 0, 32, 0x89AB_CDEF_5555_5555UL)]
