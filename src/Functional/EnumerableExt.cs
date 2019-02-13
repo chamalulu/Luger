@@ -74,9 +74,10 @@ namespace Luger.Functional
         //  since GetHashCode is defined on System.Object .
         /// <summary>Calculate hash code of a sequence.</summary>
         public static int GetHashCode<T>(IEnumerable<T> sequence)
-            => sequence
-                .Map(t => t?.GetHashCode() ?? 0)
-                .Aggregate(0, (acc, hashcode) => acc << LShift ^ acc >> RShift ^ hashcode);
+            => unchecked((int)(
+                sequence
+                    .Map(t => (uint)(t?.GetHashCode() ?? 0))
+                    .Aggregate(0U, (acc, hashcode) => acc << LShift ^ acc >> RShift ^ hashcode)));
 
         public static int GetHashCode(params object[] args)
             => GetHashCode(args.AsEnumerable());
