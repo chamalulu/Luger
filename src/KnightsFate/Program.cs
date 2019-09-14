@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Luger.Utilities;
@@ -139,9 +139,14 @@ namespace Luger.KnightsFate
 
             Console.WriteLine($"A knight starting at square {X}, {Y} on a {S}x{S} board will stay on board after {N} random moves with probability {1 - outProbability:P}.");
 
+            /* The reasoning around backProbability is incorrect.
+             * Because of the optimization of calculating a probability matrix
+             * of just over 1/8 of the board we are actually calculating the
+             * probabiliy of returning to a square of the same "kind" w.r.t.
+             * the 1/8 triangular slice of the board. */
             double backProbability = PN[startIndex, startIndex];
 
-            Console.WriteLine($"A knight starting at square {X}, {Y} on a {S}x{S} board will return to the same square at {N} random moves with probability {backProbability:P}.");
+            //Console.WriteLine($"A knight starting at square {X}, {Y} on a {S}x{S} board will return to the same square at {N} random moves with probability {backProbability:P}.");
         }
     }
 }
