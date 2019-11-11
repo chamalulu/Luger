@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using static Luger.Functional.Optional;
 
@@ -21,33 +22,98 @@ namespace Luger.Functional
         public static IEnumerable<TR> Bind<T, TR>(this IEnumerable<T> ts, Func<T, IEnumerable<TR>> f)
             => Enumerable.SelectMany(ts, f);
 
-        private static TR Match<T, TR>(this IEnumerable<T> ts, Func<TR> none, Func<ImmutableArray<T>, TR> some)
+        private static IEnumerable<T> ContinueAsEnumerable<T>(this IEnumerator<T> enumerator)
         {
-            var list = ts.ToImmutableArray();
-            return list.Length == 0 ? none() : some(list);
+            Contract.Requires(enumerator != null);
+
+            do { yield return enumerator.Current; }
+            while (enumerator.MoveNext());
         }
 
         public static TR Match<T, TR>(this IEnumerable<T> ts, Func<TR> none, Func<IEnumerable<T>, TR> some)
-            => ts.Match(none, (ImmutableArray<T> array) => some(array));
+        {
+            Contract.Requires(ts != null);
+            Contract.Requires(none != null);
+            Contract.Requires(some != null);
+
+            using var enumerator = ts.GetEnumerator();
+
+            return enumerator.MoveNext()
+                ? some(enumerator.ContinueAsEnumerable())
+                : none();
+        }
 
         public static TR Match<T, TR>(this IEnumerable<T> ts, Func<TR> none, Func<T, IEnumerable<T>, TR> some)
-            => ts.Match(none, array => some(array[0], array.Skip(1)));
+        {
+            Contract.Requires(ts != null);
+            Contract.Requires(none != null);
+            Contract.Requires(some != null);
+
+            using var enumerator = ts.GetEnumerator();
+
+            if (enumerator.MoveNext())
+            {
+                var first = enumerator.Current;
+
+                return enumerator.MoveNext()
+                    ? some(first, enumerator.ContinueAsEnumerable())
+                    : some(first, Enumerable.Empty<T>());
+            }
+            else
+                return none();
+        }
 
         public static TR Match<T, TR>(
             this IEnumerable<T> ts,
             Func<TR> none,
-            Func<T, TR> single,
+            Func<T, TR> one,
             Func<IEnumerable<T>, TR> some
         )
-            => ts.Match(none, array => array.Length == 1 ? single(array[0]) : some(array));
+        {
+            Contract.Requires(ts != null);
+            Contract.Requires(none != null);
+            Contract.Requires(one != null);
+            Contract.Requires(some != null);
+
+            using var enumerator = ts.GetEnumerator();
+
+            if (enumerator.MoveNext())
+            {
+                var first = enumerator.Current;
+
+                return enumerator.MoveNext()
+                    ? some(enumerator.ContinueAsEnumerable().Prepend(first))
+                    : one(first);
+            }
+            else
+                return none();
+        }
 
         public static TR Match<T, TR>(
             this IEnumerable<T> ts,
             Func<TR> none,
-            Func<T, TR> single,
+            Func<T, TR> one,
             Func<T, IEnumerable<T>, TR> some
         )
-            => ts.Match(none, array => array.Length == 1 ? single(array[0]) : some(array[0], array.Skip(1)));
+        {
+            Contract.Requires(ts != null);
+            Contract.Requires(none != null);
+            Contract.Requires(one != null);
+            Contract.Requires(some != null);
+
+            using var enumerator = ts.GetEnumerator();
+
+            if (enumerator.MoveNext())
+            {
+                var first = enumerator.Current;
+
+                return enumerator.MoveNext()
+                    ? some(first, enumerator.ContinueAsEnumerable())
+                    : one(first);
+            }
+            else
+                return none();
+        }
 
         public static void Deconstruct<T>(this IEnumerable<T> ts, out T head, out IEnumerable<T> tail)
             => (head, tail) = ts.Match(() => throw new InvalidOperationException(), (h, t) => (h, t));
