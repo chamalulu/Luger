@@ -27,7 +27,8 @@ namespace Luger.Utilities.Tests
 
         [Theory]
         [MemberData(nameof(mul_testdata))]
-        public void Mul64HiTest(ulong x, ulong y, ulong a) => Assert.Equal(IntExt.Mul64Hi(x, y), a);
+        public void Mul64HiTest(ulong x, ulong y, ulong a) =>
+            Assert.Equal(Mul64Hi(x, y), a);
 
         private const uint PT_Iterations = 10000000;
 
@@ -53,16 +54,24 @@ namespace Luger.Utilities.Tests
 
             var noTime = TimeAndReport(v => v, "nothing");
 
-            var mul64hiTime = TimeAndReport(v => IntExt.Mul64Hi(v, v), "Mul64Hi");
+            var mul64hiTime = TimeAndReport(v => Mul64Hi(v, v), "Mul64Hi");
 
-            var biTime = TimeAndReport(v => (ulong)((BigInteger)v * (BigInteger)v >> 64), "BigInteger");
+            static ulong TimeAndReportFuncBI(ulong v)
+            {
+                var vbi = (BigInteger)v;
+                return (ulong)(vbi * vbi >> 64);
+            }
+
+            var biTime = TimeAndReport(TimeAndReportFuncBI, "BigInteger");
 
             var mulsPerBIs = (biTime - noTime) / (mul64hiTime - noTime);
             _output.WriteLine($"Mul64Hi is {mulsPerBIs:N2} times faster than BigInteger.");
         }
 
 
-        private const ulong CBT_Target = 0x5555_5555_5555_5555UL, CBT_Source = 0x0123_4567_89AB_CDEFUL;
+        private const ulong
+            CBT_Target = 0x5555_5555_5555_5555UL,
+            CBT_Source = 0x0123_4567_89AB_CDEFUL;
 
         [Theory]
         [InlineData(0, 32, 0x5555_5555_89AB_CDEFUL)]
@@ -70,13 +79,64 @@ namespace Luger.Utilities.Tests
         [InlineData(32, 32, 0x0123_4567_5555_5555UL)]
         [InlineData(48, 32, 0x0123_5555_5555_CDEFUL)]
         public void CopyBitsTest(int offset, int width, ulong expected)
-            => Assert.Equal(expected, IntExt.CopyBits(CBT_Target, CBT_Source, (UInt6) offset, (byte) width));
+        {
+            ulong actual = CopyBits(
+                target: CBT_Target,
+                source: CBT_Source,
+                offset: (UInt6)offset,
+                width: (byte)width);
+
+            Assert.Equal(expected, actual);
+        }
 
         [Theory]
         [InlineData(0, 32, 32, 0x5555_5555_0123_4567UL)]
         [InlineData(32, 0, 32, 0x89AB_CDEF_5555_5555UL)]
         [InlineData(16, 16, 32, 0x5555_4567_89AB_5555UL)]
-        public void CopyBitsShiftTest(int target_offset, int source_offset, int width, ulong expected)
-            => Assert.Equal(expected, IntExt.CopyBits(CBT_Target, CBT_Source, (UInt6) target_offset, (UInt6) source_offset, (byte) width));
+        public void CopyBitsShiftTest(
+            int target_offset, int source_offset, int width, ulong expected)
+        {
+            ulong actual = CopyBits(
+                  target: CBT_Target,
+                  source: CBT_Source,
+                  target_offset: (UInt6)target_offset,
+                  source_offset: (UInt6)source_offset,
+                  width: (byte)width);
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [InlineData(42U, 0U, 42U)]
+        [InlineData(0U, 42U, 42U)]
+        [InlineData(63U, 42U, 21U)]
+        [InlineData(42U, 63U, 21U)]
+        [InlineData(~0U - 4, ~0U - 16, 1U)] // Greatest primes < 2^32
+        public void GcdUInt32Test(uint a, uint b, uint expected) =>
+            Assert.Equal(expected, Gcd(a, b));
+
+        [Theory]
+        [InlineData(42UL, 0UL, 42UL)]
+        [InlineData(0UL, 42UL, 42UL)]
+        [InlineData(63UL, 42UL, 21UL)]
+        [InlineData(42UL, 63UL, 21UL)]
+        [InlineData(~0UL - 58, ~0UL - 82, 1UL)] // Greatest primes < 2^64
+        public void GcdUInt64Test(ulong a, ulong b, ulong expected) =>
+            Assert.Equal(expected, Gcd(a, b));
+
+        [Theory]
+        [InlineData(0, 0U)]
+        [InlineData(int.MinValue, 1U << 31)]
+        [InlineData(int.MaxValue, (1U << 31) - 1)]
+        public void AbsInt32Test(int n, uint expected) =>
+            Assert.Equal(expected, Abs(n));
+
+        [Theory]
+        [InlineData(0, 0UL)]
+        [InlineData(long.MinValue, 1UL << 63)]
+        [InlineData(long.MaxValue, (1UL << 63) - 1)]
+        public void AbsInt64Test(long n, ulong expected) =>
+            Assert.Equal(expected, Abs(n));
+
     }
 }

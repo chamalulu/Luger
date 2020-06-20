@@ -83,5 +83,21 @@ namespace Luger.Utilities
             else
                 return CopyBits(target, source, target_offset, width);
         }
+
+        public static uint Gcd(uint a, uint b) => b == 0 ? a : Gcd(b, a % b);
+
+        public static ulong Gcd(ulong a, ulong b) => b == 0 ? a : Gcd(b, a % b);
+
+        public static uint Abs(int n)
+        {
+            int mask = n >> ((sizeof(int) << 3) - 1);
+            return unchecked((uint)((n + mask) ^ mask));
+        }
+
+        public static ulong Abs(long n)
+        {
+            long mask = n >> ((sizeof(long) << 3) - 1);
+            return unchecked((ulong)((n + mask) ^ mask));
+        }
     }
 }
