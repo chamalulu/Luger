@@ -9,10 +9,10 @@ namespace Luger.Utilities.Tests
     {
         private class ArrayEqualityComparer<T> : IEqualityComparer<T[]>
         {
-            public bool Equals(T[] x, T[] y) =>
+            public bool Equals(T[]? x, T[]? y) =>
                 x?.Length == y?.Length &&
-                (x?.Zip(y, (ex, ey) => (ex, ey))
-                  ?.All(p => p.ex.Equals(p.ey)) ?? true);
+                (x?.Zip(y, (ex, ey) => Equals(ex, ey))
+                  ?.All(b => b) ?? true);
 
             public int GetHashCode(T[] obj) =>
                 EnumerableExt.GetHashCode(obj);

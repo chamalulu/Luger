@@ -17,21 +17,25 @@ namespace Luger.Utilities.Tests
             private readonly Func<ulong> _nextUInt64;
             private readonly Func<uint, IEnumerable<byte>> _nextBytes;
 
+            private static ulong MockNextUInt64() => MockUInt64;
+
+            private static IEnumerable<byte> MockNextBytes(uint count) => EnumerableExt.Repeat(MockByte, count);
+
             public MockRNGState(Func<ulong> nextUInt64, Func<uint, IEnumerable<byte>> nextBytes)
             {
-                _nextUInt64 = nextUInt64 ?? new Func<ulong>(() => MockUInt64);
-                _nextBytes = nextBytes ?? new Func<uint, IEnumerable<byte>>(count => EnumerableExt.Repeat(MockByte, count));
+                _nextUInt64 = nextUInt64;
+                _nextBytes = nextBytes;
             }
 
-            public MockRNGState() : this(null, null) { }
+            public MockRNGState() : this(MockNextUInt64, MockNextBytes) { }
 
-            public MockRNGState(ulong nextUInt64) : this(() => nextUInt64, null) { }
+            public MockRNGState(ulong nextUInt64) : this(() => nextUInt64, MockNextBytes) { }
 
-            public MockRNGState(IEnumerable<byte> nextBytes) : this(null, _ => nextBytes) { }
+            public MockRNGState(IEnumerable<byte> nextBytes) : this(MockNextUInt64, _ => nextBytes) { }
 
-            public MockRNGState(Func<ulong> nextUInt64) : this(nextUInt64, null) { }
+            public MockRNGState(Func<ulong> nextUInt64) : this(nextUInt64, MockNextBytes) { }
 
-            public MockRNGState(Func<uint, IEnumerable<byte>> nextBytes) : this(null, nextBytes) { }
+            public MockRNGState(Func<uint, IEnumerable<byte>> nextBytes) : this(MockNextUInt64, nextBytes) { }
 
             public ulong NextUInt64() => _nextUInt64();
 
@@ -50,7 +54,7 @@ namespace Luger.Utilities.Tests
         }
 
         public static IEnumerable<object[]> ValidNextNBitsData
-            => from v in System.Linq.Enumerable.Range(1, 64) select new object[] { v };
+            => from v in Enumerable.Range(1, 64) select new object[] { v };
 
         [Theory]
         [MemberData(nameof(ValidNextNBitsData))]
