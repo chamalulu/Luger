@@ -11,13 +11,13 @@ namespace Luger.Utilities.Tests
 {
     public class IntExtTests
     {
-        private ITestOutputHelper _output;
+        private readonly ITestOutputHelper _output;
 
         public IntExtTests(ITestOutputHelper output) => _output = output;
 
         private const uint multestcount = 3;
 
-        public static IEnumerable<object[]> mul_testdata()
+        public static IEnumerable<object[]> Mul64HiTestData()
             => from x in EnumerableExt.RangeUInt32(multestcount)
                from y in EnumerableExt.RangeUInt32(multestcount)
                let bix = ((BigInteger)x << 64) / multestcount
@@ -26,7 +26,7 @@ namespace Luger.Utilities.Tests
                select new object[] { (ulong)bix, (ulong)biy, (ulong)bia };
 
         [Theory]
-        [MemberData(nameof(mul_testdata))]
+        [MemberData(nameof(Mul64HiTestData))]
         public void Mul64HiTest(ulong x, ulong y, ulong a) =>
             Assert.Equal(Mul64Hi(x, y), a);
 
@@ -94,13 +94,13 @@ namespace Luger.Utilities.Tests
         [InlineData(32, 0, 32, 0x89AB_CDEF_5555_5555UL)]
         [InlineData(16, 16, 32, 0x5555_4567_89AB_5555UL)]
         public void CopyBitsShiftTest(
-            int target_offset, int source_offset, int width, ulong expected)
+            int targetOffset, int sourceOffset, int width, ulong expected)
         {
             ulong actual = CopyBits(
                   target: CBT_Target,
                   source: CBT_Source,
-                  target_offset: (UInt6)target_offset,
-                  source_offset: (UInt6)source_offset,
+                  target_offset: (UInt6)targetOffset,
+                  source_offset: (UInt6)sourceOffset,
                   width: (byte)width);
 
             Assert.Equal(expected, actual);

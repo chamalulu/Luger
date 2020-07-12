@@ -43,7 +43,7 @@ namespace Luger.Utilities.Tests
         }
 
         [Fact]
-        public void NextUInt64_Test()
+        public void NextUInt64Test()
         {
             var target = RNG.NextUInt64();
             var state = new MockRNGState();
@@ -58,7 +58,7 @@ namespace Luger.Utilities.Tests
 
         [Theory]
         [MemberData(nameof(ValidNextNBitsData))]
-        public void NextNBits_Positive_Test(int n)
+        public void NextNBitsPositiveTest(int n)
         {
             var target = RNG.NextNBits(n);
             var state = new MockRNGState();
@@ -71,12 +71,12 @@ namespace Luger.Utilities.Tests
         [Theory]
         [InlineData(0)]
         [InlineData(65)]
-        public void NextNBits_Negative_Test(int n)
+        public void NextNBitsNegativeTest(int n)
             => Assert.Throws<ArgumentOutOfRangeException>(() => RNG.NextNBits(n));
 
         [Theory]
         [InlineData(100)]
-        public void NextBytes_Positive_Test(uint count)
+        public void NextBytesPositiveTest(uint count)
         {
             var target = RNG.NextBytes(count);
             var state = new MockRNGState();
@@ -88,7 +88,7 @@ namespace Luger.Utilities.Tests
         [Theory]
         [InlineData(ulong.MinValue, 100, 0)]
         [InlineData(ulong.MaxValue, 100, 99)]
-        public void NextUInt64_maxValue_Positive_Test(ulong nextUInt64, ulong maxValue, ulong expected)
+        public void NextUInt64MaxValuePositiveTest(ulong nextUInt64, ulong maxValue, ulong expected)
         {
             var target = RNG.NextUInt64(maxValue);
             var state = new MockRNGState(nextUInt64);
@@ -99,13 +99,13 @@ namespace Luger.Utilities.Tests
 
         [Theory]
         [InlineData(0)]
-        public void NextUInt64_maxValue_Negative_Test(ulong maxValue)
+        public void NextUInt64MaxValueNegativeTest(ulong maxValue)
             => Assert.Throws<ArgumentOutOfRangeException>(() => RNG.NextUInt64(maxValue));
 
         [Theory]
         [InlineData(ulong.MinValue, 100, 200, 100)]
         [InlineData(ulong.MaxValue, 100, 200, 199)]
-        public void NextUInt64_minValue_maxValue_Positive_Test(ulong nextUInt64, ulong minValue, ulong maxValue, ulong expected)
+        public void NextUInt64MinValueMaxValuePositiveTest(ulong nextUInt64, ulong minValue, ulong maxValue, ulong expected)
         {
             var target = RNG.NextUInt64(minValue, maxValue);
             var state = new MockRNGState(nextUInt64);
@@ -116,7 +116,7 @@ namespace Luger.Utilities.Tests
 
         [Theory]
         [InlineData(200, 100)]
-        public void NextUInt64_minValue_maxValue_Negative_Test(ulong minValue, ulong maxValue)
+        public void NextUInt64MinValueMaxValueNegativeTest(ulong minValue, ulong maxValue)
             => Assert.Throws<ArgumentException>(() => RNG.NextUInt64(minValue, maxValue));
 
         [Theory]
@@ -124,7 +124,7 @@ namespace Luger.Utilities.Tests
         [InlineData(0x7FFF_FFFF_FFFF_FFFFUL, long.MaxValue)]
         [InlineData(0x8000_0000_0000_0000UL, long.MinValue)]
         [InlineData(ulong.MaxValue, -1L)]
-        public void NextInt64_Test(ulong nextUInt64, long expected)
+        public void NextInt64Test(ulong nextUInt64, long expected)
         {
             var target = RNG.NextInt64();
             var state = new MockRNGState(nextUInt64);
@@ -136,7 +136,7 @@ namespace Luger.Utilities.Tests
         [Theory]
         [InlineData(ulong.MinValue, 0d)]
         [InlineData(ulong.MaxValue, 1d)]
-        public void NextDouble_Test(ulong nextUInt64, double expected)
+        public void NextDoubleTest(ulong nextUInt64, double expected)
         {
             var target = RNG.NextDouble();
             var state = new MockRNGState(nextUInt64);
@@ -148,7 +148,7 @@ namespace Luger.Utilities.Tests
         [Theory]
         [InlineData(ulong.MinValue, 0d)]
         [InlineData(ulong.MaxValue, 0.999999999999999777955395074969d)]
-        public void NextDoubleBC_Test(ulong nextUInt64, double expected)
+        public void NextDoubleBCTest(ulong nextUInt64, double expected)
         {
             var target = RNG.NextDoubleBC();
             var state = new MockRNGState(nextUInt64);
@@ -162,7 +162,7 @@ namespace Luger.Utilities.Tests
     {
         [Theory]
         [InlineData(0, 15628745651041733658ul)]
-        public void NextUInt64_Test(int seed, ulong expected)
+        public void NextUInt64Test(int seed, ulong expected)
         {
             var state = new RandomRNGState(new Random(seed), sizeof(ulong));
 
@@ -171,7 +171,7 @@ namespace Luger.Utilities.Tests
 
         [Theory]
         [InlineData(32, 48)]
-        public void NextBytes_Test(uint bufferLength, uint count)
+        public void NextBytesTest(uint bufferLength, uint count)
         {
             var state = new RandomRNGState(bufferLength: bufferLength);
 
@@ -182,12 +182,12 @@ namespace Luger.Utilities.Tests
     public class UInt64TransitionRNGStateTests
     {
         [Fact]
-        public void Ctor_ANEX_Test() =>
+        public void CtorANExTest() =>
             Assert.Throws<ArgumentNullException>("prng", () => new UInt64TransitionRNGState(default, null));
 
         [Theory]
         [InlineData(0UL, 0UL)]
-        public void NextUInt64_Test(ulong seed, ulong expected)
+        public void NextUInt64Test(ulong seed, ulong expected)
         {
             var state = new UInt64TransitionRNGState(seed, s => (s, s));
 
@@ -199,7 +199,7 @@ namespace Luger.Utilities.Tests
         [InlineData(1, 1)]
         [InlineData(8, 1)]
         [InlineData(9, 2)]
-        public void NextBytes_Test(uint count, uint calls)
+        public void NextBytesTest(uint count, uint calls)
         {
             var mockPrng = new FuncMock<ulong, (ulong, ulong)>(s => (s, s));
             
@@ -215,13 +215,13 @@ namespace Luger.Utilities.Tests
     public class XorShift64StarRNGStateTests
     {
         [Fact]
-        public void Ctor_AOOREX_Test() =>
+        public void CtorAOORExTest() =>
             Assert.Throws<ArgumentOutOfRangeException>("seed", () => new XorShift64StarRNGState(0));
 
         [Theory]
         [InlineData(1UL, 5180492295206395165UL)]
         [InlineData(ulong.MaxValue, 17954947803125907456UL)]
-        public void NextUInt64_Test(ulong seed, ulong expected)
+        public void NextUInt64Test(ulong seed, ulong expected)
         {
             var state = new XorShift64StarRNGState(seed);
 
