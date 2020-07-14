@@ -41,9 +41,7 @@ namespace Luger.Utilities
                     var j = -(i & 0b1) & counters[i]; // if i is even then j = 0 else j = counters[i]
 
                     // Swap values buffer[i] and buffer[j]
-                    var t = buffer[i];
-                    buffer[i] = buffer[j];
-                    buffer[j] = t;
+                    (buffer[j], buffer[i]) = (buffer[i], buffer[j]);
 
                     // Yield next permutation
                     yield return unchecked(seqno++);
