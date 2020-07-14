@@ -3,11 +3,7 @@
   <PropertyGroup>
     <AssemblyName>Luger.Utilities.Tests</AssemblyName>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <!-- <LangVersion>latest</LangVersion> -->
-    <IsPackable>false</IsPackable>
-    <!-- <IsTestProject>true</IsTestProject> -->
     <Nullable>enable</Nullable>
-    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
