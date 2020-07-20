@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Luger.Utilities;
 using Xunit;
 using static Luger.Functional.Optional;
 
@@ -91,7 +90,7 @@ namespace Luger.Functional.Tests
         }
 
         [Fact]
-        public void Deconstruct_IOEX_Test() =>
+        public void DeconstructIOExTest() =>
             Assert.Throws<InvalidOperationException>(() => { var (actualHead, actualTail) = Enumerable.Empty<int>(); });
 
         [Theory]
@@ -115,17 +114,13 @@ namespace Luger.Functional.Tests
                     )
                 );
 
-            public int GetHashCode(Optional<IEnumerable<T>> obj) =>
-                obj.Match(
-                    none: () => 0,
-                    some: ts => EnumerableExt.GetHashCode(ts)
-                );
+            public int GetHashCode(Optional<IEnumerable<T>> obj) => throw new NotImplementedException();
         }
 
-        public static IEnumerable<object[]> HeadTestData = new[]
+        public static IEnumerable<object[]> HeadTestData => new[]
         {
-            new object[]{new int[0], None},
-            new object[]{new []{1}, 1}
+            new object[] { Array.Empty<int>(), None },
+            new object[] { new[] { 1 }, 1}
         };
 
         [Theory]
@@ -136,11 +131,11 @@ namespace Luger.Functional.Tests
             Assert.Equal(expected, actual);
         }
 
-        public static IEnumerable<object[]> TailTestData = new[]
+        public static IEnumerable<object[]> TailTestData => new[]
         {
-            new object[]{new int[0], None},
-            new object[]{new []{1}, new int[0]},
-            new object[]{new []{1,2,3}, new []{2,3}}
+            new object[] { Array.Empty<int>(), None },
+            new object[] { new[] { 1 }, Array.Empty<int>() },
+            new object[] { new[] { 1, 2, 3 }, new[] { 2, 3 }}
         };
 
         [Theory]
@@ -150,41 +145,6 @@ namespace Luger.Functional.Tests
             var actual = source.Tail();
             Assert.Equal(expected, actual, new OptionalEnumerableEqualityComparer<int>());
         }
-
-        private void GetHashCodeTest<T>(T[] array)
-        {
-            var permutations = new Dictionary<int, List<T[]>>();
-            foreach (var _ in Combinatorics.Permutations(array))
-            {
-                var a = new T[array.Length];
-                array.CopyTo(a, 0);
-                var hashCode = EnumerableExt.GetHashCode(a);
-                if (permutations.TryGetValue(hashCode, out var list))
-                    list.Add(a);
-                else
-                    permutations.Add(hashCode, new List<T[]>() { a });
-            }
-
-            //var collisions = new Dictionary<int, List<T[]>>(permutations.Where(kvp => kvp.Value.Count > 1));
-
-            var expectedCount = Enumerable.Range(1, array.Length).Aggregate(1, (a, f) => a * f);
-
-            // Assert permutations of array have distinct hash code
-            Assert.Equal(expectedCount, permutations.Count);
-        }
-
-        [Fact]
-        public void GetHashCodeTest3Ints() => GetHashCodeTest(new[] { 1, 2, 3 });
-
-        [Fact]
-        public void GetHashCodeTestNullableInts() => GetHashCodeTest(new[] { 1, (int?)null, 3 });
-
-        [Fact]
-        public void GetHashCodeTestStrings() => GetHashCodeTest(new[] { "one", null, "three" });
-
-        // 6 integers work (720 permutations) but we get collisions on 7 and more.
-        [Fact]
-        public void GetHashCodeTest6Ints() => GetHashCodeTest(Enumerable.Range(0, 6).ToArray());
 
         [Theory]
         [InlineData(1, new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 })]
@@ -196,13 +156,13 @@ namespace Luger.Functional.Tests
             Assert.Equal(expected, actual);
         }
 
-        public static IEnumerable<object[]> PairwiseTestData = new[]
+        public static IEnumerable<object[]> PairwiseTestData => new[]
         {
-            new object[]{new int[0]     , new (int,int)[0]},
-            new object[]{new []{0}      , new []{(0,0)}},
-            new object[]{new []{0,1}    , new []{(0,1)}},
-            new object[]{new []{0,1,2}  , new []{(0,1),(2,0)}},
-            new object[]{new []{0,1,2,3}, new []{(0,1),(2,3)}}
+            new object[] { Array.Empty<int>()  , Array.Empty<(int, int)>() },
+            new object[] { new[] { 0 }         , new[] { (0, 0) }          },
+            new object[] { new[] { 0, 1 }      , new[] { (0, 1) }          },
+            new object[] { new[] { 0, 1, 2 }   , new[] { (0, 1), (2, 0) }  },
+            new object[] { new[] { 0, 1, 2, 3 }, new[] { (0, 1), (2, 3) }  }
         };
 
         [Theory]
@@ -217,12 +177,12 @@ namespace Luger.Functional.Tests
         [InlineData(new int[0], 0, new int[0])]
         [InlineData(new int[0], 1, new int[0])]
         [InlineData(new int[0], 2, new int[0])]
-        [InlineData(new []{0}, 0, new int[0])]
-        [InlineData(new []{0}, 1, new []{0})]
-        [InlineData(new []{0}, 2, new []{0})]
-        [InlineData(new []{0,1}, 0, new int[0])]
-        [InlineData(new []{0,1}, 1, new []{0})]
-        [InlineData(new []{0,1}, 2, new []{0,1})]
+        [InlineData(new[] { 0 }, 0, new int[0])]
+        [InlineData(new[] { 0 }, 1, new[] { 0 })]
+        [InlineData(new[] { 0 }, 2, new[] { 0 })]
+        [InlineData(new[] { 0, 1 }, 0, new int[0])]
+        [InlineData(new[] { 0, 1 }, 1, new[] { 0 })]
+        [InlineData(new[] { 0, 1 }, 2, new[] { 0, 1 })]
         public void TakeTest(IEnumerable<int> source, uint count, IEnumerable<int> expected)
         {
             var actual = source.Take(count);

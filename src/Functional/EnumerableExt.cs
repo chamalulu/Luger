@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -123,30 +122,6 @@ namespace Luger.Functional
 
         public static Optional<IEnumerable<T>> Tail<T>(this IEnumerable<T> ts)
             => ts.Match(() => None, (_, tail) => Some(tail));
-
-        /* Rotation step is the odd integer closest to [bits per int] / (golden ratio)
-         * Being odd makes it coprime with any normal field width since they are 2^n
-         *  which should improve spread of element GetHashCode implementation results
-         *  and make the result more sensitive of element order.
-         * 1,696,631 = ⌊(1 + √5)/2 * 2^20⌋
-         * BTW, do not use this on sets since element order does not matter.
-         */
-
-        private const int BitsPerInt = sizeof(int) << 3;
-        private const int LShift = (BitsPerInt << 20) / 1696631 | 1;
-        private const int RShift = BitsPerInt - LShift;
-
-        // This function can not be implemented and used as an extension method
-        //  since GetHashCode is defined on System.Object .
-        /// <summary>Calculate hash code of a sequence.</summary>
-        public static int GetHashCode<T>(IEnumerable<T> sequence)
-            => unchecked((int)(
-                sequence
-                    .Map(t => (uint)(t?.GetHashCode() ?? 0))
-                    .Aggregate(0U, (acc, hashcode) => acc << LShift ^ acc >> RShift ^ hashcode)));
-
-        public static int GetHashCode(params object[] args)
-            => GetHashCode(args.AsEnumerable());
 
         public static IEnumerable<(T value, uint index)> WithUInt32Index<T>(this IEnumerable<T> ts)
         {

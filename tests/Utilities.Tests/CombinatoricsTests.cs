@@ -1,6 +1,6 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Luger.Functional;
 using Xunit;
 
 namespace Luger.Utilities.Tests
@@ -16,13 +16,27 @@ namespace Luger.Utilities.Tests
 
             public ArrayEqualityComparer() : this(EqualityComparer<T>.Default) { }
 
-            public bool Equals(T[]? xs, T[]? ys) =>
-                xs?.Length == ys?.Length &&
-                (xs?.Zip(ys, (x, y) => (x, y))
-                  ?.All(p => _memberEqualityComparer.Equals(p.x, p.y)) ?? true);
+            public bool Equals(T[]? xs, T[]? ys)
+            {
+                if (xs is null || ys is null)
+                    return xs is null && ys is null;
 
-            public int GetHashCode(T[] obj) =>
-                EnumerableExt.GetHashCode(obj);
+                if (xs.Length == ys.Length)
+                    return xs.Zip(ys, (x, y) => (x, y))
+                        .All(p => _memberEqualityComparer.Equals(p.x, p.y));
+
+                return false;
+            }
+
+            public int GetHashCode(T[] obj)
+            {
+                var hc = new HashCode();
+
+                foreach (var o in obj)
+                    hc.Add(o, _memberEqualityComparer);
+
+                return hc.ToHashCode();
+            }
         }
 
         [Theory]
