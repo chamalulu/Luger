@@ -2,9 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 using System.Linq;
-using static Luger.Functional.Optional;
+using static Luger.Functional.Maybe;
 
 namespace Luger.Functional
 {
@@ -23,17 +22,19 @@ namespace Luger.Functional
 
         private static IEnumerable<T> ContinueAsEnumerable<T>(this IEnumerator<T> enumerator)
         {
-            Contract.Requires(enumerator != null);
-
             do { yield return enumerator.Current; }
             while (enumerator.MoveNext());
         }
 
+        public static IEnumerable<T> Return<T>(T t) => Repeat(t, 1u);
+
+        public static IEnumerable<T> Empty<T>() => Repeat(default(T)!, 0u);
+
         public static TR Match<T, TR>(this IEnumerable<T> ts, Func<TR> none, Func<IEnumerable<T>, TR> some)
         {
-            Contract.Requires(ts != null);
-            Contract.Requires(none != null);
-            Contract.Requires(some != null);
+            ts = ts ?? throw new ArgumentNullException(nameof(ts));
+            none = none ?? throw new ArgumentNullException(nameof(none));
+            some = some ?? throw new ArgumentNullException(nameof(some));
 
             using var enumerator = ts.GetEnumerator();
 
@@ -44,9 +45,9 @@ namespace Luger.Functional
 
         public static TR Match<T, TR>(this IEnumerable<T> ts, Func<TR> none, Func<T, IEnumerable<T>, TR> some)
         {
-            Contract.Requires(ts != null);
-            Contract.Requires(none != null);
-            Contract.Requires(some != null);
+            ts = ts ?? throw new ArgumentNullException(nameof(ts));
+            none = none ?? throw new ArgumentNullException(nameof(none));
+            some = some ?? throw new ArgumentNullException(nameof(some));
 
             using var enumerator = ts.GetEnumerator();
 
@@ -69,10 +70,10 @@ namespace Luger.Functional
             Func<IEnumerable<T>, TR> some
         )
         {
-            Contract.Requires(ts != null);
-            Contract.Requires(none != null);
-            Contract.Requires(one != null);
-            Contract.Requires(some != null);
+            ts = ts ?? throw new ArgumentNullException(nameof(ts));
+            none = none ?? throw new ArgumentNullException(nameof(none));
+            one = one ?? throw new ArgumentNullException(nameof(one));
+            some = some ?? throw new ArgumentNullException(nameof(some));
 
             using var enumerator = ts.GetEnumerator();
 
@@ -95,10 +96,10 @@ namespace Luger.Functional
             Func<T, IEnumerable<T>, TR> some
         )
         {
-            Contract.Requires(ts != null);
-            Contract.Requires(none != null);
-            Contract.Requires(one != null);
-            Contract.Requires(some != null);
+            ts = ts ?? throw new ArgumentNullException(nameof(ts));
+            none = none ?? throw new ArgumentNullException(nameof(none));
+            one = one ?? throw new ArgumentNullException(nameof(one));
+            some = some ?? throw new ArgumentNullException(nameof(some));
 
             using var enumerator = ts.GetEnumerator();
 
@@ -117,14 +118,16 @@ namespace Luger.Functional
         public static void Deconstruct<T>(this IEnumerable<T> ts, out T head, out IEnumerable<T> tail)
             => (head, tail) = ts.Match(() => throw new InvalidOperationException(), (h, t) => (h, t));
 
-        public static Optional<T> Head<T>(this IEnumerable<T> ts)
-            => ts.Match(() => None, (head, _) => Some(head));
+        public static Maybe<T> Head<T>(this IEnumerable<T> ts)
+            => ts.Match(None<T>, (head, _) => Some(head));
 
-        public static Optional<IEnumerable<T>> Tail<T>(this IEnumerable<T> ts)
-            => ts.Match(() => None, (_, tail) => Some(tail));
+        public static Maybe<IEnumerable<T>> Tail<T>(this IEnumerable<T> ts)
+            => ts.Match(None<IEnumerable<T>>, (_, tail) => Some(tail));
 
         public static IEnumerable<(T value, uint index)> WithUInt32Index<T>(this IEnumerable<T> ts)
         {
+            ts = ts ?? throw new ArgumentNullException(nameof(ts));
+
             var index = 0U;
 
             foreach (var t in ts)
@@ -133,6 +136,8 @@ namespace Luger.Functional
 
         public static IEnumerable<(T value, ulong index)> WithUInt64Index<T>(this IEnumerable<T> ts)
         {
+            ts = ts ?? throw new ArgumentNullException(nameof(ts));
+
             var index = 0UL;
 
             foreach (var t in ts)
@@ -151,14 +156,17 @@ namespace Luger.Functional
 
         public static IEnumerable<(T first, T second)> Pairwise<T>(this IEnumerable<T> ts)
         {
-            using (var etor = ts.GetEnumerator())
-                while (etor.MoveNext())
-                {
-                    var first = etor.Current;
-                    var second = etor.MoveNext() ? etor.Current : default;
+            ts = ts ?? throw new ArgumentNullException(nameof(ts));
 
-                    yield return (first, second);
-                }
+            using var etor = ts.GetEnumerator();
+
+            while (etor.MoveNext())
+            {
+                var first = etor.Current;
+                var second = etor.MoveNext() ? etor.Current : default;
+
+                yield return (first, second);
+            }
         }
 
         public static IEnumerable<T> Repeat<T>(T element, uint count)
@@ -169,50 +177,64 @@ namespace Luger.Functional
 
         public static IEnumerable<T> Take<T>(this IEnumerable<T> source, uint count)
         {
-            using (var etor = source.GetEnumerator())
-                while (count > 0 && etor.MoveNext())
-                {
-                    yield return etor.Current;
-                    count--;
-                }
+            source = source ?? throw new ArgumentNullException(nameof(source));
+
+            using var etor = source.GetEnumerator();
+
+            while (count > 0 && etor.MoveNext())
+            {
+                yield return etor.Current;
+                count--;
+            }
         }
 
         public static uint UInt32Count<T>(this IEnumerable<T> sequence)
         {
-            switch (sequence)
-            {
-                case ICollection<T> collection:
-                    return (uint)collection.Count;
-                case ICollection collection:
-                    return (uint)collection.Count;
-                default:
-                    var i = 0U;
-                    using (var etor = sequence.GetEnumerator())
-                        while (etor.MoveNext())
-                            checked { i++; }
+            sequence = sequence ?? throw new ArgumentNullException(nameof(sequence));
 
-                    return i;
+            static uint count(IEnumerable<T> sequence)
+            {
+                var i = 0U;
+                using (var etor = sequence.GetEnumerator())
+                    while (etor.MoveNext())
+                        checked { i++; }
+
+                return i;
             }
+
+            return sequence switch
+            {
+                ICollection<T> collection => (uint)collection.Count,
+                ICollection collection => (uint)collection.Count,
+                _ => count(sequence),
+            };
         }
 
         public static ulong UInt64Count<T>(this IEnumerable<T> sequence)
         {
-            switch (sequence)
-            {
-                case ICollection<T> collection:
-                    return (ulong)collection.Count;
-                case ICollection collection:
-                    return (ulong)collection.Count;
-                default:
-                    var i = 0UL;
-                    using (var etor = sequence.GetEnumerator())
-                        while (etor.MoveNext())
-                            checked { i++; }
+            sequence = sequence ?? throw new ArgumentNullException(nameof(sequence));
 
-                    return i;
+            static ulong count(IEnumerable<T> sequence)
+            {
+                var i = 0UL;
+                using (var etor = sequence.GetEnumerator())
+                    while (etor.MoveNext())
+                        checked { i++; }
+
+                return i;
             }
+
+            return sequence switch
+            {
+                ICollection<T> collection => (ulong)collection.Count,
+                ICollection collection => (ulong)collection.Count,
+                _ => count(sequence),
+            };
         }
 
+        /// <summary>
+        /// Generates an ordered sequence of all unsigned 32-bit numbers in the range [0 .. 2^32).
+        /// </summary>
         public static IEnumerable<uint> RangeUInt32()
         {
             var i = uint.MinValue;
@@ -222,14 +244,20 @@ namespace Luger.Functional
             while (i > uint.MinValue);
         }
 
+        /// <summary>
+        /// Generates an ordered sequence of unsigned 32-bit numbers in the range [0 .. count).  
+        /// </summary>
         public static IEnumerable<uint> RangeUInt32(uint count)
             => RangeUInt32().Take(count);
 
-        public static IEnumerable<uint> RangeUInt32(uint start, uint count)
-            => count == 0
-                ? System.Linq.Enumerable.Empty<uint>()
-                : count - 1 <= uint.MaxValue - start
-                    ? RangeUInt32(count).Map(i => i + start)
-                    : throw new ArgumentException("start + count - 1 > uint.MaxValue");
+        /// <summary>
+        /// Generates a sequence of unsigned 32-bit numbers in the range [start .. start + count).
+        /// May wrap around to 0 in unchecked context.
+        /// </summary>
+        /// <exception cref="OverflowException">
+        /// Thrown in checked context if and when sequence wraps around to 0.
+        /// </exception>
+        public static IEnumerable<uint> RangeUInt32(uint start, uint count) =>
+            RangeUInt32(count).Map(i => i + start);
     }
 }

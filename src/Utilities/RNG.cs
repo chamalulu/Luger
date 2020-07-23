@@ -126,7 +126,11 @@ namespace Luger.Utilities
                 if (_freshBytes == 0)
                     FillBuffer();
 
-                yield return _buffer[_buffer.Length - _freshBytes--];
+                byte nextByte = _buffer[^_freshBytes];
+
+                _freshBytes -= 1;
+
+                yield return nextByte;
             }
         }
 
@@ -161,7 +165,7 @@ namespace Luger.Utilities
             // This expression would work for signed count even when count is 0.
             var ulongCount = (count - 1) / sizeof(ulong) + 1;
 
-            IEnumerable<byte> GetBytes(IEnumerable<ulong> qwords) => qwords.Bind(BitConverter.GetBytes);
+            static IEnumerable<byte> GetBytes(IEnumerable<ulong> qwords) => qwords.Bind(BitConverter.GetBytes);
 
             var bytesGenerator = EnumerableExt.RangeUInt32(ulongCount)
                 .TraverseM(_ => _prng)
@@ -178,7 +182,7 @@ namespace Luger.Utilities
     public class XorShift64StarRNGState : UInt64TransitionRNGState
     {
         // PRNG function reimplemented from https://en.wikipedia.org/wiki/Xorshift
-        private static Transition<ulong, ulong> xorshift64star
+        private static Transition<ulong, ulong> XorShift64Star
         => s =>
         {
             s ^= s >> 12;
@@ -188,7 +192,7 @@ namespace Luger.Utilities
             return (s * 0x2545_F491_4F6C_DD1D, s);
         };
 
-        public XorShift64StarRNGState(ulong seed) : base(seed, xorshift64star)
+        public XorShift64StarRNGState(ulong seed) : base(seed, XorShift64Star)
         {
             if (seed == 0)
                 throw new ArgumentOutOfRangeException(nameof(seed), "Seed must not be 0.");

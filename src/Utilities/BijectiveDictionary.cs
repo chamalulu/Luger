@@ -1,11 +1,10 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Luger.Functional;
-using static Luger.Functional.Optional;
+using static Luger.Functional.Maybe;
 
 namespace Luger.Utilities
 {
@@ -74,9 +73,9 @@ namespace Luger.Utilities
 
         public int Count => _itemDict.Count;
 
-        public TCI this[TI item] => _itemDict[item];
+        public Maybe<TCI> this[TI item] => _itemDict.TryGetValue(item, out var coItem) ? Some(coItem) : None<TCI>();
 
-        public TI this[TCI coItem] => _coItemDict[coItem];
+        public Maybe<TI> this[TCI coItem] => _coItemDict.TryGetValue(coItem, out var item) ? Some(item) : None<TI>();
 
         public BijectiveDictionary<TI, TCI> Clear()
             => this.With(_itemDict.Clear(), _coItemDict.Clear());
@@ -103,15 +102,9 @@ namespace Luger.Utilities
 
         public bool Contains(TCI coItem) => _coItemDict.ContainsKey(coItem);
 
-        public Optional<TCI> OptGetValue(TI item)
-            => _itemDict.TryGetValue(item, out var value)
-                ? Some(value)
-                : None;
+        public TCI GetValueUnsafe(TI item) => _itemDict[item];
 
-        public Optional<TI> OptGetValue(TCI coItem)
-            => _coItemDict.TryGetValue(coItem, out var value)
-                ? Some(value)
-                : None;
+        public TI OptGetValue(TCI coItem) => _coItemDict[coItem];
 
         public IEnumerator<(TI Item, TCI CoItem)> GetEnumerator()
             => _itemDict.Select(kvp => (kvp.Key, kvp.Value)).GetEnumerator();
