@@ -64,8 +64,13 @@ namespace Luger.Utilities.Tests
 
             var biTime = TimeAndReport(TimeAndReportFuncBI, "BigInteger");
 
-            var mulsPerBIs = (biTime - noTime) / (mul64hiTime - noTime);
-            _output.WriteLine($"Mul64Hi is {mulsPerBIs:N2} times faster than BigInteger.");
+            var ratio = (biTime - noTime) / (mul64hiTime - noTime);
+
+            var (times, rel) = ratio > 1 ? (ratio, "faster") : (1 / ratio, "slower");
+
+            _output.WriteLine($"Mul64Hi is {times:N2} times {rel} than BigInteger.");
+
+            Assert.True(ratio > 1);
         }
 
 
