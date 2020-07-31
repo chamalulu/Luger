@@ -104,8 +104,8 @@ namespace Luger.Utilities.Tests
             ulong actual = CopyBits(
                   target: CBT_Target,
                   source: CBT_Source,
-                  target_offset: (UInt6)targetOffset,
-                  source_offset: (UInt6)sourceOffset,
+                  targetOffset: (UInt6)targetOffset,
+                  sourceOffset: (UInt6)sourceOffset,
                   width: (byte)width);
 
             Assert.Equal(expected, actual);

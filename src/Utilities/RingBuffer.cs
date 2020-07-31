@@ -30,10 +30,11 @@ namespace Luger.Utilities
             return this;
         }
 
+#pragma warning disable CA1303 // Do not pass literals as localized parameters
+
         public RingBuffer<T> Push(T[] buffer, uint index, uint count)
         {
-            if (buffer == null)
-                throw new ArgumentNullException(nameof(buffer));
+            buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
 
             if (index + count > buffer.Length)
                 throw new ArgumentException("index + count > buffer.Length");
@@ -51,7 +52,14 @@ namespace Luger.Utilities
             return this;
         }
 
-        public RingBuffer<T> Push(T[] buffer) => Push(buffer, 0, (uint)buffer.Length);
+#pragma warning restore CA1303 // Do not pass literals as localized parameters
+
+        public RingBuffer<T> Push(T[] buffer)
+        {
+            buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+
+            return Push(buffer, 0, (uint)buffer.Length);
+        }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

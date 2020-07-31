@@ -181,10 +181,6 @@ namespace Luger.Utilities.Tests
 
     public class UInt64TransitionRNGStateTests
     {
-        [Fact]
-        public void CtorANExTest() =>
-            Assert.Throws<ArgumentNullException>("prng", () => new UInt64TransitionRNGState(default, null));
-
         [Theory]
         [InlineData(0UL, 0UL)]
         public void NextUInt64Test(ulong seed, ulong expected)

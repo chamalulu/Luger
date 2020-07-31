@@ -63,7 +63,7 @@ namespace Luger.Utilities
                     _itemDict.WithComparers(itemComparer, coItemComparer),
                     _coItemDict.WithComparers(coItemComparer, itemComparer));
 
-        public static BijectiveDictionary<TI, TCI> Empty = new BijectiveDictionary<TI, TCI>(
+        public readonly static BijectiveDictionary<TI, TCI> Empty = new BijectiveDictionary<TI, TCI>(
                 ImmutableDictionary<TI, TCI>.Empty,
                 ImmutableDictionary<TCI, TI>.Empty);
 

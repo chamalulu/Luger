@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Luger.Functional;
 
+#pragma warning disable CA1303 // Do not pass literals as localized parameters
+
 namespace Luger.Utilities
 {
     public interface IRNGState
@@ -94,12 +96,19 @@ namespace Luger.Utilities
         private readonly byte[] _buffer;
         private int _freshBytes;
 
-        public RandomRNGState(Random random = null, uint bufferLength = 0x1000)
-        {
-            _random = random ?? new Random();
+        private const uint DefaultBufferLength = 0x1000;
 
+        public RandomRNGState(Random random, uint bufferLength)
+        {
+            _random = random;
             _buffer = new byte[bufferLength];
         }
+
+        public RandomRNGState(Random random) : this(random, DefaultBufferLength) { }
+
+        public RandomRNGState(uint bufferLength) : this(new Random(), bufferLength) { }
+
+        public RandomRNGState() : this(new Random(), DefaultBufferLength) { }
 
         private void FillBuffer()
         {
@@ -133,8 +142,6 @@ namespace Luger.Utilities
                 yield return nextByte;
             }
         }
-
-        public static implicit operator RandomRNGState(Random random) => new RandomRNGState(random);
     }
 
     public class UInt64TransitionRNGState : IRNGState
@@ -195,7 +202,7 @@ namespace Luger.Utilities
         public XorShift64StarRNGState(ulong seed) : base(seed, XorShift64Star)
         {
             if (seed == 0)
-                throw new ArgumentOutOfRangeException(nameof(seed), "Seed must not be 0.");
+                throw new ArgumentOutOfRangeException(nameof(seed), $"{nameof(seed)} = 0");
         }
 
         // Don't run this just around midnight, January 1, 0001 :)

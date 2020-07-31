@@ -21,6 +21,8 @@ namespace Luger.Utilities
         /// </remarks>
         public static IEnumerable<ulong> Permutations<T>(T[] buffer)
         {
+            buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+
             /* A buffer length of n will make the iterator yield n! times. Factorial grows very fast.
              * If n > 20 the number of permutations will cause the sequence counter to roll over.
              */

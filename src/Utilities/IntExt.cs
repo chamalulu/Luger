@@ -33,26 +33,6 @@ namespace Luger.Utilities
             return (acc2 >> 32) + carry + xh * yh;  // Can not overflow
         }
 
-        public struct UInt6
-        {
-            readonly int _value;
-
-            private UInt6(int value)
-                => _value =
-                    ((value & ~0x3F) == 0)
-                        ? value
-                        : (byte)(value & 0x3F | 0x100);   // Preserve low bits and force OverflowException if checking enabled.
-
-            public static implicit operator int(UInt6 value) => value._value;
-            public static explicit operator UInt6(int value) => new UInt6(value);
-
-            public static UInt6 operator +(UInt6 addend1, UInt6 addend2) =>
-                new UInt6(addend1._value + addend2._value);
-
-            public static UInt6 operator -(UInt6 minuend, UInt6 subtrahend) =>
-                new UInt6(minuend._value - subtrahend._value);
-        }
-
         public static ulong RotateLeft(ulong value, UInt6 n) => value << n | value >> 64 - n;
 
         public static ulong RotateRight(ulong value, UInt6 n) => value >> n | value << 64 - n;
@@ -74,14 +54,14 @@ namespace Luger.Utilities
             }
         }
 
-        public static ulong CopyBits(ulong target, ulong source, UInt6 target_offset, UInt6 source_offset, byte width)
+        public static ulong CopyBits(ulong target, ulong source, UInt6 targetOffset, UInt6 sourceOffset, byte width)
         {
-            if (target_offset < source_offset)
-                return CopyBits(target, RotateRight(source, source_offset - target_offset), target_offset, width);
-            else if (target_offset > source_offset)
-                return CopyBits(target, RotateLeft(source, target_offset - source_offset), target_offset, width);
+            if (targetOffset < sourceOffset)
+                return CopyBits(target, RotateRight(source, sourceOffset - targetOffset), targetOffset, width);
+            else if (targetOffset > sourceOffset)
+                return CopyBits(target, RotateLeft(source, targetOffset - sourceOffset), targetOffset, width);
             else
-                return CopyBits(target, source, target_offset, width);
+                return CopyBits(target, source, targetOffset, width);
         }
 
         public static uint Gcd(uint a, uint b) => b == 0 ? a : Gcd(b, a % b);
