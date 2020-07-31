@@ -20,16 +20,37 @@ namespace Luger.Functional
         public static IEnumerable<TR> Bind<T, TR>(this IEnumerable<T> ts, Func<T, IEnumerable<TR>> f)
             => Enumerable.SelectMany(ts, f);
 
-        private static IEnumerable<T> ContinueAsEnumerable<T>(this IEnumerator<T> enumerator)
+        public static IEnumerable<T> Repeat<T>(T element, uint count)
         {
-            do { yield return enumerator.Current; }
-            while (enumerator.MoveNext());
+            for (uint c = 0; c < count; c++)
+                yield return element;
         }
 
         public static IEnumerable<T> Return<T>(T t) => Repeat(t, 1u);
 
         public static IEnumerable<T> Empty<T>() => Repeat(default(T)!, 0u);
 
+        private static IEnumerable<T> ContinueAsEnumerableNoneOrMore<T>(this IEnumerator<T> enumerator)
+        {
+            while (enumerator.MoveNext())
+                yield return enumerator.Current;
+        }
+
+        private static IEnumerable<T> ContinueAsEnumerableOneOrMore<T>(this IEnumerator<T> enumerator)
+        {
+            do
+                yield return enumerator.Current;
+            while (enumerator.MoveNext());
+        }
+
+        /// <summary>
+        /// Matches empty or other sequence to result.
+        /// </summary>
+        /// <typeparam name="T">Type of source sequence element</typeparam>
+        /// <typeparam name="TR">Type of result</typeparam>
+        /// <param name="ts">Source sequence</param>
+        /// <param name="none">Factory of result for empty sequence</param>
+        /// <param name="some">Map of other sequence to result</param>
         public static TR Match<T, TR>(this IEnumerable<T> ts, Func<TR> none, Func<IEnumerable<T>, TR> some)
         {
             ts = ts ?? throw new ArgumentNullException(nameof(ts));
@@ -39,10 +60,18 @@ namespace Luger.Functional
             using var enumerator = ts.GetEnumerator();
 
             return enumerator.MoveNext()
-                ? some(enumerator.ContinueAsEnumerable())
+                ? some(enumerator.ContinueAsEnumerableOneOrMore())
                 : none();
         }
 
+        /// <summary>
+        /// Matches empty or other sequence to result.
+        /// </summary>
+        /// <typeparam name="T">Type of source sequence element</typeparam>
+        /// <typeparam name="TR">Type of result</typeparam>
+        /// <param name="ts">Source sequence</param>
+        /// <param name="none">Factory of result for empty sequence</param>
+        /// <param name="some">Map of head element and tail sequence to result</param>
         public static TR Match<T, TR>(this IEnumerable<T> ts, Func<TR> none, Func<T, IEnumerable<T>, TR> some)
         {
             ts = ts ?? throw new ArgumentNullException(nameof(ts));
@@ -51,18 +80,20 @@ namespace Luger.Functional
 
             using var enumerator = ts.GetEnumerator();
 
-            if (enumerator.MoveNext())
-            {
-                var first = enumerator.Current;
-
-                return enumerator.MoveNext()
-                    ? some(first, enumerator.ContinueAsEnumerable())
-                    : some(first, Enumerable.Empty<T>());
-            }
-            else
-                return none();
+            return enumerator.MoveNext()
+                ? some(enumerator.Current, enumerator.ContinueAsEnumerableNoneOrMore())
+                : none();
         }
 
+        /// <summary>
+        /// Matches empty, singleton or other sequence to result.
+        /// </summary>
+        /// <typeparam name="T">Type of source sequence element</typeparam>
+        /// <typeparam name="TR">Type of result</typeparam>
+        /// <param name="ts">Source sequence</param>
+        /// <param name="none">Factory of result for empty sequence</param>
+        /// <param name="one">Map of singleton element to result</param>
+        /// <param name="some">Map of other sequence to result</param>
         public static TR Match<T, TR>(
             this IEnumerable<T> ts,
             Func<TR> none,
@@ -82,13 +113,22 @@ namespace Luger.Functional
                 var first = enumerator.Current;
 
                 return enumerator.MoveNext()
-                    ? some(enumerator.ContinueAsEnumerable().Prepend(first))
+                    ? some(enumerator.ContinueAsEnumerableOneOrMore().Prepend(first))
                     : one(first);
             }
             else
                 return none();
         }
 
+        /// <summary>
+        /// Matches empty, singleton or other sequence to result.
+        /// </summary>
+        /// <typeparam name="T">Type of source sequence element</typeparam>
+        /// <typeparam name="TR">Type of result</typeparam>
+        /// <param name="ts">Source sequence</param>
+        /// <param name="none">Factory of result for empty sequence</param>
+        /// <param name="one">Map of singleton element to result</param>
+        /// <param name="some">Map of head element and tail sequence to result</param>
         public static TR Match<T, TR>(
             this IEnumerable<T> ts,
             Func<TR> none,
@@ -108,40 +148,40 @@ namespace Luger.Functional
                 var first = enumerator.Current;
 
                 return enumerator.MoveNext()
-                    ? some(first, enumerator.ContinueAsEnumerable())
+                    ? some(first, enumerator.ContinueAsEnumerableOneOrMore())
                     : one(first);
             }
             else
                 return none();
         }
 
-        public static void Deconstruct<T>(this IEnumerable<T> ts, out T head, out IEnumerable<T> tail)
-            => (head, tail) = ts.Match(() => throw new InvalidOperationException(), (h, t) => (h, t));
+        public static void Deconstruct<T>(this IEnumerable<T> ts, out T head, out IEnumerable<T> tail) =>
+            (head, tail) = ts.Match(() => throw new InvalidOperationException(), (h, t) => (h, t));
 
-        public static Maybe<T> Head<T>(this IEnumerable<T> ts)
-            => ts.Match(None<T>, (head, _) => Some(head));
+        public static Maybe<T> Head<T>(this IEnumerable<T> ts) =>
+            ts.Match(None<T>, (head, _) => Some(head));
 
-        public static Maybe<IEnumerable<T>> Tail<T>(this IEnumerable<T> ts)
-            => ts.Match(None<IEnumerable<T>>, (_, tail) => Some(tail));
+        public static Maybe<IEnumerable<T>> Tail<T>(this IEnumerable<T> ts) =>
+            ts.Match(None<IEnumerable<T>>, (_, tail) => Some(tail));
 
         public static IEnumerable<(T value, uint index)> WithUInt32Index<T>(this IEnumerable<T> ts)
         {
             ts = ts ?? throw new ArgumentNullException(nameof(ts));
 
-            var index = 0U;
+            var i = 0U;
 
             foreach (var t in ts)
-                yield return (t, checked(index++));
+                yield return (t, checked(i++));
         }
 
         public static IEnumerable<(T value, ulong index)> WithUInt64Index<T>(this IEnumerable<T> ts)
         {
             ts = ts ?? throw new ArgumentNullException(nameof(ts));
 
-            var index = 0UL;
+            var i = 0UL;
 
             foreach (var t in ts)
-                yield return (t, checked(index++));
+                yield return (t, checked(i++));
         }
 
         public static IEnumerable<T> EveryNth<T>(this IEnumerable<T> ts, ulong n)
@@ -167,12 +207,6 @@ namespace Luger.Functional
 
                 yield return (first, second);
             }
-        }
-
-        public static IEnumerable<T> Repeat<T>(T element, uint count)
-        {
-            for (uint c = 0; c < count; c++)
-                yield return element;
         }
 
         public static IEnumerable<T> Take<T>(this IEnumerable<T> source, uint count)
