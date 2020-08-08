@@ -4,6 +4,7 @@
     <AssemblyName>Luger.Utilities.Tests</AssemblyName>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <Nullable>enable</Nullable>
+    <RootNamespace>Luger.Utilities.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
