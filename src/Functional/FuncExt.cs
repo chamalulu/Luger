@@ -46,6 +46,9 @@ namespace Luger.Functional
         public static Func<TR> Bind<T, TR>(this Func<T> ft, Func<T, Func<TR>> f)
             => () => f(ft())();
 
+        public static Func<T, TR> Compose<T, TC, TR>(this Func<TC, TR> g, Func<T, TC> f) =>
+            t => g(f(t));
+
         #region LINQ method implementations
 
         public static Func<TR> Select<T, TR>(this Func<T> ft, Func<T, TR> f)
@@ -65,6 +68,8 @@ namespace Luger.Functional
 
         public static IEnumerable<T> Repeat<T>(this Func<T> f)
         {
+            f = f ?? throw new ArgumentNullException(nameof(f));
+
             while (true) yield return f();
         }
     }

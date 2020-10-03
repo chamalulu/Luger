@@ -24,11 +24,11 @@ namespace Luger.Functional
      */
 
     /// <summary>
-    /// Traverse extension methods for Transition<S, R> over IEnumerable<T>
+    /// Traverse extension methods for <see cref="Transition{TState, T}"/> over <see cref="IEnumerable{T}"/>
     /// </summary>
     /// <remarks>
-    /// Transition<S, R> is not an applicative functor so only Monadic and Sequential traverse is implemented.
-    /// (An implementation of Apply for Transition<S, R> wouldn't know which order to thread the state.)
+    /// <see cref="Transition{TState, T}"/> is not an applicative functor so only Monadic and Sequential traverse is implemented.
+    /// (An implementation of Apply for <see cref="Transition{TState, T}"/> wouldn't know which order to thread the state.)
     /// </remarks>
     public static class EnumerableTransitionTraversal
     {
@@ -37,15 +37,15 @@ namespace Luger.Functional
         /// </summary>
         /// <param name="ts">Sequence to traverse over</param>
         /// <param name="f">Function mapping element to transition</param>
-        /// <typeparam name="S">Type of transition state</typeparam>
+        /// <typeparam name="TState">Type of transition state</typeparam>
         /// <typeparam name="T">Type of source element</typeparam>
-        /// <typeparam name="R">Type of transition result</typeparam>
+        /// <typeparam name="TR">Type of transition result</typeparam>
         /// <returns>Transition yielding sequence results</returns>
-        public static Transition<S, IEnumerable<R>> TraverseM<S, T, R>(this IEnumerable<T> ts, Func<T, Transition<S, R>> f)
+        public static Transition<TState, IEnumerable<TR>> TraverseM<TState, T, TR>(this IEnumerable<T> ts, Func<T, Transition<TState, TR>> f)
         {
-            var seed = Transition<S>.Return(ImmutableList<R>.Empty);
+            var seed = Transition.Return<TState, ImmutableList<TR>>(ImmutableList<TR>.Empty);
 
-            Transition<S, ImmutableList<R>> reduce(Transition<S, ImmutableList<R>> trrs, T t)
+            Transition<TState, ImmutableList<TR>> reduce(Transition<TState, ImmutableList<TR>> trrs, T t)
                 => from rs in trrs
                    from r in f(t)
                    select rs.Add(r);
@@ -58,16 +58,16 @@ namespace Luger.Functional
         /// </summary>
         /// <param name="ts">Sequence to traverse over</param>
         /// <param name="f">Function mapping element to transition</param>
-        /// <typeparam name="S">Type of transition state</typeparam>
+        /// <typeparam name="TState">Type of transition state</typeparam>
         /// <typeparam name="T">Type of source element</typeparam>
-        /// <typeparam name="R">Type of transition result</typeparam>
+        /// <typeparam name="TR">Type of transition result</typeparam>
         /// <returns>Transition yielding sequence results</returns>
-        public static Transition<S, IEnumerable<R>> TraverseS<S, T, R>(this IEnumerable<T> ts, Func<T, Transition<S, R>> f)
+        public static Transition<TState, IEnumerable<TR>> TraverseS<TState, T, TR>(this IEnumerable<T> ts, Func<T, Transition<TState, TR>> f)
             => state =>
             {
                 var source = ts.ToArray();
                 var length = source.Length;
-                var result = new R[length];
+                var result = new TR[length];
 
                 for (int i = 0; i < length; i++)
                     (result[i], state) = f(source[i])(state);
@@ -77,7 +77,7 @@ namespace Luger.Functional
     }
 
     /// <summary>
-    /// Traverse extension methods for Task<R> over IEnumerable<T>
+    /// Traverse extension methods for <see cref="Task{TResult}"/> over <see cref="IEnumerable{T}"/>
     /// </summary>
     /// <remarks>
     /// I see no point in running independent tasks sequentially so only Applicative and Parallell traverse is implemented.
@@ -90,14 +90,14 @@ namespace Luger.Functional
         /// <param name="ts">Sequence to traverse over</param>
         /// <param name="f">Function mapping element to task</param>
         /// <typeparam name="T">Type of source element</typeparam>
-        /// <typeparam name="R">Type of task result</typeparam>
+        /// <typeparam name="TR">Type of task result</typeparam>
         /// <returns>Task yeilding sequence results</returns>
-        public static Task<IEnumerable<R>> TraverseA<T, R>(this IEnumerable<T> ts, Func<T, Task<R>> f)
+        public static Task<IEnumerable<TR>> TraverseA<T, TR>(this IEnumerable<T> ts, Func<T, Task<TR>> f)
         {
-            var seed = Task.FromResult(ImmutableList<R>.Empty);
-            var appendTask = Task.FromResult<Func<ImmutableList<R>, R, ImmutableList<R>>>((list, t) => list.Add(t));
+            var seed = Task.FromResult(ImmutableList<TR>.Empty);
+            var appendTask = Task.FromResult<Func<ImmutableList<TR>, TR, ImmutableList<TR>>>((list, t) => list.Add(t));
 
-            Task<ImmutableList<R>> reduce(Task<ImmutableList<R>> trs, T t)
+            Task<ImmutableList<TR>> reduce(Task<ImmutableList<TR>> trs, T t)
                 => appendTask.Apply(trs).Apply(f(t));
 
             return ts.Aggregate(seed, reduce).Map(Enumerable.AsEnumerable);
@@ -109,9 +109,9 @@ namespace Luger.Functional
         /// <param name="ts">Sequence to traverse over</param>
         /// <param name="f">Function mapping element to task</param>
         /// <typeparam name="T">Type of source element</typeparam>
-        /// <typeparam name="R">Type of task result</typeparam>
+        /// <typeparam name="TR">Type of task result</typeparam>
         /// <returns>Task yeilding sequence results</returns>
-        public static Task<IEnumerable<R>> TraverseP<T, R>(this IEnumerable<T> ts, Func<T, Task<R>> f)
+        public static Task<IEnumerable<TR>> TraverseP<T, TR>(this IEnumerable<T> ts, Func<T, Task<TR>> f)
             => Task.WhenAll(ts.Map(f)).Map(Enumerable.AsEnumerable);
     }
 }
