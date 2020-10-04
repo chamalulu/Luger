@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Void = System.ValueTuple;
 
 namespace Luger.Utilities
@@ -30,7 +29,7 @@ namespace Luger.Utilities
 
         protected Func<T, TR> Func { get; }
 
-        public IEnumerable<Invocation<T, TR>> Calls => _calls;
+        public IEnumerable<Invocation<T, TR>> Calls => _calls.AsReadOnly();
 
         private Func<T, TR> Intercept(Func<T, TR> f)
             => args =>
