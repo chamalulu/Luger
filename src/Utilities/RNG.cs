@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+
 using Luger.Functional;
 
 #pragma warning disable CA1303 // Do not pass literals as localized parameters
@@ -27,6 +29,7 @@ namespace Luger.Utilities
         /// Number of significant bits in result. [1 .. 64]
         /// </param>
         public static Transition<IRNGState, ulong> NextNBits(int n)
+
             => (n - 1 & ~0x3F) == 0
                 ? from value in NextUInt64()
                   select value >> 64 - n
@@ -36,12 +39,14 @@ namespace Luger.Utilities
         /// Return next count random bytes
         /// </summary>
         public static Transition<IRNGState, IEnumerable<byte>> NextBytes(uint count)
+
             => new Transition<IRNGState, IEnumerable<byte>>(state => (state.NextBytes(count), state));
 
         /// <summary>
         /// Return next random ulong in range [0 .. maxValue)
         /// </summary>
         public static Transition<IRNGState, ulong> NextUInt64(ulong maxValue)
+
             => maxValue > 0
                 ? from value in NextUInt64()
                   select IntExt.Mul64Hi(value, maxValue)
@@ -51,6 +56,7 @@ namespace Luger.Utilities
         /// Return next random ulong in range [minValue .. maxValue)
         /// </summary>
         public static Transition<IRNGState, ulong> NextUInt64(ulong minValue, ulong maxValue)
+
             => maxValue > minValue
                 ? from value in NextUInt64(maxValue - minValue)
                   select value + minValue
@@ -60,34 +66,42 @@ namespace Luger.Utilities
         /// Return next random long
         /// </summary>
         public static Transition<IRNGState, long> NextInt64()
+
             => from value in NextUInt64()
                select unchecked((long)value);
 
-        // Set RangeUInt64 to IEEE 754 binary64 representation of exactly 2^64. (exponent + 1023) << 52 | (mantissa - 1) * 2^52
-        private static readonly double RangeUInt64 = BitConverter.Int64BitsToDouble(0x43F0_0000_0000_0000);
+        // Set RangeUInt53 to IEEE 754 binary64 representation of exactly 2^53. (exponent + 1023) << 52 | (mantissa - 1) * 2^52
+        private static readonly double RangeUInt53 = BitConverter.Int64BitsToDouble(0x4340_0000_0000_0000);
 
         /// <summary>
-        /// Return next random double in range [0..1]
+        /// Return next random double in range [0 .. 1)
         /// </summary>
         /// <remarks>
-        /// Because IEEE 754 cast of 2^64-1 is rounding to 2^64 the greatest value is equal to 1
+        /// This transition linearly scales the random integer value in range [0 .. 2^53) to an IEEE 754 binary64 value in range [0 .. 1)
+        /// Linear scaling preserves uniform distribution but should otherwise be of no importance since these are random values.
         /// </remarks>
         public static Transition<IRNGState, double> NextDouble()
-            => from value in NextUInt64()
-               select value / RangeUInt64;
+
+            => from value in NextUInt64(0x20_0000_0000_0000)
+               select value / RangeUInt53;
+
 
         /// <summary>
-        /// Return next random double in range [0..1)
+        /// Return next random double in range [0 .. 1)
         /// </summary>
         /// <remarks>
-        /// Because IEEE 754 subtraction of greatest IEEE 754 number &lt; 2 by 1 is shifting a
-        /// clear bit into the mantissa the greatest value is 0.999999999999999777955395074969
-        /// which is not the greatest IEEE 754 number &lt; 1 (0.999999999999999888977697537484)
+        /// This transition translates the magnitude of the random integer value in range [0 .. 2^64) to an IEEE 754 binary64 exponent (biased 11-bit) and fills the mantissa with random bits.
+        /// Exponent translation should preserve uniform distribution but the result will not be linear with the source since we don't bother shifting into position.
         /// </remarks>
-        public static Transition<IRNGState, double> NextDoubleBC()
-            => from value in NextUInt64()
-               let bits = (long)(value >> 12) | 0x3FF0_0000_0000_0000
-               select BitConverter.Int64BitsToDouble(bits) - 1;
+        public static Transition<IRNGState, double> NextDoubleBitOp()
+
+            => NextUInt64().Map(ul =>
+            {
+                long exponent = ul == 0 ? 0 : BitOperations.Log2(ul) + 959;
+                long mantissa = (long)ul & 0xF_FFFF_FFFF_FFFF;
+
+                return BitConverter.Int64BitsToDouble(exponent << 52 | mantissa);
+            });
     }
 
     public class RandomRNGState : IRNGState
@@ -146,13 +160,13 @@ namespace Luger.Utilities
 
     public class UInt64TransitionRNGState : IRNGState
     {
-        private readonly Transition<ulong, ulong> _prng;
         private ulong _seed;
+        private readonly Transition<ulong, ulong> _prng;
 
         public UInt64TransitionRNGState(ulong seed, Transition<ulong, ulong> prng)
         {
-            _prng = prng ?? throw new ArgumentNullException(nameof(prng));
             _seed = seed;
+            _prng = prng;
         }
 
         public ulong NextUInt64()
@@ -190,14 +204,15 @@ namespace Luger.Utilities
     {
         // PRNG function reimplemented from https://en.wikipedia.org/wiki/Xorshift
         private static Transition<ulong, ulong> XorShift64Star
-        => s =>
-        {
-            s ^= s >> 12;
-            s ^= s << 25;
-            s ^= s >> 27;
 
-            return (s * 0x2545_F491_4F6C_DD1D, s);
-        };
+            => s =>
+            {
+                s ^= s >> 12;
+                s ^= s << 25;
+                s ^= s >> 27;
+
+                return (s * 0x2545_F491_4F6C_DD1D, s);
+            };
 
         public XorShift64StarRNGState(ulong seed) : base(seed, XorShift64Star)
         {
@@ -207,6 +222,7 @@ namespace Luger.Utilities
 
         // Don't run this just around midnight, January 1, 0001 :)
         public static XorShift64StarRNGState FromClock()
+
             => new XorShift64StarRNGState(unchecked((ulong)DateTime.Now.Ticks));
     }
 }

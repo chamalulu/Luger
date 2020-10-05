@@ -133,9 +133,14 @@ namespace Luger.Utilities.Tests
             Assert.Equal(expected, actual);
         }
 
+        public static IEnumerable<object[]> NextDoubleTestData => new (ulong next, double expected)[]
+        {
+            (ulong.MinValue, 0d),
+            (ulong.MaxValue, BitConverter.Int64BitsToDouble(0x3FEF_FFFF_FFFF_FFFF)) // Greatest value of Double less than 1
+        }.Select(args => new object[] { args.next, args.expected });
+
         [Theory]
-        [InlineData(ulong.MinValue, 0d)]
-        [InlineData(ulong.MaxValue, 1d)]
+        [MemberData(nameof(NextDoubleTestData))]
         public void NextDoubleTest(ulong nextUInt64, double expected)
         {
             var target = RNG.NextDouble();
@@ -146,16 +151,17 @@ namespace Luger.Utilities.Tests
         }
 
         [Theory]
-        [InlineData(ulong.MinValue, 0d)]
-        [InlineData(ulong.MaxValue, 0.999999999999999777955395074969d)]
+        [MemberData(nameof(NextDoubleTestData))]
         public void NextDoubleBCTest(ulong nextUInt64, double expected)
         {
-            var target = RNG.NextDoubleBC();
+            var target = RNG.NextDoubleBitOp();
             var state = new MockRNGState(nextUInt64);
             var actual = target.Run(state);
 
             Assert.Equal(expected, actual);
         }
+
+        // TODO: Write uniformity tests
     }
 
     public class RandomRNGStateTests
