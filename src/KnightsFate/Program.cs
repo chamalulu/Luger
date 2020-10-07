@@ -41,7 +41,7 @@ namespace Luger.KnightsFate
             public void AddNeighbour(Square neighbour) => _neighbours.Add(neighbour.Index);
         }
 
-        private static (int x, int y)[] Moves = new []
+        private static (int x, int y)[] Moves = new[]
         {
             ( 2,  1),
             ( 1,  2),
@@ -128,14 +128,15 @@ namespace Luger.KnightsFate
             startTime = DateTime.Now;
 
             // Calculate probability matrix P^N
-            var PN = P.Pow(N);
+            // var PN = P.Pow(N);
+            var PN = P.Power((int)N);
 
             stopTime = DateTime.Now;
 
             Console.WriteLine($"{N}-move probability matrix (P^{N}) calculated in {(stopTime - startTime).TotalMilliseconds} ms.");
 
             uint startIndex = board[X, Y].Index;
-            double outProbability = PN[startIndex, outside.Index];
+            double outProbability = PN[(int)startIndex, (int)outside.Index];
 
             Console.WriteLine($"A knight starting at square {X}, {Y} on a {S}x{S} board will stay on board after {N} random moves with probability {1 - outProbability:P}.");
 
@@ -144,7 +145,7 @@ namespace Luger.KnightsFate
              * of just over 1/8 of the board we are actually calculating the
              * probabiliy of returning to a square of the same "kind" w.r.t.
              * the 1/8 triangular slice of the board. */
-            double backProbability = PN[startIndex, startIndex];
+            double backProbability = PN[(int)startIndex, (int)startIndex];
 
             //Console.WriteLine($"A knight starting at square {X}, {Y} on a {S}x{S} board will return to the same square at {N} random moves with probability {backProbability:P}.");
         }
