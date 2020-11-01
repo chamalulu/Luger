@@ -30,6 +30,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{998301E3-CCED-4B1B-BB59-AAC6C98CE90B}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		stylecop.json = stylecop.json
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{BA33FB4D-C54D-45F3-8241-91498ED0B8D3}"

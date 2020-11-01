@@ -1,0 +1,13 @@
+{
+  "$schema": "https://raw.githubusercontent.com/DotNetAnalyzers/StyleCopAnalyzers/master/StyleCop.Analyzers/StyleCop.Analyzers/Settings/stylecop.schema.json",
+  "settings": {
+    "documentationRules": {
+      "xmlHeader": false,
+      "copyrightText": "Copyright © {year} {name}. Licensed to you under the MIT license.",
+      "variables": {
+        "year": "2020",
+        "name": "Henrik Lundberg"
+      }
+    }
+  }
+}
