@@ -8,7 +8,7 @@ using Void = System.ValueTuple;
 namespace Luger.Functional
 {
     /// <summary>
-    /// Encapsulate options for the <see cref="TaskExt.ExponentialBackoff"/> extension method.
+    /// Encapsulate options for the <see cref="TaskExtensions.ExponentialBackoff"/> extension method.
     /// </summary>
     public class ExponentialBackoffOptions
     {
@@ -62,11 +62,12 @@ namespace Luger.Functional
         }
     }
 
+    // TODO: Add overloads for ValueTask
 
     /// <summary>
     /// Functional extensions to Task related types.
     /// </summary>
-    public static class TaskExt
+    public static class TaskExtensions
     {
         /// <summary>
         /// Map <paramref name="f"/> within functor <see cref="Task{TResult}"/>.
