@@ -119,6 +119,9 @@ namespace Luger.Functional
                 none: None<TR>);
         }
 
+        public static Maybe<T> Where<T>(this Maybe<T> maybeT, Func<T, bool> func)
+            => maybeT.Bind(t => func(t) ? maybeT : None<T>());
+
         public static IEnumerable<T> AsEnumerable<T>(this Maybe<T> maybeT) =>
             maybeT.MatchInternal(
                 some: EnumerableExt.Return,
