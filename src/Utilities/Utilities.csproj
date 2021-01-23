@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AssemblyName>Luger.Utilities</AssemblyName>
     <TargetFramework>net5.0</TargetFramework>
@@ -11,6 +11,9 @@
     <RootNamespace>Luger.Utilities</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="AlgebraicStructures.cs" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Functional\Functional.csproj" />
   </ItemGroup>

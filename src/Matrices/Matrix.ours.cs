@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace Luger.Utilities
+namespace Luger.Matrices
 {
     public interface IMatrix<out T, out TVector> where TVector : IVector<T>
     {
