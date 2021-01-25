@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <AssemblyName>Luger.Extensions.Configuration.CommandLine</AssemblyName>
+    <RootNamespace>Luger.Extensions.Configuration.CommandLine</RootNamespace>
+    <Description>
+      Command line configuration provider implementation for Microsoft.Extensions.Configuration.
+      In shape, very much inspired by Microsoft.Extensions.Configuration.CommandLine .
+      In functionality, not as much.
+    </Description>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
+  </ItemGroup>
+
+</Project>
