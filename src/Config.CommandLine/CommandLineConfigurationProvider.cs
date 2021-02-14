@@ -5,7 +5,7 @@ using System.Linq;
 
 using Microsoft.Extensions.Configuration;
 
-namespace Luger.Extensions.Configuration.CommandLine
+namespace Luger.Configuration.CommandLine
 {
     public class CommandLineConfigurationProvider : ConfigurationProvider
     {

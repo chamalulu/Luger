@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Immutable;
 
-namespace Luger.Extensions.Configuration.CommandLine
+namespace Luger.Configuration.CommandLine
 {
     public abstract record SpecificationBase;
 

@@ -4,7 +4,7 @@ using System.Linq;
 
 using Microsoft.Extensions.Configuration;
 
-namespace Luger.Extensions.Configuration.CommandLine
+namespace Luger.Configuration.CommandLine
 {
     public record OptionNode(string Name, string? Value = null);
 
@@ -57,7 +57,7 @@ namespace Luger.Extensions.Configuration.CommandLine
         }
 
         public static void Collect(this ArgumentNode argumentNode, string prefix, SetKeyValue setKeyValue) =>
-            
+
             setKeyValue(ConfigurationPath.Combine(prefix, argumentNode.Name), argumentNode.Value);
 
         public static void Collect(this IEnumerable<ArgumentNode> argumentNodes, string prefix, SetKeyValue setKeyValue)

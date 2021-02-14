@@ -1,10 +1,10 @@
 using System;
 
-using Luger.Extensions.Configuration.CommandLine;
+using Luger.Configuration.CommandLine;
 
 using Microsoft.Extensions.Configuration;
 
-namespace Luger.Extensions.Configuration
+namespace Luger.Configuration
 {
     public static class CommandLineConfigurationExtensions
     {
