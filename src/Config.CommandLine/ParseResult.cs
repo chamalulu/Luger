@@ -2,7 +2,7 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Luger.Extensions.Configuration.CommandLine
+namespace Luger.Configuration.CommandLine
 {
     public record ParseResult<TValue>(
         ImmutableList<(TValue value, ParseState state)> Successes,

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace Luger.Extensions.Configuration.CommandLine
+namespace Luger.Configuration.CommandLine
 {
     public abstract record TokenBase(string Arg, Range Range);
 

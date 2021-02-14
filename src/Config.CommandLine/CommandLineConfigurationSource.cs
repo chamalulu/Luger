@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 using Microsoft.Extensions.Configuration;
 
-namespace Luger.Extensions.Configuration.CommandLine
+namespace Luger.Configuration.CommandLine
 {
     public class CommandLineConfigurationSource : IConfigurationSource
     {
@@ -11,7 +11,7 @@ namespace Luger.Extensions.Configuration.CommandLine
         public IEnumerable<string>? Args { get; set; }
 
         public IConfigurationProvider Build(IConfigurationBuilder builder)
-            
-            => new CommandLineConfigurationProvider(this.Args, this.Specification);
+
+            => new CommandLineConfigurationProvider(Args, Specification);
     }
 }

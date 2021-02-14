@@ -4,7 +4,7 @@ using System.Linq;
 
 using Xunit;
 
-namespace Luger.Extensions.Configuration.CommandLine.Tests
+namespace Luger.Configuration.CommandLine.Tests
 {
     public class CommandLineNodesTests
     {

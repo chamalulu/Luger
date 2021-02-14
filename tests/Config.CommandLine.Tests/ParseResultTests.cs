@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
 using Xunit;
 
-namespace Luger.Extensions.Configuration.CommandLine.Tests
+namespace Luger.Configuration.CommandLine.Tests
 {
     public class ParseResultTests
     {
@@ -35,7 +35,7 @@ namespace Luger.Extensions.Configuration.CommandLine.Tests
             var successes = ImmutableList.Create((0, ParseState.Empty));
             var failures = ImmutableList.Create(("message", ParseState.Empty));
             var source = new ParseResult<int>(successes, failures);
-            Func<int, string> selector = i => i.ToString();
+            static string selector(int i) => i.ToString();
             var actual = source.Select(selector);
 
             Assert.Single(actual.Successes);
@@ -80,7 +80,7 @@ namespace Luger.Extensions.Configuration.CommandLine.Tests
             Dictionary<int, ParseResult<int>> selectorDict,
             ParseResult<(int, int)> expected)
         {
-            Func<int, ParseDelegate<int>> selector = s => state => selectorDict[s];
+            ParseDelegate<int> selector(int s) => state => selectorDict[s];
             var actual = source.SelectMany<int, int, (int, int)>(selector, (s, n) => (s, n));
 
             Assert.Equal(expected.Successes, actual.Successes);

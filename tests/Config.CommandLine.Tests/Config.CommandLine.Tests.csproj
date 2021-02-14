@@ -5,9 +5,9 @@
 
     <IsPackable>false</IsPackable>
 
-    <AssemblyName>Luger.Extensions.Configuration.CommandLine.Tests</AssemblyName>
+    <AssemblyName>Luger.Configuration.CommandLine.Tests</AssemblyName>
 
-    <RootNamespace>Luger.Extensions.Configuration.CommandLine.Tests</RootNamespace>
+    <RootNamespace>Luger.Configuration.CommandLine.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
