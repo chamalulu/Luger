@@ -6,7 +6,7 @@ env:
 on:
   push:
     tags:
-    - "${{ PROJ_NAME }}/v[0-9]+.[0-9]+.[0-9]+"
+    - "Config.CommandLine/v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   build:
@@ -50,8 +50,8 @@ jobs:
     - name: Pack
       run: dotnet pack ${PROJ_FILE} --configuration Release /p:Version=${VERSION} --no-build --output .
 
-    - name: Push
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: dotnet nuget push Luger.Configuration.CommandLine.${VERSION}.nupkg --source https://nuget.pkg.github.com/chamalulu/index.json --api-key ${GITHUB_TOKEN}
+#    - name: Push
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      run: dotnet nuget push Luger.Configuration.CommandLine.${VERSION}.nupkg --source https://nuget.pkg.github.com/chamalulu/index.json --api-key ${GITHUB_TOKEN}
         
