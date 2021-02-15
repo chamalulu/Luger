@@ -1,0 +1,57 @@
+name: Release Luger.Configuration.CommandLine
+
+env:
+  PROJ_NAME: Config.CommandLine
+
+on:
+  push:
+    tags:
+    - "${PROJ_NAME}/v[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    env:
+      PROJ_FILE: "$(GITHUB_WORKSPACE)/src/${PROJ_NAME}/${PROJ_NAME}.csproj"
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Verify commit exists in origin/trunk
+      run: |
+        git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+        git branch --remote --contains | grep origin/trunk
+
+    - name: Set VERSION variable from tag
+      run: echo "VERSION=${GITHUB_REF/refs\/tags\/${PROJ_NAME}\/v/})" >> $GITHUB_ENV
+
+#    - name: Install xmllint
+#      run: sudo apt-get -y install libxml2-utils
+
+    - name: Verify tag represents version in project file
+      env:
+        VERIFY_VERSION: "$(GITHUB_WORKSPACE)/.github/scripts/verifyversion.sh"
+      run: |
+        chmod +x ${VERIFY_VERSION}
+        ${VERIFY_VERSION} ${VERSION} ${PROJ_FILE}
+
+    - name: Build
+      run: dotnet build ${PROJ_FILE} --configuration Release /p:Version=${VERSION}
+
+    - name: Test
+      env:
+        TEST_PROJ_FILE: "$(GITHUB_WORKSPACE)/tests/${PROJ_NAME}.Tests/${PROJ_NAME}.Tests.csproj"
+      run: dotnet test  ${TEST_PROJ_FILE} --configuration Release /p:Version=${VERSION}
+
+    - name: Pack
+      run: dotnet pack ${PROJ_FILE} --configuration Release /p:Version=${VERSION} --no-build --output .
+
+    - name: Push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: dotnet nuget push Luger.Configuration.CommandLine.${VERSION}.nupkg --source https://nuget.pkg.github.com/chamalulu/index.json --api-key ${GITHUB_TOKEN}
+        

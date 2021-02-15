@@ -36,10 +36,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{BA33
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{7FD405C9-F59C-4F56-9DCB-BA0A4445B435}"
 	ProjectSection(SolutionItems) = preProject
-		.github\workflows\dotnet_build_test.yml = .github\workflows\dotnet_build_test.yml
+		.github\workflows\config.commandline_release.yml = .github\workflows\config.commandline_release.yml
+		.github\workflows\solutionwide_ci.yml = .github\workflows\solutionwide_ci.yml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{52743753-6848-4902-9072-C438F7CA80AF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{4E1D8EB7-E765-4928-BE45-D2D92CC502DF}"
+	ProjectSection(SolutionItems) = preProject
+		.github\scripts\verifyversion.sh = .github\scripts\verifyversion.sh
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -200,6 +206,7 @@ Global
 		{0C582845-14AC-4A8E-AACC-DB8AB12C885D} = {FDBAACCA-C0C6-452B-B2E2-8C282ECD6FD6}
 		{CD0431CA-B617-4F9A-9456-1E83F47F8D4A} = {52743753-6848-4902-9072-C438F7CA80AF}
 		{7FD405C9-F59C-4F56-9DCB-BA0A4445B435} = {BA33FB4D-C54D-45F3-8241-91498ED0B8D3}
+		{4E1D8EB7-E765-4928-BE45-D2D92CC502DF} = {BA33FB4D-C54D-45F3-8241-91498ED0B8D3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {ADD9066A-282A-42FB-A88C-26F61A3B3F89}
