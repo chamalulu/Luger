@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      PROJ_FILE: "${{ GITHUB_WORKSPACE }}/src/${{ PROJ_NAME }}/${{ PROJ_NAME }}.csproj"
+      PROJ_FILE: "${{ github.workspace }}/src/${{ env.PROJ_NAME }}/${{ env.PROJ_NAME }}.csproj"
 
     steps:
 
@@ -34,7 +34,7 @@ jobs:
 
     - name: Verify tag represents version in project file
       env:
-        VERIFY_VERSION: "${{ GITHUB_WORKSPACE }}/.github/scripts/verifyversion.sh"
+        VERIFY_VERSION: "${{ github.workspace }}/.github/scripts/verifyversion.sh"
       run: |
         chmod +x ${VERIFY_VERSION}
         ${VERIFY_VERSION} ${VERSION} ${PROJ_FILE}
@@ -44,7 +44,7 @@ jobs:
 
     - name: Test
       env:
-        TEST_PROJ_FILE: "${{ GITHUB_WORKSPACE }}/tests/${{ PROJ_NAME }}.Tests/${{ PROJ_NAME }}.Tests.csproj"
+        TEST_PROJ_FILE: "${{ github.workspace }}/tests/${{ env.PROJ_NAME }}.Tests/${{ env.PROJ_NAME }}.Tests.csproj"
       run: dotnet test  ${TEST_PROJ_FILE} --configuration Release /p:Version=${VERSION}
 
     - name: Pack
