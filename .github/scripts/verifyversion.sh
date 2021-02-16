@@ -33,13 +33,14 @@ then
 			echo "VersionSuffix element not found."
 		fi
 	else
-		echo "VersionPrefix element not found. Go ahead and use tagged version."
+		echo "VersionPrefix element not found."
+        echo "No project version specified. Go ahead and use tagged version."
 
 		exit 0
 	fi
 fi
 
-echo "Comparing tagged version \"$TAGGED_VERSION\" with project version \"$VERSION\"."
+echo "Comparing tagged version \"$TAGGED_VERSION\" with project version \"$VERSION\"..."
 
 if [ $TAGGED_VERSION == $VERSION ]
 then
