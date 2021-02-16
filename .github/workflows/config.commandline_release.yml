@@ -2,6 +2,7 @@ name: Release Luger.Configuration.CommandLine
 
 env:
   PROJ_NAME: Config.CommandLine
+  PROJ_FILE: "${{ github.workspace }}/src/Config.CommandLine/Config.CommandLine.csproj"
 
 on:
   push:
@@ -12,9 +13,6 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
-    env:
-      PROJ_FILE: "${{ github.workspace }}/src/${{ env.PROJ_NAME }}/${{ env.PROJ_NAME }}.csproj"
 
     steps:
 
