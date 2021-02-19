@@ -36,7 +36,7 @@ namespace Luger.Configuration.CommandLine
             var value = successes.Single().value; // Throws on ambiguous parsing
 
             // Collect configuration items
-            value.Collect("", Set);
+            value.Collect(Set);
         }
     }
 }

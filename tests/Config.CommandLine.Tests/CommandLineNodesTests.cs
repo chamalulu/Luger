@@ -20,7 +20,7 @@ namespace Luger.Configuration.CommandLine.Tests
             var expected = new[] { ("prefix:option", "value") };
 
             // Act
-            optionNode.Collect("prefix", SetKeyValue(actual));
+            optionNode.Collect(SetKeyValue(actual), ImmutableList.Create("prefix"));
 
             // Assert
             Assert.Equal(expected, actual);
@@ -36,7 +36,7 @@ namespace Luger.Configuration.CommandLine.Tests
             var expected = new[] { ("prefix:option", bool.TrueString) };
 
             // Act
-            optionNode.Collect("prefix", SetKeyValue(actual));
+            optionNode.Collect(SetKeyValue(actual), ImmutableList.Create("prefix"));
 
             // Assert
             Assert.Equal(expected, actual);
@@ -55,7 +55,7 @@ namespace Luger.Configuration.CommandLine.Tests
             // Act
             optionNames
                 .Select(name => new OptionNode(name))
-                .Collect("prefix", setKeyValue);
+                .Collect(setKeyValue, ImmutableList.Create("prefix"));
 
             // Assert
             Assert.Equal(expected, actual);
@@ -79,7 +79,7 @@ namespace Luger.Configuration.CommandLine.Tests
             };
 
             // Act
-            verbNode.Collect("prefix", SetKeyValue(actual));
+            verbNode.Collect(SetKeyValue(actual), ImmutableList.Create("prefix"));
 
             // Assert
             Assert.Equal(expected, actual);
@@ -99,7 +99,7 @@ namespace Luger.Configuration.CommandLine.Tests
             var expected = new[] { ("prefix:verbName", bool.TrueString) };
 
             // Act
-            verbNode.Collect("prefix", SetKeyValue(actual));
+            verbNode.Collect(SetKeyValue(actual), ImmutableList.Create("prefix"));
 
             // Assert
             Assert.Equal(expected, actual);
@@ -122,7 +122,7 @@ namespace Luger.Configuration.CommandLine.Tests
                     Options: ImmutableList.Create<OptionNode>(),
                     Verbs: ImmutableList.Create<VerbNode>(),
                     Arguments: ImmutableList.Create<ArgumentNode>()))
-                .Collect("prefix", setKeyValue);
+                .Collect(setKeyValue, ImmutableList.Create("prefix"));
 
             // Assert
             Assert.Equal(expected, actual);
@@ -138,7 +138,7 @@ namespace Luger.Configuration.CommandLine.Tests
             var expected = new[] { ("prefix:argumentName", "value") };
 
             // Act
-            argumentNode.Collect("prefix", SetKeyValue(actual));
+            argumentNode.Collect(SetKeyValue(actual), ImmutableList.Create("prefix"));
 
             // Assert
             Assert.Equal(expected, actual);
@@ -159,7 +159,7 @@ namespace Luger.Configuration.CommandLine.Tests
             var expected = from node in argumentNodes select ($"prefix:{node.Name}", node.Value);
 
             // Act
-            argumentNodes.Collect("prefix", setKeyValue);
+            argumentNodes.Collect(setKeyValue, ImmutableList.Create("prefix"));
 
             // Assert
             Assert.Equal(expected, actual);
@@ -182,7 +182,7 @@ namespace Luger.Configuration.CommandLine.Tests
             };
 
             // Act
-            commandLineNode.Collect("prefix", SetKeyValue(actual));
+            commandLineNode.Collect(SetKeyValue(actual), ImmutableList.Create("prefix"));
 
             // Assert
             Assert.Equal(expected, actual);

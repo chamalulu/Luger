@@ -67,61 +67,83 @@ namespace Luger.Configuration.CommandLine
     {
         public delegate void SetKeyValue(string key, string value);
 
-        public static void Collect(this OptionNode optionNode, string prefix, SetKeyValue setKeyValue) =>
+        public static void Collect(this OptionNode optionNode, SetKeyValue setKeyValue, ImmutableList<string>? path = null)
+        {
+            var key = path is null
+                ? optionNode.Name
+                : ConfigurationPath.Combine(path.Add(optionNode.Name));
 
-            setKeyValue(
-                key: ConfigurationPath.Combine(prefix, optionNode.Name),
-                value: optionNode.Value ?? bool.TrueString);
+            var value = optionNode.Value ?? bool.TrueString;
 
-        public static void Collect(this IEnumerable<OptionNode> optionNodes, string prefix, SetKeyValue setKeyValue)
+            setKeyValue(key, value);
+        }
+
+        public static void Collect(
+            this IEnumerable<OptionNode> optionNodes,
+            SetKeyValue setKeyValue,
+            ImmutableList<string>? path = null)
         {
             foreach (var node in optionNodes)
             {
-                node.Collect(prefix, setKeyValue);
+                node.Collect(setKeyValue, path);
             }
         }
 
-        public static void Collect(this VerbNode verbNode, string prefix, SetKeyValue setKeyValue)
+        public static void Collect(this VerbNode verbNode, SetKeyValue setKeyValue, ImmutableList<string>? path = null)
         {
-            prefix = ConfigurationPath.Combine(prefix, verbNode.Name);
+            path = path?.Add(verbNode.Name) ?? ImmutableList.Create(verbNode.Name);
 
             if (verbNode.Options.Any() || verbNode.Verbs.Any() || verbNode.Arguments.Any())
             {
-                verbNode.Options.Collect(prefix, setKeyValue);
-                verbNode.Verbs.Collect(prefix, setKeyValue);
-                verbNode.Arguments.Collect(prefix, setKeyValue);
+                verbNode.Options.Collect(setKeyValue, path);
+                verbNode.Verbs.Collect(setKeyValue, path);
+                verbNode.Arguments.Collect(setKeyValue, path);
             }
             else
             {
-                setKeyValue(prefix, bool.TrueString);
+                setKeyValue(ConfigurationPath.Combine(path), bool.TrueString);
             }
         }
 
-        public static void Collect(this IEnumerable<VerbNode> verbNodes, string prefix, SetKeyValue setKeyValue)
+        public static void Collect(
+            this IEnumerable<VerbNode> verbNodes,
+            SetKeyValue setKeyValue,
+            ImmutableList<string>? path = null)
         {
             foreach (var node in verbNodes)
             {
-                node.Collect(prefix, setKeyValue);
+                node.Collect(setKeyValue, path);
             }
         }
 
-        public static void Collect(this ArgumentNode argumentNode, string prefix, SetKeyValue setKeyValue) =>
+        public static void Collect(this ArgumentNode argumentNode, SetKeyValue setKeyValue, ImmutableList<string>? path = null)
+        {
+            var key = path is null
+                ? argumentNode.Name
+                : ConfigurationPath.Combine(path.Add(argumentNode.Name));
 
-            setKeyValue(ConfigurationPath.Combine(prefix, argumentNode.Name), argumentNode.Value);
+            setKeyValue(key, argumentNode.Value);
+        }
 
-        public static void Collect(this IEnumerable<ArgumentNode> argumentNodes, string prefix, SetKeyValue setKeyValue)
+        public static void Collect(
+            this IEnumerable<ArgumentNode> argumentNodes,
+            SetKeyValue setKeyValue,
+            ImmutableList<string>? path = null)
         {
             foreach (var node in argumentNodes)
             {
-                node.Collect(prefix, setKeyValue);
+                node.Collect(setKeyValue, path);
             }
         }
 
-        public static void Collect(this CommandLineNode commandLineNode, string prefix, SetKeyValue setKeyValue)
+        public static void Collect(
+            this CommandLineNode commandLineNode,
+            SetKeyValue setKeyValue,
+            ImmutableList<string>? path = null)
         {
-            commandLineNode.Options.Collect(prefix, setKeyValue);
-            commandLineNode.Verbs.Collect(prefix, setKeyValue);
-            commandLineNode.Arguments.Collect(prefix, setKeyValue);
+            commandLineNode.Options.Collect(setKeyValue, path);
+            commandLineNode.Verbs.Collect(setKeyValue, path);
+            commandLineNode.Arguments.Collect(setKeyValue, path);
         }
 
     }
