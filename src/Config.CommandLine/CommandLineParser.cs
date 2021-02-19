@@ -190,6 +190,21 @@ namespace Luger.Configuration.CommandLine
                 ? ParseResult.Success(token.Value, nextState)
                 : ParseResult.Failure<string>("Expected Argument", state));
 
+        public static CommandLineParser<string> LiteralArgumentParser(
+            string literal,
+            StringComparison comparison = StringComparison.OrdinalIgnoreCase)
+        {
+            bool predicate(ArgumentToken token) => token.Value.Equals(literal, comparison);
+
+            ParseResult<string> parse(ParseState state) =>
+
+                state.Accept<ArgumentToken>(predicate) is (ParseState nextState, ArgumentToken token)
+                    ? ParseResult.Success(token.Value, nextState)
+                    : ParseResult.Failure<string>($"Expected Argument '{literal}'", state);
+
+            return new CommandLineParser<string>(parse);
+        }
+
         /// <summary>
         /// Create a <see cref="CommandLineParser{TResult}"/> which parse a list of arguments in sequence according to the given
         ///  <paramref name="argumentSpecifications"/>.
@@ -242,7 +257,7 @@ namespace Luger.Configuration.CommandLine
         /// </summary>
         public static CommandLineParser<VerbNode> VerbParser(VerbSpecification verbSpecification) =>
 
-            from name in AnonymousArgumentParser
+            from name in LiteralArgumentParser(verbSpecification.Name, verbSpecification.NameComparison)
             from options in OptionSetParser(verbSpecification.Options)
             from verbs in VerbSetParser(verbSpecification.Verbs)
             from arguments in ArgumentListParser(verbSpecification.Arguments)

@@ -315,6 +315,32 @@ namespace Luger.Configuration.CommandLine.Tests
             Assert.Equal(expected.Failures, result.Failures);
         }
 
+        [Theory]
+        [InlineData("literal", true, "literal")]
+        [InlineData("Literal", true, "Literal")]
+        [InlineData("litter", true, null)]
+        [InlineData("literal", false, "literal")]
+        [InlineData("Literal", false, null)]
+        [InlineData("litter", false, null)]
+        public void LiteralArgumentParserTest(string arg, bool ignoreCase, string expectedValue)
+        {
+            // Arrange
+            var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            var tokens = ImmutableQueue.Create<TokenBase>(new ArgumentToken(arg, Index.Start));
+            var state = new ParseState(tokens);
+            var expected = expectedValue is string
+                ? ParseResult.Success(expectedValue, ParseState.Empty)
+                : ParseResult.Failure<string>("Expected Argument 'literal'", state);
+
+            // Act
+            var actual = CommandLineParser.LiteralArgumentParser("literal", comparison);
+
+            // Assert
+            var result = actual.Parse(state);
+            Assert.Equal(expected.Successes, result.Successes);
+            Assert.Equal(expected.Failures, result.Failures);
+        }
+
         [Fact]
         public void ArgumentListParserTest()
         {

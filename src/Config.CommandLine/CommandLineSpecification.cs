@@ -11,7 +11,7 @@ namespace Luger.Configuration.CommandLine
 
             other is not null && Name.Equals(other.Name, StringComparison.OrdinalIgnoreCase);
 
-        public override int GetHashCode() => Name.GetHashCode();
+        public override int GetHashCode() => Name.GetHashCode(StringComparison.OrdinalIgnoreCase);
     }
 
     public record ArgumentSpecification(string? Name = null) : NamedSpecificationBase(Name ?? string.Empty);
@@ -25,7 +25,8 @@ namespace Luger.Configuration.CommandLine
     public record VerbSpecification(string Name,
         ImmutableHashSet<OptionSpecificationBase> Options,
         ImmutableHashSet<VerbSpecification> Verbs,
-        ImmutableList<ArgumentSpecification> Arguments) : NamedSpecificationBase(Name);
+        ImmutableList<ArgumentSpecification> Arguments,
+        StringComparison NameComparison = StringComparison.OrdinalIgnoreCase) : NamedSpecificationBase(Name);
 
     public record CommandLineSpecification(
         ImmutableHashSet<OptionSpecificationBase> Options,
