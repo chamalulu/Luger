@@ -8,7 +8,8 @@ on:
   push:
     tags:
     - "Config.CommandLine/v[0-9]+.[0-9]+.[0-9]+"
-    - "Config.CommandLine/v[0-9]+.[0-9]+.[0-9]+-[0-9A-Za-z-]+"
+    - "Config.CommandLine/v[0-9]+.[0-9]+.[0-9]+-[0-9A-Za-z]+"
+    - "Config.CommandLine/v[0-9]+.[0-9]+.[0-9]+-[0-9A-Za-z]+-[0-9A-Za-z]+"  # Accomodate at least one dash in pre-release
 
 jobs:
   build:
