@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -8,11 +9,59 @@ namespace Luger.Configuration.CommandLine
 {
     public record OptionNode(string Name, string? Value = null);
 
-    public record VerbNode(string Name, IImmutableList<OptionNode> Options, IImmutableList<VerbNode> Verbs, IImmutableList<ArgumentNode> Arguments);
+    public record VerbNode(
+        string Name,
+        ImmutableList<OptionNode> Options,
+        ImmutableList<VerbNode> Verbs,
+        ImmutableList<ArgumentNode> Arguments)
+    {
+        public virtual bool Equals(VerbNode? other) =>
+
+            other is not null &&
+                Name.Equals(other.Name) &&
+                Options.SequenceEqual(other.Options) &&
+                Verbs.SequenceEqual(other.Verbs) &&
+                Arguments.SequenceEqual(other.Arguments);
+
+        public override int GetHashCode()
+        {
+            var hc = new HashCode();
+
+            hc.Add(Name);
+            Options.ForEach(hc.Add);
+            Verbs.ForEach(hc.Add);
+            Arguments.ForEach(hc.Add);
+
+            return hc.ToHashCode();
+        }
+
+    }
 
     public record ArgumentNode(string Name, string Value);
 
-    public record CommandLineNode(IImmutableList<OptionNode> Options, IImmutableList<VerbNode> Verbs, IImmutableList<ArgumentNode> Arguments);
+    public record CommandLineNode(
+        ImmutableList<OptionNode> Options,
+        ImmutableList<VerbNode> Verbs,
+        ImmutableList<ArgumentNode> Arguments)
+    {
+        public virtual bool Equals(CommandLineNode? other) =>
+
+            other is not null &&
+                Options.SequenceEqual(other.Options) &&
+                Verbs.SequenceEqual(other.Verbs) &&
+                Arguments.SequenceEqual(other.Arguments);
+
+        public override int GetHashCode()
+        {
+            var hc = new HashCode();
+
+            Options.ForEach(hc.Add);
+            Verbs.ForEach(hc.Add);
+            Arguments.ForEach(hc.Add);
+
+            return hc.ToHashCode();
+        }
+    }
 
     public static class CommandLineNodes
     {
