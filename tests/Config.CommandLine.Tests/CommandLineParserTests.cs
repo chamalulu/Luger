@@ -424,5 +424,100 @@ namespace Luger.Configuration.CommandLine.Tests
             Assert.Equal(expected.Successes, result.Successes);
             Assert.Equal(expected.Failures, result.Failures);
         }
+
+        [Fact]
+        public void VerbParserTest()
+        {
+            // Arrange
+            var verbSpecification = new VerbSpecification("verb",
+                ImmutableHashSet.Create<OptionSpecificationBase>(),
+                ImmutableHashSet.Create<VerbSpecification>(),
+                ImmutableList.Create<ArgumentSpecification>());
+
+            var tokens = ImmutableQueue.Create<TokenBase>(new ArgumentToken("verb", Index.Start));
+            var state = new ParseState(tokens);
+
+            var value = new VerbNode(
+                "verb",
+                ImmutableList.Create<OptionNode>(),
+                ImmutableList.Create<VerbNode>(),
+                ImmutableList.Create<ArgumentNode>());
+
+            var expected = ParseResult.Success(value, ParseState.Empty);
+
+            // Act
+            var actual = CommandLineParser.VerbParser(verbSpecification);
+
+            // Assert
+            var result = actual.Parse(state);
+            Assert.Equal(expected.Successes, result.Successes);
+            Assert.Equal(expected.Failures, result.Failures);
+        }
+
+        [Fact]
+        public void VerbSetParserTest()
+        {
+            // Arrange
+            var verbSpecifications = new VerbSpecification[]
+            {
+                new("verb1",
+                    ImmutableHashSet.Create<OptionSpecificationBase>(),
+                    ImmutableHashSet.Create<VerbSpecification>(),
+                    ImmutableList.Create(new ArgumentSpecification("arg1.1"), new ArgumentSpecification("arg1.2"))),
+                new("verb2",
+                    ImmutableHashSet.Create<OptionSpecificationBase>(),
+                    ImmutableHashSet.Create<VerbSpecification>(),
+                    ImmutableList.Create(new ArgumentSpecification("arg2")))
+            };
+
+            var args = new[] { "verb1", "value1.1", "value1.2", "verb2", "value2" };
+
+            var tokens = ImmutableQueue.CreateRange<TokenBase>(from arg in args select new ArgumentToken(arg, Index.Start));
+
+            var state = new ParseState(tokens);
+
+            var expected = ParseResult.Success(
+                ImmutableList.Create<VerbNode>(
+                    new("verb1",
+                    ImmutableList.Create<OptionNode>(),
+                    ImmutableList.Create<VerbNode>(),
+                    ImmutableList.Create<ArgumentNode>(
+                        new("arg1.1", "value1.1"),
+                        new("arg1.2", "value1.2"))),
+                    new("verb2",
+                    ImmutableList.Create<OptionNode>(),
+                    ImmutableList.Create<VerbNode>(),
+                    ImmutableList.Create(
+                        new ArgumentNode("arg2", "value2")))),
+                ParseState.Empty);
+
+            // Act
+            var actual = CommandLineParser.VerbSetParser(verbSpecifications);
+
+            // Assert
+            var result = actual.Parse(state);
+            Assert.Equal(expected.Successes, result.Successes);
+            Assert.Equal(expected.Failures, result.Failures);
+        }
+
+        [Fact]
+        public void CommandLineParserTest()
+        {
+            // Arrange
+            var expected = ParseResult.Success(
+                new CommandLineNode(
+                    ImmutableList.Create<OptionNode>(),
+                    ImmutableList.Create<VerbNode>(),
+                    ImmutableList.Create<ArgumentNode>()),
+                ParseState.Empty);
+
+            // Act
+            var actual = CommandLineParser.Create(CommandLineSpecification.Empty);
+
+            // Assert
+            var result = actual.Parse(ParseState.Empty);
+            Assert.Equal(expected.Successes, result.Successes);
+            Assert.Equal(expected.Failures, result.Failures);
+        }
     }
 }
