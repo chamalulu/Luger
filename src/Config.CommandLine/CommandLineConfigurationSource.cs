@@ -6,9 +6,9 @@ namespace Luger.Configuration.CommandLine
 {
     public class CommandLineConfigurationSource : IConfigurationSource
     {
-        public CommandLineSpecification? Specification { get; set; }
-
         public IEnumerable<string>? Args { get; set; }
+
+        public CommandLineSpecification? Specification { get; set; }
 
         public IConfigurationProvider Build(IConfigurationBuilder builder)
 

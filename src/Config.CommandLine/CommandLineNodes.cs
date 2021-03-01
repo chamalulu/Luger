@@ -1,150 +1,41 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-
-using Microsoft.Extensions.Configuration;
 
 namespace Luger.Configuration.CommandLine
 {
-    public record OptionNode(string Name, string? Value = null);
-
-    public record VerbNode(
-        string Name,
-        ImmutableList<OptionNode> Options,
-        ImmutableList<VerbNode> Verbs,
-        ImmutableList<ArgumentNode> Arguments)
+    public sealed partial record ListNode<T>(ImmutableList<T> List)
     {
-        public virtual bool Equals(VerbNode? other) =>
-
-            other is not null &&
-                Name.Equals(other.Name) &&
-                Options.SequenceEqual(other.Options) &&
-                Verbs.SequenceEqual(other.Verbs) &&
-                Arguments.SequenceEqual(other.Arguments);
-
-        public override int GetHashCode()
-        {
-            var hc = new HashCode();
-
-            hc.Add(Name);
-            Options.ForEach(hc.Add);
-            Verbs.ForEach(hc.Add);
-            Arguments.ForEach(hc.Add);
-
-            return hc.ToHashCode();
-        }
-
+        public static readonly ListNode<T> Empty = new ListNode<T>(ImmutableList<T>.Empty);
     }
 
-    public record ArgumentNode(string Name, string Value);
+    public sealed partial record SetNode<T>(ImmutableHashSet<T> Set);
 
-    public record CommandLineNode(
-        ImmutableList<OptionNode> Options,
-        ImmutableList<VerbNode> Verbs,
-        ImmutableList<ArgumentNode> Arguments)
-    {
-        public virtual bool Equals(CommandLineNode? other) =>
+    public abstract partial record NamedNode(string Name);
 
-            other is not null &&
-                Options.SequenceEqual(other.Options) &&
-                Verbs.SequenceEqual(other.Verbs) &&
-                Arguments.SequenceEqual(other.Arguments);
+    /// <summary>
+    /// Parse tree node representing a flag.
+    /// </summary>
+    public partial record FlagNode(string Name) : NamedNode(Name);
 
-        public override int GetHashCode()
-        {
-            var hc = new HashCode();
+    public partial record FlagNodeWithValue(string Name, string Value) : FlagNode(Name);
 
-            Options.ForEach(hc.Add);
-            Verbs.ForEach(hc.Add);
-            Arguments.ForEach(hc.Add);
+    public partial record ArgumentNode(string Name, string Value) : NamedNode(Name);
 
-            return hc.ToHashCode();
-        }
-    }
+    public partial record MultiArgumentNode(string Name, int Index, string Value) : ArgumentNode(Name, Value);
 
-    public static class CommandLineNodes
-    {
-        public delegate void SetKeyValue(string key, string value);
+    /// <summary>
+    /// Parse tree node representing a verb. A verb has a name, flag* and ((sub)verb* | argument*)
+    /// </summary>
+    public partial record VerbNode(string Name, ListNode<FlagNode> Flags) : NamedNode(Name);
 
-        public static void Collect(this OptionNode optionNode, SetKeyValue setKeyValue, ImmutableList<string>? path = null)
-        {
-            var key = path is null
-                ? optionNode.Name
-                : ConfigurationPath.Combine(path.Add(optionNode.Name));
+    public partial record VerbNodeWithVerb(string Name, ListNode<FlagNode> Flags, VerbNode Verb) : VerbNode(Name, Flags);
 
-            var value = optionNode.Value ?? bool.TrueString;
+    public partial record VerbNodeWithArguments(string Name, ListNode<FlagNode> Flags, ListNode<ArgumentNode> Arguments)
+        : VerbNode(Name, Flags);
 
-            setKeyValue(key, value);
-        }
+    public partial record CommandLineNode(ListNode<FlagNode> Flags);
 
-        public static void Collect(
-            this IEnumerable<OptionNode> optionNodes,
-            SetKeyValue setKeyValue,
-            ImmutableList<string>? path = null)
-        {
-            foreach (var node in optionNodes)
-            {
-                node.Collect(setKeyValue, path);
-            }
-        }
+    public partial record CommandLineNodeWithVerb(ListNode<FlagNode> Flags, VerbNode Verb) : CommandLineNode(Flags);
 
-        public static void Collect(this VerbNode verbNode, SetKeyValue setKeyValue, ImmutableList<string>? path = null)
-        {
-            path = path?.Add(verbNode.Name) ?? ImmutableList.Create(verbNode.Name);
-
-            if (verbNode.Options.Any() || verbNode.Verbs.Any() || verbNode.Arguments.Any())
-            {
-                verbNode.Options.Collect(setKeyValue, path);
-                verbNode.Verbs.Collect(setKeyValue, path);
-                verbNode.Arguments.Collect(setKeyValue, path);
-            }
-            else
-            {
-                setKeyValue(ConfigurationPath.Combine(path), bool.TrueString);
-            }
-        }
-
-        public static void Collect(
-            this IEnumerable<VerbNode> verbNodes,
-            SetKeyValue setKeyValue,
-            ImmutableList<string>? path = null)
-        {
-            foreach (var node in verbNodes)
-            {
-                node.Collect(setKeyValue, path);
-            }
-        }
-
-        public static void Collect(this ArgumentNode argumentNode, SetKeyValue setKeyValue, ImmutableList<string>? path = null)
-        {
-            var key = path is null
-                ? argumentNode.Name
-                : ConfigurationPath.Combine(path.Add(argumentNode.Name));
-
-            setKeyValue(key, argumentNode.Value);
-        }
-
-        public static void Collect(
-            this IEnumerable<ArgumentNode> argumentNodes,
-            SetKeyValue setKeyValue,
-            ImmutableList<string>? path = null)
-        {
-            foreach (var node in argumentNodes)
-            {
-                node.Collect(setKeyValue, path);
-            }
-        }
-
-        public static void Collect(
-            this CommandLineNode commandLineNode,
-            SetKeyValue setKeyValue,
-            ImmutableList<string>? path = null)
-        {
-            commandLineNode.Options.Collect(setKeyValue, path);
-            commandLineNode.Verbs.Collect(setKeyValue, path);
-            commandLineNode.Arguments.Collect(setKeyValue, path);
-        }
-
-    }
+    public partial record CommandLineNodeWithArguments(ListNode<FlagNode> Flags, ListNode<ArgumentNode> Arguments)
+        : CommandLineNode(Flags);
 }

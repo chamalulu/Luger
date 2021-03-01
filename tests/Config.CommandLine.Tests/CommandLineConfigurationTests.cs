@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 
 using Microsoft.Extensions.Configuration;
 
@@ -10,7 +11,7 @@ namespace Luger.Configuration.CommandLine.Tests
 {
     public class CommandLineConfigurationTests
     {
-        public static IEnumerable<object[]> TestData => new object[][]
+        public static IEnumerable<object[]> AddCommandLineConfigurationSpecTestData => new object[][]
         {
             new object[]    // Empty case
             {
@@ -18,61 +19,48 @@ namespace Luger.Configuration.CommandLine.Tests
                 CommandLineSpecification.Empty,
                 new Dictionary<string, string>()
             },
-            new object[]    // Options and argument case
+            new object[]    // Flags and argument case
             {
-                new []{ "-ab", "--copt", "val", "arg" },
-                new CommandLineSpecification(
-                    Options: ImmutableHashSet.Create<OptionSpecificationBase>(
-                        new ShortOptionSpecification("Aopt", 'a', false),
-                        new ShortOptionSpecification("Bopt", 'b', false),
-                        new LongOptionSpecification("Copt", "copt", true)),
-                    Verbs: ImmutableHashSet.Create<VerbSpecification>(),
-                    Arguments: ImmutableList.Create(new ArgumentSpecification("Argument"))),
+                new []{ "-ab", "--cflag", "val", "arg" },
+                new CommandLineSpecification()
+                    .AddFlag(new("Aflag", "aflag", 'a', false))
+                    .AddFlag(new("Bflag", "bflag", 'b', false))
+                    .AddFlag(new("Cflag", "cflag", 'c', true))
+                    .AddArgument(new("Argument")),
                 new Dictionary<string, string>
                 {
-                    ["Aopt"] = "True",
-                    ["Bopt"] = "True",
-                    ["Copt"] = "val",
+                    ["Aflag"] = "True",
+                    ["Bflag"] = "True",
+                    ["Cflag"] = "val",
                     ["Argument"] = "arg"
                 }
             },
             new object[]    // Nested verbs case
             {
-                new []{ "verb1", "verb1.1", "arg1.1", "arg1", "arg" },
-                new CommandLineSpecification(
-                    Options: ImmutableHashSet.Create<OptionSpecificationBase>(),
-                    Verbs: ImmutableHashSet.Create(
-                        new VerbSpecification("Verb1",
-                            Options: ImmutableHashSet.Create<OptionSpecificationBase>(),
-                            Verbs: ImmutableHashSet.Create(
-                                new VerbSpecification("Verb1.1",
-                                    Options: ImmutableHashSet.Create<OptionSpecificationBase>(),
-                                    Verbs: ImmutableHashSet.Create<VerbSpecification>(),
-                                    Arguments: ImmutableList.Create(new ArgumentSpecification("Argument1.1")))),
-                            Arguments: ImmutableList.Create(new ArgumentSpecification("Argument1")))),
-                    Arguments: ImmutableList.Create(new ArgumentSpecification("Argument"))),
+                new []{ "noun", "verb", "arg" },
+                new CommandLineSpecification()
+                    .AddVerb(new("Noun", new CommandLineSpecification()
+                        .AddVerb(new("Verb", new CommandLineSpecification()
+                            .AddArgument(new("Argument")))))),
                 new Dictionary<string, string>
                 {
-                    ["Verb1:Verb1.1:Argument1.1"] = "arg1.1",
-                    ["Verb1:Argument1"] = "arg1",
-                    ["Argument"] = "arg"
+                    ["Noun:Verb:Argument"] = "arg"
                 }
             }
         };
 
         [Theory]
-        [MemberData(nameof(TestData))]
-        public void E2ETest(
+        [MemberData(nameof(AddCommandLineConfigurationSpecTestData))]
+        public void AddCommandLineConfigurationSpecTest(
             string[] args,
             CommandLineSpecification commandLineSpecification,
             Dictionary<string, string> expected)
         {
             // Arrange
+            var target = new ConfigurationBuilder();
 
             // Act
-            var actual = new ConfigurationBuilder()
-                .AddCommandLineConfiguration(args, commandLineSpecification)
-                .Build();
+            var actual = target.AddCommandLineConfiguration(args, commandLineSpecification).Build();
 
             // Assert
             Assert.All(expected.Keys, key => Assert.Equal(expected[key], actual[key]));

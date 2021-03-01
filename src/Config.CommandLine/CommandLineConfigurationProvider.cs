@@ -33,10 +33,13 @@ namespace Luger.Configuration.CommandLine
             // Parse tokens
             // TODO: errorhandling
             var (successes, failures) = parser.Parse(state);
-            var value = successes.Single().value; // Throws on ambiguous parsing
+            var commandLineNode = successes.Single().value; // Throws on ambiguous parsing
 
             // Collect configuration items
-            value.Collect(Set);
+            foreach (var (key, value) in commandLineNode.Collect())
+            {
+                Set(key, value);
+            }
         }
     }
 }
