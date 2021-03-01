@@ -342,19 +342,19 @@ namespace Luger.Configuration.CommandLine.Tests
         }
 
         [Fact]
-        public void ArgumentListParserTest()
+        public void ArgumentsParserTest()
         {
             // Arrange
             var source = new[] { 1, 2, 3 }.Select(i => (name: $"Arg{i}", value: $"Value{i}")).ToArray();
-            var argumentSpecifications = source.Select(nvp => new ArgumentSpecification(nvp.name));
+            var argumentSpecifications = ImmutableList.CreateRange(source.Select(nvp => new ArgumentSpecification(nvp.name)));
             var tokens = ImmutableQueue.CreateRange<TokenBase>(source.Select(nvp => new ArgumentToken(nvp.value, 0)));
             var state = new ParseState(tokens);
-            var expected = ParseResult.Success(
-                ImmutableList.CreateRange(source.Select(nvp => new ArgumentNode(nvp.name, nvp.value))),
+            var expected = ParseResult.Success(new ListNode<ArgumentNode>(
+                ImmutableList.CreateRange(source.Select(nvp => new ArgumentNode(nvp.name, nvp.value)))),
                 ParseState.Empty);
 
             // Act
-            var actual = CommandLineParser.ArgumentListParser(argumentSpecifications);
+            var actual = CommandLineParser.ArgumentsParser(argumentSpecifications);
 
             // Assert
             var result = actual.Parse(state);
@@ -362,41 +362,41 @@ namespace Luger.Configuration.CommandLine.Tests
             Assert.Equal(expected.Failures, result.Failures);
         }
 
-        public static IEnumerable<object[]> OptionParserTestData => new (OptionSpecificationBase spec, TokenBase[] tokens, OptionNode[] nodes, TokenBase[] remaining)[]
+        public static IEnumerable<object[]> FlagParserTestData => new (FlagSpecification spec, TokenBase[] tokens, FlagNode[] nodes, TokenBase[] remaining)[]
         {
-            (new ShortOptionSpecification("Name", 'o', false),
-             new[] { new ShortOptionToken("-o", 1) },
-             new[] { new OptionNode("Name") },
+            (new FlagSpecification("Name", "flag", 'f', false),
+             new[] { new ShortFlagToken("-f", 1) },
+             new[] { new FlagNode("Name") },
              Array.Empty<TokenBase>()),
-            (new LongOptionSpecification("Name", "option", false),
-             new[] { new LongOptionToken("--option", 2..) },
-             new[] { new OptionNode("Name") },
+            (new FlagSpecification("Name", "flag", 'f', false),
+             new[] { new LongFlagToken("--flag", 2..) },
+             new[] { new FlagNode("Name") },
              Array.Empty<TokenBase>()),
-            (new ShortOptionSpecification("Name", 'o', true),
-             new TokenBase[] { new ShortOptionToken("-o", 1), new ArgumentToken("Argument", 0) },
-             new[] { new OptionNode("Name", "Argument") },
+            (new FlagSpecification("Name", "flag", 'f', true),
+             new TokenBase[] { new ShortFlagToken("-f", 1), new ArgumentToken("arg", 0) },
+             new[] { new FlagNodeWithValue("Name", "arg") },
              Array.Empty<TokenBase>()),
-            (new LongOptionSpecification("Name", "option", true),
-             new TokenBase[] { new LongOptionToken("--option", 2..), new ArgumentToken("Argument", 0) },
-             new[] { new OptionNode("Name", "Argument") },
+            (new FlagSpecification("Name", "flag", 'f', true),
+             new TokenBase[] { new LongFlagToken("--flag", 2..), new ArgumentToken("arg", 0) },
+             new[] { new FlagNodeWithValue("Name", "arg") },
              Array.Empty<TokenBase>()),
         }.Select(data => new object[]
         {
             data.spec,
             new ParseState(ImmutableQueue.CreateRange(data.tokens)),
-            new ParseResult<OptionNode>(
+            new ParseResult<FlagNode>(
                 ImmutableList.CreateRange(data.nodes.Select(n => (n, new ParseState(ImmutableQueue.CreateRange(data.remaining))))),
                 ImmutableList.Create<(string, ParseState)>())
         });
 
         [Theory]
-        [MemberData(nameof(OptionParserTestData))]
-        public void OptionParserTest(OptionSpecificationBase optionSpecification, ParseState state, ParseResult<OptionNode> expected)
+        [MemberData(nameof(FlagParserTestData))]
+        public void FlagParserTest(FlagSpecification flagSpecification, ParseState state, ParseResult<FlagNode> expected)
         {
             // Arrange
 
             // Act
-            var actual = CommandLineParser.OptionParser(optionSpecification);
+            var actual = CommandLineParser.FlagParser(flagSpecification);
 
             // Assert
             var result = actual.Parse(state);
@@ -405,19 +405,19 @@ namespace Luger.Configuration.CommandLine.Tests
         }
 
         [Fact]
-        public void OptionSetParserTest()
+        public void FlagsParserTest()
         {
             // Arrange
             var source = "abddf";
-            var optionSpecifications = "abcdef".Select(c => new ShortOptionSpecification($"Name_{c}", c, false));
-            var tokens = ImmutableQueue.CreateRange<TokenBase>(source.Select((c, i) => new ShortOptionToken(source, i)));
+            var flagSpecifications = "abcdef".Select(c => new FlagSpecification($"Name_{c}", $"name_c", c, false));
+            var tokens = ImmutableQueue.CreateRange<TokenBase>(source.Select((c, i) => new ShortFlagToken(source, i)));
             var state = new ParseState(tokens);
-            var expected = ParseResult.Success(
-                ImmutableList.CreateRange(source.Select(c => new OptionNode($"Name_{c}"))),
+            var expected = ParseResult.Success(new ListNode<FlagNode>(
+                ImmutableList.CreateRange(source.Select(c => new FlagNode($"Name_{c}")))),
                 ParseState.Empty);
 
             // Act
-            var actual = CommandLineParser.OptionSetParser(optionSpecifications);
+            var actual = CommandLineParser.FlagsParser(flagSpecifications);
 
             // Assert
             var result = actual.Parse(state);
@@ -429,19 +429,12 @@ namespace Luger.Configuration.CommandLine.Tests
         public void VerbParserTest()
         {
             // Arrange
-            var verbSpecification = new VerbSpecification("verb",
-                ImmutableHashSet.Create<OptionSpecificationBase>(),
-                ImmutableHashSet.Create<VerbSpecification>(),
-                ImmutableList.Create<ArgumentSpecification>());
+            var verbSpecification = new VerbSpecification("verb");
 
             var tokens = ImmutableQueue.Create<TokenBase>(new ArgumentToken("verb", Index.Start));
             var state = new ParseState(tokens);
 
-            var value = new VerbNode(
-                "verb",
-                ImmutableList.Create<OptionNode>(),
-                ImmutableList.Create<VerbNode>(),
-                ImmutableList.Create<ArgumentNode>());
+            var value = new VerbNode("verb", ListNode<FlagNode>.Empty);
 
             var expected = ParseResult.Success(value, ParseState.Empty);
 
@@ -454,45 +447,26 @@ namespace Luger.Configuration.CommandLine.Tests
             Assert.Equal(expected.Failures, result.Failures);
         }
 
-        [Fact]
-        public void VerbSetParserTest()
+        [Theory]
+        [InlineData(new string[0], null)]
+        [InlineData(new[] { "verb" }, "verb")]
+        public void VerbsParserTest(string[] args, string verb)
         {
             // Arrange
-            var verbSpecifications = new VerbSpecification[]
-            {
-                new("verb1",
-                    ImmutableHashSet.Create<OptionSpecificationBase>(),
-                    ImmutableHashSet.Create<VerbSpecification>(),
-                    ImmutableList.Create(new ArgumentSpecification("arg1.1"), new ArgumentSpecification("arg1.2"))),
-                new("verb2",
-                    ImmutableHashSet.Create<OptionSpecificationBase>(),
-                    ImmutableHashSet.Create<VerbSpecification>(),
-                    ImmutableList.Create(new ArgumentSpecification("arg2")))
-            };
-
-            var args = new[] { "verb1", "value1.1", "value1.2", "verb2", "value2" };
+            var verbSpecifications = ImmutableList.Create(new VerbSpecification("verb"));
 
             var tokens = ImmutableQueue.CreateRange<TokenBase>(from arg in args select new ArgumentToken(arg, Index.Start));
 
             var state = new ParseState(tokens);
 
-            var expected = ParseResult.Success(
-                ImmutableList.Create<VerbNode>(
-                    new("verb1",
-                    ImmutableList.Create<OptionNode>(),
-                    ImmutableList.Create<VerbNode>(),
-                    ImmutableList.Create<ArgumentNode>(
-                        new("arg1.1", "value1.1"),
-                        new("arg1.2", "value1.2"))),
-                    new("verb2",
-                    ImmutableList.Create<OptionNode>(),
-                    ImmutableList.Create<VerbNode>(),
-                    ImmutableList.Create(
-                        new ArgumentNode("arg2", "value2")))),
-                ParseState.Empty);
+            var expected = verb is null
+                ? ParseResult.Success(ListNode<VerbNode>.Empty, ParseState.Empty)
+                : new ParseResult<ListNode<VerbNode>>(ImmutableList.Create(
+                    (new ListNode<VerbNode>(ImmutableList.Create(new VerbNode(verb, ListNode<FlagNode>.Empty))), ParseState.Empty),
+                    (ListNode<VerbNode>.Empty, state)), ImmutableList<(string, ParseState)>.Empty);
 
             // Act
-            var actual = CommandLineParser.VerbSetParser(verbSpecifications);
+            var actual = CommandLineParser.VerbsParser(verbSpecifications);
 
             // Assert
             var result = actual.Parse(state);
@@ -504,12 +478,7 @@ namespace Luger.Configuration.CommandLine.Tests
         public void CommandLineParserTest()
         {
             // Arrange
-            var expected = ParseResult.Success(
-                new CommandLineNode(
-                    ImmutableList.Create<OptionNode>(),
-                    ImmutableList.Create<VerbNode>(),
-                    ImmutableList.Create<ArgumentNode>()),
-                ParseState.Empty);
+            var expected = ParseResult.Success(new CommandLineNode(ListNode<FlagNode>.Empty), ParseState.Empty);
 
             // Act
             var actual = CommandLineParser.Create(CommandLineSpecification.Empty);

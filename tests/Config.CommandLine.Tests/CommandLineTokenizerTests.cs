@@ -15,7 +15,7 @@ namespace Luger.Configuration.CommandLine.Tests
         [InlineData("-ab", 2, 'b', "-b")]
         public void ShortOptionTokenTest(string arg, int index, char flag, string repr)
         {
-            var actual = new ShortOptionToken(arg, index);
+            var actual = new ShortFlagToken(arg, index);
 
             Assert.Equal(flag, actual.Flag);
             Assert.Equal(repr, actual.ToString());
@@ -26,7 +26,7 @@ namespace Luger.Configuration.CommandLine.Tests
         [InlineData("option=value", 0, 6, "option", "--option")]
         public void LongOptionTokenTest(string arg, int start, int end, string key, string repr)
         {
-            var actual = new LongOptionToken(arg, start..end);
+            var actual = new LongFlagToken(arg, start..end);
 
             Assert.Equal(key, actual.Key);
             Assert.Equal(repr, actual.ToString());
@@ -46,27 +46,27 @@ namespace Luger.Configuration.CommandLine.Tests
         {
             new object[]
             {
-                "-hal", new []{1,2,3}.Select(i => new ShortOptionToken("-hal", i)).ToArray()
+                "-hal", new []{1,2,3}.Select(i => new ShortFlagToken("-hal", i)).ToArray()
             },
             new object[]
             {
                 "/Option", new TokenBase[]
                 {
-                    new LongOptionToken("/Option", 1..)
+                    new LongFlagToken("/Option", 1..)
                 }
             },
             new object[]
             {
                 "--option", new TokenBase[]
                 {
-                    new LongOptionToken("--option", 2..)
+                    new LongFlagToken("--option", 2..)
                 }
             },
             new object[]
             {
                 "Option=Value", new TokenBase[]
                 {
-                    new LongOptionToken("Option=Value", ..6),
+                    new LongFlagToken("Option=Value", ..6),
                     new ArgumentToken("Option=Value", 7)
                 }
             },

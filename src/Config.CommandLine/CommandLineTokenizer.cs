@@ -8,14 +8,14 @@ namespace Luger.Configuration.CommandLine
 
     public abstract record OptionTokenBase(string Arg, Range Range) : TokenBase(Arg, Range);
 
-    public record ShortOptionToken(string Arg, Index Index) : OptionTokenBase(Arg, Index..(Index.IsFromEnd ? ^(Index.Value - 1) : Index.Value + 1))
+    public record ShortFlagToken(string Arg, Index Index) : OptionTokenBase(Arg, Index..(Index.IsFromEnd ? ^(Index.Value - 1) : Index.Value + 1))
     {
         public char Flag => Arg[Index];
 
         public override string ToString() => $"-{Flag}";
     }
 
-    public record LongOptionToken(string Arg, Range Range) : OptionTokenBase(Arg, Range)
+    public record LongFlagToken(string Arg, Range Range) : OptionTokenBase(Arg, Range)
     {
         public string Key => Arg[Range];
 
@@ -54,18 +54,18 @@ namespace Luger.Configuration.CommandLine
             {
                 foreach (Capture flag in flagsMatch.Groups["flag"].Captures)
                 {
-                    yield return new ShortOptionToken(arg, flag.Index);
+                    yield return new ShortFlagToken(arg, flag.Index);
                 }
             }
             else if (KeyRex.TryMatch(arg, out var keyMatch))
             {
                 Capture key = keyMatch.Groups["key"];
-                yield return new LongOptionToken(arg, key.Index..);
+                yield return new LongFlagToken(arg, key.Index..);
             }
             else if (KeyValueRex.TryMatch(arg, out var keyValueMatch))
             {
                 Capture key = keyValueMatch.Groups["key"];
-                yield return new LongOptionToken(arg, ..key.Length);
+                yield return new LongFlagToken(arg, ..key.Length);
 
                 Capture value = keyValueMatch.Groups["value"];
                 yield return new ArgumentToken(arg, value.Index);
