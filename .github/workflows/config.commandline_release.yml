@@ -53,7 +53,12 @@ jobs:
     - name: Pack
       run: dotnet pack ${PROJ_FILE} --configuration Release /p:Version=${VERSION} --no-build --output .
 
-    - name: Push
+    - name: Push to GitHub Packages
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: dotnet nuget push Luger.Configuration.CommandLine.${VERSION}.nupkg --source https://nuget.pkg.github.com/chamalulu/index.json --api-key ${GITHUB_TOKEN}
+
+    - name: Push to NuGet
+      env:
+        PUSH_TO_NUGET: ${{ secrets.PUSH_TO_NUGET }}
+      run: dotnet nuget push Luger.Configuration.CommandLine.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${PUSH_TO_NUGET}

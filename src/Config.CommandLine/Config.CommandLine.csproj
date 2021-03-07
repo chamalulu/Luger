@@ -11,10 +11,9 @@
     </Description>
     <Nullable>enable</Nullable>
 
-    <!-- Bump to prefix 1.0.0 and suffix alpha when API is mostly stable -->
-    <!-- Bump to prefix 1.0.0 and empty suffix when API is stable -->
-    <VersionPrefix>0.1.0</VersionPrefix>
-    <VersionSuffix></VersionSuffix>
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <!-- Set empty empty suffix when API is stable -->
+    <VersionSuffix>alpha</VersionSuffix>
 
     <Authors>Henrik Lundberg</Authors>
     <Company></Company>
