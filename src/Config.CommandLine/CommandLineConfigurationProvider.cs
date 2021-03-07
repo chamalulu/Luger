@@ -9,21 +9,67 @@ namespace Luger.Configuration.CommandLine
 {
     public class CommandLineConfigurationProvider : ConfigurationProvider
     {
-        private readonly CommandLineSpecification _commandLineSpecification;
-
-        public CommandLineConfigurationProvider(IEnumerable<string>? args, CommandLineSpecification? commandLineSpecification = null)
+        public CommandLineConfigurationProvider(
+            IEnumerable<string> args,
+            CommandLineSpecification? specification = null,
+            string? errorPath = null)
         {
-            Args = args?.ToArray() ?? throw new ArgumentNullException(nameof(args));
+            Args = Array.AsReadOnly(args.ToArray());
 
-            _commandLineSpecification = commandLineSpecification ?? CommandLineSpecification.Empty;
+            Specification = specification ?? CommandLineSpecification.Empty;
+
+            ErrorPath = errorPath ?? nameof(CommandLineConfigurationProvider);
         }
 
-        protected IEnumerable<string> Args { get; private init; }
+        public IReadOnlyList<string> Args { get; }
+
+        public CommandLineSpecification Specification { get; }
+
+        protected string ErrorPath { get; }
+
+        protected void Set(IEnumerable<string> path, string value) => Set(ConfigurationPath.Combine(path), value);
+
+        protected virtual void SetErrorKeys(ImmutableList<(string message, ParseState state)> failures)
+        {
+            var path = ImmutableList.Create(ErrorPath);
+
+            // Add argument list keys
+            var argsPath = path.Add("Args");
+
+            if (Args.Any())
+            {
+                foreach (var (arg, index) in Args.Select((a, i) => (a, i + 1)))
+                {
+                    Set(argsPath.Add(index.ToString()), arg);
+                }
+            }
+            else
+            {
+                Set(argsPath, "Empty");
+            }
+
+            // Add failures
+            var failuresPath = path.Add("Failures");
+
+            foreach (var (failure, index) in failures.Select((f, i) => (f, i + 1)))
+            {
+                var failurePath = failuresPath.Add(index.ToString());
+
+                Set(failurePath.Add("Message"), failure.message);
+
+                var token = failure.state.Tokens.FirstOrDefault();
+
+                if (token is TokenBase)
+                {
+                    Set(failurePath.Add("Token"), token.ToString());
+                }
+            }
+        }
 
         public override void Load()
         {
             // Create parser from specification
-            var parser = CommandLineParser.Create(_commandLineSpecification);
+            var parser = CommandLineParser.Create(Specification);
 
             // Tokenize arguments
             var tokens = ImmutableQueue.CreateRange(Args.SelectMany(CommandLineTokenizer.Tokenize));
@@ -31,14 +77,26 @@ namespace Luger.Configuration.CommandLine
             var state = new ParseState(tokens);
 
             // Parse tokens
-            // TODO: errorhandling
             var (successes, failures) = parser.Parse(state);
-            var commandLineNode = successes.Single().value; // Throws on ambiguous parsing
 
-            // Collect configuration items
-            foreach (var (key, value) in commandLineNode.Collect())
+            if (failures.Count > 0)
             {
-                Set(key, value);
+                // Failed to parse command line given these command line arguments and specification
+                // Set some predefined keys in configuration the client can use in error handling.
+                SetErrorKeys(failures);
+            }
+            else
+            {
+                // If successes.Count > 1 we have an ambiguous specification leading with multiple successes.
+                // Collect them all, hope for no collisions and let the client deal with ambiguities.
+                foreach (var success in successes)
+                {
+                    // Collect configuration items
+                    foreach (var (key, value) in success.value.Collect())
+                    {
+                        Set(key, value);
+                    }
+                }
             }
         }
     }
