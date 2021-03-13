@@ -14,7 +14,7 @@ namespace Luger.Configuration.CommandLine
             CommandLineSpecification? specification = null,
             string? errorPath = null)
         {
-            Args = Array.AsReadOnly(args.ToArray());
+            Args = ImmutableList.CreateRange(args);
 
             Specification = specification ?? CommandLineSpecification.Empty;
 

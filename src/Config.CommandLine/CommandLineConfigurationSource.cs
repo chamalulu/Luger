@@ -7,7 +7,13 @@ namespace Luger.Configuration.CommandLine
 {
     public class CommandLineConfigurationSource : IConfigurationSource
     {
-        public IEnumerable<string>? Args { get; set; }
+        public CommandLineConfigurationSource()
+        {
+            Args = Environment.GetCommandLineArgs();
+
+        }
+
+        public string[] Args { get; set; }
 
         public CommandLineSpecification? Specification { get; set; }
 
