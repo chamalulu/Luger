@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -7,61 +6,48 @@ using Microsoft.Extensions.Configuration;
 
 namespace Luger.Configuration.CommandLine
 {
+    public delegate void FailureCallback(string message, TokenBase? token);
+
     public class CommandLineConfigurationProvider : ConfigurationProvider
     {
         public CommandLineConfigurationProvider(
-            IEnumerable<string> args,
+            string[] args,
             CommandLineSpecification? specification = null,
-            string? errorPath = null)
+            FailureCallback? failureCallback = null,
+            string? commandLineSection = null)
         {
             Args = ImmutableList.CreateRange(args);
-
             Specification = specification ?? CommandLineSpecification.Empty;
-
-            ErrorPath = errorPath ?? nameof(CommandLineConfigurationProvider);
+            FailureCallback = failureCallback;
+            CommandLineSection = commandLineSection;
         }
 
         public IReadOnlyList<string> Args { get; }
 
         public CommandLineSpecification Specification { get; }
 
-        protected string ErrorPath { get; }
+        protected FailureCallback? FailureCallback { get; }
 
-        protected void Set(IEnumerable<string> path, string value) => Set(ConfigurationPath.Combine(path), value);
+        protected string? CommandLineSection { get; }
 
-        protected virtual void SetErrorKeys(ImmutableList<(string message, ParseState state)> failures)
+        protected virtual void ReportFailures(ImmutableList<(string message, ParseState state)> failures)
         {
-            var path = ImmutableList.Create(ErrorPath);
-
-            // Add argument list keys
-            var argsPath = path.Add("Args");
-
-            if (Args.Any())
+            foreach (var (message, state) in failures)
             {
-                foreach (var (arg, index) in Args.Select((a, i) => (a, i + 1)))
-                {
-                    Set(argsPath.Add(index.ToString()), arg);
-                }
+                FailureCallback?.Invoke(message, state.Tokens.FirstOrDefault());
             }
-            else
+        }
+
+        protected virtual void SetConfigurationItems(ImmutableList<(CommandLineNode value, ParseState state)> successes)
+        {
+            var path = CommandLineSection is null ? ImmutableList<string>.Empty : ImmutableList.Create(CommandLineSection);
+
+            foreach (var success in successes)
             {
-                Set(argsPath, "Empty");
-            }
-
-            // Add failures
-            var failuresPath = path.Add("Failures");
-
-            foreach (var (failure, index) in failures.Select((f, i) => (f, i + 1)))
-            {
-                var failurePath = failuresPath.Add(index.ToString());
-
-                Set(failurePath.Add("Message"), failure.message);
-
-                var token = failure.state.Tokens.FirstOrDefault();
-
-                if (token is TokenBase)
+                // Collect and set configuration items
+                foreach (var (key, value) in success.value.Collect(path))
                 {
-                    Set(failurePath.Add("Token"), token.ToString());
+                    Set(key, value);
                 }
             }
         }
@@ -82,21 +68,14 @@ namespace Luger.Configuration.CommandLine
             if (failures.Count > 0)
             {
                 // Failed to parse command line given these command line arguments and specification
-                // Set some predefined keys in configuration the client can use in error handling.
-                SetErrorKeys(failures);
+                // Report failures to client provided callback.
+                ReportFailures(failures);
             }
             else
             {
                 // If successes.Count > 1 we have an ambiguous specification leading with multiple successes.
                 // Collect them all, hope for no collisions and let the client deal with ambiguities.
-                foreach (var success in successes)
-                {
-                    // Collect configuration items
-                    foreach (var (key, value) in success.value.Collect())
-                    {
-                        Set(key, value);
-                    }
-                }
+                SetConfigurationItems(successes);
             }
         }
     }

@@ -11,14 +11,25 @@ namespace Config.CommandLine.Example
 {
     internal class Program
     {
+        private static bool FailureSignalled;
+
+        private static void FailureCallback(string message, TokenBase token)
+        {
+            FailureSignalled = true;
+
+            Console.WriteLine();
+            Console.WriteLine("Command Line Configuration failed with the following error.");
+            Console.WriteLine(token is null ? $"Message: {message}" : $"Message: {message}, Token: {token}");
+        }
+
         private static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
                 .ConfigureHostConfiguration(configHost =>
                 {
                     configHost.AddCommandLineConfiguration(source =>
                     {
-                        source.Args = args;
-                        source.ErrorPath = "CLC_ERROR";
+                        source.Args = args; // Not really needed, default is taken from Environment.GetCommandLineArgs()
+                        source.FailureCallback = FailureCallback;
                         source.Specification = new CommandLineSpecification()
                             .AddFlag(new FlagSpecification("Help", "help", 'h'));
                     });
@@ -28,22 +39,12 @@ namespace Config.CommandLine.Example
         {
             using var host = CreateHostBuilder(args).Build();
 
-            var configurationRoot = (ConfigurationRoot)host.Services.GetService(typeof(IConfiguration));
-
-            var errorSection = configurationRoot.GetSection("CLC_ERROR");
-
-            if (errorSection.Exists())
+            if (FailureSignalled)
             {
-                Console.WriteLine("Command Line Configuration failed. Here's the error section.");
-                Console.WriteLine();
-
-                foreach (var (key, value) in errorSection.AsEnumerable(true))
-                {
-                    Console.WriteLine($"Key: '{key}', Value '{value}'.");
-                }
-
                 return 1;
             }
+
+            var configurationRoot = (ConfigurationRoot)host.Services.GetService(typeof(IConfiguration));
 
             var helpFlag = configurationRoot["Help"];
 

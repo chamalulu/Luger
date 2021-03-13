@@ -12,13 +12,15 @@ namespace Luger.Configuration
             this IConfigurationBuilder configurationBuilder,
             string[] args,
             CommandLineSpecification? specification = null,
-            string? errorPath = null)
+            FailureCallback? failureCallback = null,
+            string? commandLineSection = null)
             
             => configurationBuilder.Add(new CommandLineConfigurationSource
             {
                 Args = args,
                 Specification = specification,
-                ErrorPath = errorPath
+                FailureCallback = failureCallback,
+                CommandLineSection = commandLineSection
             });
 
         public static IConfigurationBuilder AddCommandLineConfiguration(

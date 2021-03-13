@@ -93,8 +93,6 @@ namespace Luger.Configuration.CommandLine
     public partial record CommandLineNode : INode
     {
         public virtual IEnumerable<(string key, string value)> Collect(ImmutableList<string> path) => Flags.Collect(path);
-
-        public IEnumerable<(string key, string value)> Collect() => Collect(ImmutableList<string>.Empty);
     }
 
     public partial record CommandLineNodeWithVerb

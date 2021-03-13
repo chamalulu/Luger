@@ -1,26 +1,37 @@
 using System;
-using System.Collections.Generic;
 
 using Microsoft.Extensions.Configuration;
 
 namespace Luger.Configuration.CommandLine
 {
+    /// <summary>
+    /// Represents a source of configuration key/values for <see cref="CommandLineConfigurationProvider"/>.
+    /// </summary>
     public class CommandLineConfigurationSource : IConfigurationSource
     {
-        public CommandLineConfigurationSource()
-        {
-            Args = Environment.GetCommandLineArgs();
+        /// <summary>
+        /// The array of command line arguments to parse.
+        /// Defaults to command line arguments provided by <see cref="Environment.GetCommandLineArgs"/>.
+        /// </summary>
+        public string[] Args { get; set; } = Environment.GetCommandLineArgs();
 
-        }
-
-        public string[] Args { get; set; }
-
+        /// <summary>
+        /// The specification of the command line.
+        /// </summary>
         public CommandLineSpecification? Specification { get; set; }
 
-        public string? ErrorPath { get; set; }
+        /// <summary>
+        /// Callback for reporting failures in parsing arguments.
+        /// </summary>
+        public FailureCallback? FailureCallback { get; set; }
+
+        /// <summary>
+        /// The root configuration section for command line configuration items.
+        /// </summary>
+        public string? CommandLineSection { get; set; }
 
         public IConfigurationProvider Build(IConfigurationBuilder builder)
 
-            => new CommandLineConfigurationProvider(Args ?? throw new InvalidOperationException(), Specification, ErrorPath);
+            => new CommandLineConfigurationProvider(Args, Specification, FailureCallback, CommandLineSection);
     }
 }

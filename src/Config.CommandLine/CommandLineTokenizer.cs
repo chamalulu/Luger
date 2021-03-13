@@ -36,11 +36,11 @@ namespace Luger.Configuration.CommandLine
 
     public static class CommandLineTokenizer
     {
-        private static readonly Regex FlagsRex = new Regex(@"^-(?<flag>[\p{L}\p{N}])+$");
+        private static readonly Regex FlagsRex = new(@"^-(?<flag>[\p{L}\p{N}])+$");
 
-        private static readonly Regex KeyRex = new Regex(@"^(?<prefix>\/|--)(?<key>\w+(?::\w+)*)$");
+        private static readonly Regex KeyRex = new(@"^(?<prefix>\/|--)(?<key>\w+(?::\w+)*)$");
 
-        private static readonly Regex KeyValueRex = new Regex(@"^(?<key>\w+(?::\w+)*)=(?<value>.*)$");
+        private static readonly Regex KeyValueRex = new(@"^(?<key>\w+(?::\w+)*)=(?<value>.*)$");
 
         private static bool TryMatch(this Regex regex, string input, out Match match)
         {
