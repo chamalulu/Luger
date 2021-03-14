@@ -31,7 +31,9 @@ namespace Config.CommandLine.Example
                         source.Args = args; // Not really needed, default is taken from Environment.GetCommandLineArgs()
                         source.FailureCallback = FailureCallback;
                         source.Specification = new CommandLineSpecification()
-                            .AddFlag(new FlagSpecification("Help", "help", 'h'));
+                            .AddStandardFlags()
+                            .AddArgument(new MultiArgumentSpecification("Arguments"));
+                        source.CommandLineSection = "CommandLine";  // If unset (null), configuration items are rooted in configuration root.
                     });
                 });
 
@@ -46,15 +48,11 @@ namespace Config.CommandLine.Example
 
             var configurationRoot = (ConfigurationRoot)host.Services.GetService(typeof(IConfiguration));
 
-            var helpFlag = configurationRoot["Help"];
+            var commandLineSection = configurationRoot.GetSection("CommandLine");
 
-            if (helpFlag is null)
+            foreach (var (key, value) in commandLineSection.AsEnumerable())
             {
-                Console.WriteLine("Help flag not set.");
-            }
-            else
-            {
-                Console.WriteLine($"Help flag set to '{helpFlag}'.");
+                Console.WriteLine($"{key}:\t{value}");
             }
 
             Console.WriteLine();
