@@ -4,7 +4,7 @@ namespace Luger.Configuration.CommandLine
 {
     public sealed partial record ListNode<T>(ImmutableList<T> List)
     {
-        public static readonly ListNode<T> Empty = new ListNode<T>(ImmutableList<T>.Empty);
+        public static readonly ListNode<T> Empty = new(ImmutableList<T>.Empty);
     }
 
     public sealed partial record SetNode<T>(ImmutableHashSet<T> Set);
@@ -14,9 +14,7 @@ namespace Luger.Configuration.CommandLine
     /// <summary>
     /// Parse tree node representing a flag.
     /// </summary>
-    public partial record FlagNode(string Name) : NamedNode(Name);
-
-    public partial record FlagNodeWithValue(string Name, string Value) : FlagNode(Name);
+    public partial record FlagNode(string Name, string Value = "True") : NamedNode(Name);
 
     public partial record ArgumentNode(string Name, string Value) : NamedNode(Name);
 

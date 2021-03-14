@@ -7,7 +7,7 @@ namespace Luger.Configuration.CommandLine
 {
     public record ParseState(ImmutableQueue<TokenBase> Tokens)
     {
-        public static readonly ParseState Empty = new ParseState(ImmutableQueue<TokenBase>.Empty);
+        public static readonly ParseState Empty = new(ImmutableQueue<TokenBase>.Empty);
 
         public (ParseState state, TToken? token) Accept<TToken>(Func<TToken, bool>? predicate = null) where TToken : TokenBase =>
 
@@ -196,9 +196,9 @@ namespace Luger.Configuration.CommandLine
             return new CommandLineParser<ArgumentNode>(parse);
         }
 
-        public static readonly CommandLineParser<string> AnonymousArgumentParser = new CommandLineParser<string>(state =>
+        public static readonly CommandLineParser<string> AnonymousArgumentParser = new(state
 
-            state.Accept<ArgumentToken>() is (ParseState nextState, ArgumentToken token)
+            => state.Accept<ArgumentToken>() is (ParseState nextState, ArgumentToken token)
                 ? ParseResult.Success(token.Value, nextState)
                 : ParseResult.Failure<string>("Expected Argument", state));
 
@@ -208,9 +208,9 @@ namespace Luger.Configuration.CommandLine
         {
             bool predicate(ArgumentToken token) => token.Value.Equals(literal, comparison);
 
-            ParseResult<string> parse(ParseState state) =>
+            ParseResult<string> parse(ParseState state)
 
-                state.Accept<ArgumentToken>(predicate) is (ParseState nextState, ArgumentToken token)
+                => state.Accept<ArgumentToken>(predicate) is (ParseState nextState, ArgumentToken token)
                     ? ParseResult.Success(token.Value, nextState)
                     : ParseResult.Failure<string>($"Expected Argument '{literal}'", state);
 
@@ -226,7 +226,7 @@ namespace Luger.Configuration.CommandLine
         {
             static MultiArgumentNode toMultiArgumentNode(ArgumentNode node, int index)
 
-                => new MultiArgumentNode(node.Name, index, node.Value);
+                => new(node.Name, index, node.Value);
 
             return from argumentNodes in ArgumentParser(multiArgumentSpecification).ZeroOrMore()
                    select new ListNode<MultiArgumentNode>(ImmutableList.CreateRange(argumentNodes.Select(toMultiArgumentNode)));
@@ -263,7 +263,7 @@ namespace Luger.Configuration.CommandLine
         /// Create a <see cref="CommandLineParser{TResult}"/> which parse a flag according to given
         ///  <paramref name="flagSpecification"/>.
         /// </summary>
-        public static CommandLineParser<FlagNode> FlagParser(FlagSpecification flagSpecification)
+        public static CommandLineParser<FlagNode> FlagParser(FlagSpecificationBase flagSpecification)
         {
             ParseDelegate<string> parseFlagName<TToken>(Func<TToken, bool> predicate) where TToken : TokenBase
 
@@ -280,17 +280,16 @@ namespace Luger.Configuration.CommandLine
                     parseFlagName<ShortFlagToken>(token => token.Flag == flagSpecification.ShortName));
             }
 
-            if (flagSpecification.TakesValue)
-            {
-                return from flagName in flagNameParser
-                       from argument in AnonymousArgumentParser
-                       select (FlagNode)new FlagNodeWithValue(flagName, argument);
-            }
-            else
-            {
-                return from flagName in flagNameParser
-                       select new FlagNode(flagName);
-            }
+            return flagSpecification switch {
+                FlagWithValueSpecification =>
+                     from flagName in flagNameParser
+                     from argument in AnonymousArgumentParser
+                     select new FlagNode(flagName, argument),
+                FlagSpecification fs =>
+                     from flagName in flagNameParser
+                     select new FlagNode(flagName, fs.Value),
+                _ => throw new NotImplementedException()
+            };
         }
 
         /// <summary>
@@ -298,7 +297,7 @@ namespace Luger.Configuration.CommandLine
         ///  given <paramref name="optionSpecifications"/>.
         /// </summary>
         public static CommandLineParser<ListNode<FlagNode>> FlagsParser(
-            IEnumerable<FlagSpecification> optionSpecifications) =>
+            IEnumerable<FlagSpecificationBase> optionSpecifications) =>
 
             optionSpecifications.Select(FlagParser).Any().ZeroOrMore().Select(flags => new ListNode<FlagNode>(flags));
 

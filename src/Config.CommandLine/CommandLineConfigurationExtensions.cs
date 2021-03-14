@@ -48,19 +48,19 @@ namespace Luger.Configuration
                 | StandardFlagsFlags.Verbose)
         {
             commandLineSpecification = standardFlags.HasFlag(StandardFlagsFlags.DryRun)
-                ? commandLineSpecification.AddFlag(new("DryRun", "dry-run", 'n'))
+                ? commandLineSpecification.AddFlag(new FlagSpecification("DryRun", "dry-run", 'n'))
                 : commandLineSpecification;
 
             commandLineSpecification = standardFlags.HasFlag(StandardFlagsFlags.Help)
-                ? commandLineSpecification.AddFlag(new("Help", "help", 'h'))
+                ? commandLineSpecification.AddFlag(new FlagSpecification("Help", "help", 'h'))
                 : commandLineSpecification;
 
             commandLineSpecification = standardFlags.HasFlag(StandardFlagsFlags.Quiet)
-                ? commandLineSpecification.AddFlag(new("Quiet", "quiet", 'q'))
+                ? commandLineSpecification.AddFlag(new FlagSpecification("Quiet", "quiet", 'q'))
                 : commandLineSpecification;
 
             commandLineSpecification = standardFlags.HasFlag(StandardFlagsFlags.Verbose)
-                ? commandLineSpecification.AddFlag(new("Verbose", "verbose", 'v'))
+                ? commandLineSpecification.AddFlag(new FlagSpecification("Verbose", "verbose", 'v'))
                 : commandLineSpecification;
 
             return commandLineSpecification;

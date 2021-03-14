@@ -19,17 +19,17 @@ namespace Luger.Configuration.CommandLine.Tests
             },
             new object[]    // Flags and argument case
             {
-                new []{ "-ab", "--cflag", "val", "arg" },
+                new []{ "-ab", "--cflag", "Cval", "arg" },
                 new CommandLineSpecification()
-                    .AddFlag(new("Aflag", "aflag", 'a', false))
-                    .AddFlag(new("Bflag", "bflag", 'b', false))
-                    .AddFlag(new("Cflag", "cflag", 'c', true))
+                    .AddFlag(new FlagSpecification("Aflag", "aflag", 'a'))
+                    .AddFlag(new FlagSpecification("Bflag", "bflag", 'b', "Bval"))
+                    .AddFlag(new FlagWithValueSpecification("Cflag", "cflag", 'c'))
                     .AddArgument(new("Argument")),
                 new Dictionary<string, string>
                 {
                     ["Aflag"] = "True",
-                    ["Bflag"] = "True",
-                    ["Cflag"] = "val",
+                    ["Bflag"] = "Bval",
+                    ["Cflag"] = "Cval",
                     ["Argument"] = "arg"
                 }
             },

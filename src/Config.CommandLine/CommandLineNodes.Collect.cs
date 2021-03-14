@@ -41,10 +41,6 @@ namespace Luger.Configuration.CommandLine
 
     public partial record FlagNode
     {
-    }
-
-    public partial record FlagNodeWithValue
-    {
         protected override string GetValue() => Value;
     }
 

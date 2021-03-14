@@ -72,7 +72,7 @@ namespace Luger.Configuration.CommandLine.Tests
             // Arrange
             var target = new FlagNode("name");
             var path = ImmutableList<string>.Empty;
-            var expected = new[] { ("name", bool.TrueString) };
+            var expected = new[] { ("name", "True") };
 
             // Act
             var actual = target.Collect(path);
@@ -85,7 +85,7 @@ namespace Luger.Configuration.CommandLine.Tests
         public void CollectFlagWithValueTest()
         {
             // Arrange
-            var target = new FlagNodeWithValue("name", "value");
+            var target = new FlagNode("name", "value");
             var path = ImmutableList<string>.Empty;
             var expected = new[] { ("name", "value") };
 

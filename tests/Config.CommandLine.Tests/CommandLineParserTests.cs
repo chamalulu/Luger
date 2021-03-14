@@ -227,10 +227,11 @@ namespace Luger.Configuration.CommandLine.Tests
 
         private record CharToken(char C) : TokenBase(string.Empty, ..);
 
-        private static CommandLineParser<string> CharParser(char c) =>
+        private static CommandLineParser<string> CharParser(char c)
 
-            new CommandLineParser<string>(state =>
-                state.Tokens.Any() && state.Tokens.PeekRef() is CharToken tt && tt.C == c
+            => new(state
+
+                => state.Tokens.Any() && state.Tokens.PeekRef() is CharToken tt && tt.C == c
                     ? ParseResult.Success(c.ToString(), state with { Tokens = state.Tokens.Dequeue() })
                     : ParseResult.Failure<string>($"Expected '{c}'", state));
 
@@ -362,23 +363,23 @@ namespace Luger.Configuration.CommandLine.Tests
             Assert.Equal(expected.Failures, result.Failures);
         }
 
-        public static IEnumerable<object[]> FlagParserTestData => new (FlagSpecification spec, TokenBase[] tokens, FlagNode[] nodes, TokenBase[] remaining)[]
+        public static IEnumerable<object[]> FlagParserTestData => new (FlagSpecificationBase spec, TokenBase[] tokens, FlagNode[] nodes, TokenBase[] remaining)[]
         {
-            (new FlagSpecification("Name", "flag", 'f', false),
+            (new FlagSpecification("Name", "flag", 'f'),
              new[] { new ShortFlagToken("-f", 1) },
              new[] { new FlagNode("Name") },
              Array.Empty<TokenBase>()),
-            (new FlagSpecification("Name", "flag", 'f', false),
+            (new FlagSpecification("Name", "flag", 'f'),
              new[] { new LongFlagToken("--flag", 2..) },
              new[] { new FlagNode("Name") },
              Array.Empty<TokenBase>()),
-            (new FlagSpecification("Name", "flag", 'f', true),
+            (new FlagWithValueSpecification("Name", "flag", 'f'),
              new TokenBase[] { new ShortFlagToken("-f", 1), new ArgumentToken("arg", 0) },
-             new[] { new FlagNodeWithValue("Name", "arg") },
+             new[] { new FlagNode("Name", "arg") },
              Array.Empty<TokenBase>()),
-            (new FlagSpecification("Name", "flag", 'f', true),
+            (new FlagWithValueSpecification("Name", "flag", 'f'),
              new TokenBase[] { new LongFlagToken("--flag", 2..), new ArgumentToken("arg", 0) },
-             new[] { new FlagNodeWithValue("Name", "arg") },
+             new[] { new FlagNode("Name", "arg") },
              Array.Empty<TokenBase>()),
         }.Select(data => new object[]
         {
@@ -391,7 +392,7 @@ namespace Luger.Configuration.CommandLine.Tests
 
         [Theory]
         [MemberData(nameof(FlagParserTestData))]
-        public void FlagParserTest(FlagSpecification flagSpecification, ParseState state, ParseResult<FlagNode> expected)
+        public void FlagParserTest(FlagSpecificationBase flagSpecification, ParseState state, ParseResult<FlagNode> expected)
         {
             // Arrange
 
@@ -409,7 +410,7 @@ namespace Luger.Configuration.CommandLine.Tests
         {
             // Arrange
             var source = "abddf";
-            var flagSpecifications = "abcdef".Select(c => new FlagSpecification($"Name_{c}", $"name_c", c, false));
+            var flagSpecifications = "abcdef".Select(c => new FlagSpecification($"Name_{c}", $"name_c", c));
             var tokens = ImmutableQueue.CreateRange<TokenBase>(source.Select((c, i) => new ShortFlagToken(source, i)));
             var state = new ParseState(tokens);
             var expected = ParseResult.Success(new ListNode<FlagNode>(
