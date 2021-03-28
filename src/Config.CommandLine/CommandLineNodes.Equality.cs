@@ -21,8 +21,7 @@ namespace Luger.Configuration.CommandLine
     {
         public bool Equals(SetNode<T>? other) => other is not null && Set.SetEquals(other.Set);
 
-        // Use #Set as seed to distinguish {} from {null}
-        public override int GetHashCode() => Set.Aggregate(Set.Count, (hc, t) => hc ^ t?.GetHashCode() ?? 0);
+        public override int GetHashCode() => Set.Aggregate(0, (hc, t) => hc ^ t.GetHashCode());
     }
 
     public abstract partial record NamedNode

@@ -46,16 +46,19 @@ namespace Luger.Configuration.CommandLine
                 .Select(s => (s.value, result: selector(s.value)(s.state)))
                 .ToArray();
 
-            var nextSuccesses = from svnrp in sourceValueNextResultPairs
-                                from success in svnrp.result.Successes
-                                let value = projection(svnrp.value, success.value)
-                                select (value, success.state);
+            var nextSuccesses =
+                from svnrp in sourceValueNextResultPairs
+                from success in svnrp.result.Successes
+                let value = projection(svnrp.value, success.value)
+                select (value, success.state);
 
             var successes = ImmutableList.CreateRange(nextSuccesses);
 
-            var failures = ImmutableList.CreateRange(successes.Count > 0
+            var nextFailures = successes.Count > 0
                 ? Enumerable.Empty<(string, ParseState)>()
-                : source.Failures.Concat(sourceValueNextResultPairs.SelectMany(svnrp => svnrp.result.Failures)));
+                : source.Failures.Concat(sourceValueNextResultPairs.SelectMany(svnrp => svnrp.result.Failures));
+
+            var failures = ImmutableList.CreateRange(nextFailures);
 
             return new(successes, failures);
         }

@@ -6,10 +6,16 @@ using Microsoft.Extensions.Configuration;
 
 namespace Luger.Configuration.CommandLine
 {
-    public delegate void SetKeyValue(string key, string value);
-
+    /// <summary>
+    /// Common interface for nodes subject to collection of configuration items.
+    /// </summary>
     public interface INode
     {
+        /// <summary>
+        /// Collect configuration items from node.
+        /// </summary>
+        /// <param name="path">List of configuration section segments to use as root for configuration items.</param>
+        /// <returns>Sequence of configuration items.</returns>
         IEnumerable<(string key, string value)> Collect(ImmutableList<string> path);
     }
 
@@ -20,7 +26,7 @@ namespace Luger.Configuration.CommandLine
             => List.SelectMany(node => node.Collect(path));
     }
 
-    public sealed partial record SetNode<T> : INode where T : INode
+    public sealed partial record SetNode<T> : INode where T : notnull, INode
     {
         public IEnumerable<(string key, string value)> Collect(ImmutableList<string> path)
 
@@ -29,8 +35,19 @@ namespace Luger.Configuration.CommandLine
 
     public abstract partial record NamedNode : INode
     {
+        /// <summary>
+        /// Produce configuration item key by combining configuration section <paramref name="path"/> with <see cref="Name"/>
+        /// </summary>
+        /// <param name="path">List of configuration section segments to use as root for configuration items.</param>
+        /// <remarks>Subclasses may override this method to customize their specific key.</remarks>
+        /// <returns>Configuration item key.</returns>
         protected virtual string GetKey(ImmutableList<string> path) => ConfigurationPath.Combine(path.Append(Name));
 
+        /// <summary>
+        /// Produce configuration item value.
+        /// </summary>
+        /// <remarks>Subclasses should override this method to produce their specific value.</remarks>
+        /// <returns>Configuration item value.</returns>
         protected virtual string GetValue() => bool.TrueString;
 
         public virtual IEnumerable<(string key, string value)> Collect(ImmutableList<string> path)
@@ -58,6 +75,13 @@ namespace Luger.Configuration.CommandLine
 
     public partial record VerbNode
     {
+        /// <summary>
+        /// Collect configuration items from child nodes.
+        /// </summary>
+        /// <remarks>
+        /// Subclasses should override this method to customize their collection of child node configuration items.
+        /// </remarks>
+        /// <inheritdoc cref="INode.Collect(ImmutableList{string})"/>
         protected virtual IEnumerable<(string key, string value)> CollectChildItems(ImmutableList<string> path)
 
             => Flags.Collect(path);

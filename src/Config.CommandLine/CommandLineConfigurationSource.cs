@@ -11,27 +11,31 @@ namespace Luger.Configuration.CommandLine
     {
         /// <summary>
         /// The array of command line arguments to parse.
-        /// Defaults to command line arguments provided by <see cref="Environment.GetCommandLineArgs"/>.
+        /// If not set, <see cref="Environment.GetCommandLineArgs"/> is used when building provider.
         /// </summary>
-        public string[] Args { get; set; } = Environment.GetCommandLineArgs();
+        public string[]? Args { get; set; }
 
         /// <summary>
-        /// The specification of the command line.
+        /// The specification of the command line. If not set, an empty specification is used by provider.
         /// </summary>
         public CommandLineSpecification? Specification { get; set; }
 
         /// <summary>
-        /// Callback for reporting failures in parsing arguments.
+        /// Callback for reporting failures in parsing arguments. If not set, failures are not reported.
         /// </summary>
         public FailureCallback? FailureCallback { get; set; }
 
         /// <summary>
-        /// The root configuration section for command line configuration items.
+        /// The root configuration section for command line configuration items. If not set, configuration root is used.
         /// </summary>
         public string? CommandLineSection { get; set; }
 
         public IConfigurationProvider Build(IConfigurationBuilder builder)
 
-            => new CommandLineConfigurationProvider(Args, Specification, FailureCallback, CommandLineSection);
+            => new CommandLineConfigurationProvider(
+                args: Args ?? Environment.GetCommandLineArgs(),
+                specification: Specification,
+                failureCallback: FailureCallback,
+                commandLineSection: CommandLineSection);
     }
 }

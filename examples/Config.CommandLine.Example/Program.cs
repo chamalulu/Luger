@@ -22,18 +22,29 @@ namespace Config.CommandLine.Example
             Console.WriteLine(token is null ? $"Message: {message}" : $"Message: {message}, Token: {token}");
         }
 
-        private static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
+        private static IHostBuilder CreateHostBuilder(string[] args)
+
+            => Host.CreateDefaultBuilder(args)
                 .ConfigureHostConfiguration(configHost =>
                 {
                     configHost.AddCommandLineConfiguration(source =>
                     {
-                        source.Args = args; // Not really needed, default is taken from Environment.GetCommandLineArgs()
+                        // Set args. Not really needed. Default is taken from Environment.GetCommandLineArgs().
+                        source.Args = args;
+
+                        // Set failure callback where configuration can report configuration errors.
+                        // Is there a standard way to report configuration errors (not exceptions) during host configuration?
                         source.FailureCallback = FailureCallback;
+
+                        // Set command line specification.
+                        // I.e. the specification of how to parse and interpret the command line arguments.
                         source.Specification = new CommandLineSpecification()
                             .AddStandardFlags()
                             .AddArgument(new MultiArgumentSpecification("Arguments"));
-                        source.CommandLineSection = "CommandLine";  // If unset (null), configuration items are rooted in configuration root.
+
+                        // Set configuration section for command line configuration.
+                        // If unset (null), configuration items are rooted in configuration root.
+                        source.CommandLineSection = "CommandLine";
                     });
                 });
 
@@ -48,7 +59,7 @@ namespace Config.CommandLine.Example
 
             var configurationRoot = (ConfigurationRoot)host.Services.GetService(typeof(IConfiguration));
 
-            var commandLineSection = configurationRoot.GetSection("CommandLine");
+            var commandLineSection = configurationRoot.GetSection("CommandLine");   // As set in CreateHostBuilder
 
             foreach (var (key, value) in commandLineSection.AsEnumerable())
             {
