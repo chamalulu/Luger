@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 
+using Luger.Configuration.CommandLine.Specifications;
+
 using Microsoft.Extensions.Configuration;
 
 using Xunit;
@@ -21,9 +23,9 @@ namespace Luger.Configuration.CommandLine.Tests
             {
                 new []{ "-ab", "--cflag", "Cval", "arg" },
                 new CommandLineSpecification()
-                    .AddFlag(new FlagSpecification("Aflag", "aflag", 'a'))
-                    .AddFlag(new FlagSpecification("Bflag", "bflag", 'b', "Bval"))
-                    .AddFlag(new FlagWithValueSpecification("Cflag", "cflag", 'c'))
+                    .AddFlagWithValue("Aflag", "aflag", 'a')
+                    .AddFlagWithValue("Bflag", "bflag", 'b', "Bval")
+                    .AddFlagWithArgument("Cflag", "cflag", 'c')
                     .AddArgument(new("Argument")),
                 new Dictionary<string, string>
                 {
@@ -36,10 +38,7 @@ namespace Luger.Configuration.CommandLine.Tests
             new object[]    // Nested verbs case
             {
                 new []{ "noun", "verb", "arg" },
-                new CommandLineSpecification()
-                    .AddVerb(new("Noun", new CommandLineSpecification()
-                        .AddVerb(new("Verb", new CommandLineSpecification()
-                            .AddArgument(new("Argument")))))),
+                new CommandLineSpecification().AddVerb("Noun", clsb => clsb.AddVerb("Verb", clsb => clsb.AddArgument("Argument"))),
                 new Dictionary<string, string>
                 {
                     ["Noun:Verb:Argument"] = "arg"

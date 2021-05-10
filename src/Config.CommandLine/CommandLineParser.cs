@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
+using Luger.Configuration.CommandLine.Specifications;
+
 namespace Luger.Configuration.CommandLine
 {
     /// <summary>
@@ -290,7 +292,7 @@ namespace Luger.Configuration.CommandLine
                     ? ParseResult.Success(token.Value, nextState)
                     : ParseResult.Failure<string>($"Expected Argument '{literal}'", state);
 
-            return new CommandLineParser<string>(parse);
+            return new(parse);
         }
 
         /// <summary>
@@ -299,53 +301,30 @@ namespace Luger.Configuration.CommandLine
         /// </summary>
         public static CommandLineParser<ListNode<MultiArgumentNode>> MultiArgumentParser(
             MultiArgumentSpecification multiArgumentSpecification)
-        {
-            static MultiArgumentNode toMultiArgumentNode(ArgumentNode node, int index)
 
-                => new(node.Name, index, node.Value);
-
-            return
-                from argumentNodes in ArgumentParser(multiArgumentSpecification).ZeroOrMore()
-                select new ListNode<MultiArgumentNode>(ImmutableList.CreateRange(argumentNodes.Select(toMultiArgumentNode)));
-        }
+            => from argumentNodes in ArgumentParser(new(multiArgumentSpecification.Name)).ZeroOrMore()
+               let multiArgumentNodes = argumentNodes.Select((n, i) => new MultiArgumentNode(n.Name, i, n.Value))
+               select new ListNode<MultiArgumentNode>(ImmutableList.CreateRange(multiArgumentNodes));
 
         /// <summary>
         /// Create a <see cref="CommandLineParser{TResult}"/> which parse a list of arguments in sequence according to the given
         /// <paramref name="argumentSpecifications"/>.
         /// </summary>
         public static CommandLineParser<ListNode<ArgumentNode>> ArgumentsParser(
-            ImmutableList<ArgumentSpecification> argumentSpecifications)
-        {
-            static CommandLineParser<ListNode<ArgumentNode>> singleArgumentsParser(
-                IEnumerable<ArgumentSpecification> argumentSpecifications)
+            IEnumerable<ArgumentSpecification> argumentSpecifications)
 
-                => argumentSpecifications.Select(ArgumentParser).All().Select(arguments => new ListNode<ArgumentNode>(arguments));
-
-            if (argumentSpecifications.Count > 0 &&
-                argumentSpecifications[^1] is MultiArgumentSpecification multiArgumentSpecification)
-            {
-                var singleArgumentSpecifications = argumentSpecifications.Take(argumentSpecifications.Count - 1);
-
-                return from singleArgumentNodes in singleArgumentsParser(singleArgumentSpecifications)
-                       from multiArgumentNodes in MultiArgumentParser(multiArgumentSpecification)
-                       select singleArgumentNodes with { List = singleArgumentNodes.List.AddRange(multiArgumentNodes.List) };
-            }
-            else
-            {
-                return singleArgumentsParser(argumentSpecifications);
-            }
-        }
+            => argumentSpecifications.Select(ArgumentParser).All().Select(arguments => new ListNode<ArgumentNode>(arguments));
 
         /// <summary>
         /// Create a <see cref="CommandLineParser{TResult}"/> which parse a flag according to given
         /// <paramref name="flagSpecification"/>.
         /// </summary>
-        public static CommandLineParser<FlagNode> FlagParser(FlagSpecificationBase flagSpecification)
+        public static CommandLineParser<FlagNode> FlagParser(FlagSpecification flagSpecification)
         {
             ParseDelegate<string> parseFlagName<TToken>(Func<TToken, bool> predicate) where TToken : TokenBase
 
                 => state => state.Accept<TToken>(predicate) is (ParseState nextState, TToken _)
-                    ? ParseResult.Success(flagSpecification.Name, nextState)
+                    ? ParseResult.Success<string>(flagSpecification.Name, nextState)
                     : ParseResult.Failure<string>($"Expected {flagSpecification}", state);
 
             var flagNameParser =
@@ -359,14 +338,14 @@ namespace Luger.Configuration.CommandLine
 
             return flagSpecification switch
             {
-                FlagWithValueSpecification =>
+                FlagWithValueSpecification fwvs =>
+                     from flagName in flagNameParser
+                     select new FlagNode(flagName, fwvs.Value),
+
+                FlagWithArgumentSpecification =>
                      from flagName in flagNameParser
                      from argument in AnonymousArgumentParser
                      select new FlagNode(flagName, argument),
-
-                FlagSpecification fs =>
-                     from flagName in flagNameParser
-                     select new FlagNode(flagName, fs.Value),
 
                 _ => throw new NotImplementedException()
             };
@@ -374,49 +353,35 @@ namespace Luger.Configuration.CommandLine
 
         /// <summary>
         /// Create a <see cref="CommandLineParser{TResult}"/> which parse zero or more options in sequence according to any of the
-        /// given <paramref name="optionSpecifications"/>.
+        /// given <paramref name="flagSpecifications"/>.
         /// </summary>
-        public static CommandLineParser<ListNode<FlagNode>> FlagsParser(
-            IEnumerable<FlagSpecificationBase> optionSpecifications) =>
+        public static CommandLineParser<ListNode<FlagNode>> FlagsParser(IEnumerable<FlagSpecification> flagSpecifications)
 
-            optionSpecifications.Select(FlagParser).Any().ZeroOrMore().Select(flags => new ListNode<FlagNode>(flags));
+            => flagSpecifications.Select(FlagParser).Any().ZeroOrMore().Select(flags => new ListNode<FlagNode>(flags));
 
         /// <summary>
         /// Create a <see cref="CommandLineParser{TResult}"/> which parse a verb according to given
         /// <paramref name="verbSpecification"/>. 
         /// </summary>
         public static CommandLineParser<VerbNode> VerbParser(VerbSpecification verbSpecification)
-        {
-            var verbNodeParser =
-                from name in LiteralArgumentParser(verbSpecification.Name, verbSpecification.NameComparison)
-                from flags in FlagsParser(verbSpecification.Flags)
-                select new VerbNode(name, flags);
 
-            return (verbSpecification.Verbs.IsEmpty, verbSpecification.Arguments.IsEmpty) switch
-            {
-                (true, true) => verbNodeParser,
-
-                (false, true) => from verbNode in verbNodeParser
-                                 from verb in VerbsParser(verbSpecification.Verbs)
-                                 select verb.List.IsEmpty
-                                    ? verbNode
-                                    : new VerbNodeWithVerb(verbNode.Name, verbNode.Flags, verb.List[0]),
-
-                (true, false) => from verbNode in verbNodeParser
-                                 from arguments in ArgumentsParser(verbSpecification.Arguments)
-                                 select (VerbNode)new VerbNodeWithArguments(verbNode.Name, verbNode.Flags, arguments),
-
-                _ => throw new InvalidOperationException()
-            };
-        }
+            => from name in LiteralArgumentParser(verbSpecification.Name, verbSpecification.NameComparison)
+               from commandLineNode in CommandLinePartParser(verbSpecification.CommandLineSpecification)
+               select commandLineNode switch
+               {
+                   CommandLineNodeWithArguments node => new VerbNodeWithArguments(name, node.Flags, node.Arguments),
+                   CommandLineNodeWithVerb node => new VerbNodeWithVerb(name, node.Flags, node.Verb),
+                   CommandLineNode node => new VerbNode(name, node.Flags)
+               };
 
         /// <summary>
         /// Create a <see cref="CommandLineParser{TResult}"/> which parse zero or one verb according to any of the given
         /// <paramref name="verbSpecifications"/>.
         /// </summary>
-        public static CommandLineParser<ListNode<VerbNode>> VerbsParser(ImmutableList<VerbSpecification> verbSpecifications) =>
+        public static CommandLineParser<ListNode<VerbNode>> VerbsParser(
+            IEnumerable<VerbSpecification> verbSpecifications)
 
-            verbSpecifications.Select(VerbParser).Any().ZeroOrOne().Select(verb => new ListNode<VerbNode>(verb));
+            => verbSpecifications.Select(VerbParser).Any().ZeroOrOne().Select(verb => new ListNode<VerbNode>(verb));
 
         public static CommandLineParser<ValueTuple> SentinelParser()
         {
@@ -435,29 +400,41 @@ namespace Luger.Configuration.CommandLine
         /// Create a <see cref="CommandLineParser{TResult}"/> which parse a command line according to given
         /// <paramref name="commandLineSpecification"/>.
         /// </summary>
-        public static CommandLineParser<CommandLineNode> Create(CommandLineSpecification commandLineSpecification)
+        public static CommandLineParser<CommandLineNode> CommandLinePartParser(CommandLineSpecification commandLineSpecification)
         {
-            var commandLineParser = (commandLineSpecification.Verbs.IsEmpty, commandLineSpecification.Arguments.IsEmpty) switch
-            {
-                (true, true) => from flags in FlagsParser(commandLineSpecification.Flags)
-                                select new CommandLineNode(flags),
+            static CommandLineParser<ListNode<MultiArgumentNode>> multiArgumentParser(CommandLineSpecification cls)
 
-                (false, true) => from flags in FlagsParser(commandLineSpecification.Flags)
-                                 from verb in VerbsParser(commandLineSpecification.Verbs)
-                                 select verb.List.IsEmpty
-                                    ? new CommandLineNode(flags)
-                                    : new CommandLineNodeWithVerb(flags, verb.List[0]),
+                => cls.MultiArgument is null
+                    ? True<ListNode<MultiArgumentNode>>(new(ImmutableList<MultiArgumentNode>.Empty))
+                    : MultiArgumentParser(cls.MultiArgument);
 
-                (true, false) => from flags in FlagsParser(commandLineSpecification.Flags)
-                                 from arguments in ArgumentsParser(commandLineSpecification.Arguments)
-                                 select (CommandLineNode)new CommandLineNodeWithArguments(flags, arguments),
+            static CommandLineParser<ListNode<ArgumentNode>> allArgumentsParser(CommandLineSpecification cls)
 
-                _ => throw new InvalidOperationException()
-            };
+                => from arguments in ArgumentsParser(cls.Arguments)
+                   from multiArgument in multiArgumentParser(cls)
+                   select new ListNode<ArgumentNode>(arguments.List.AddRange(multiArgument.List));
 
-            return from commandLine in commandLineParser
-                   from _ in SentinelParser()
-                   select commandLine;
+            return
+                from flags in FlagsParser(commandLineSpecification.Flags)
+                from verb in VerbsParser(commandLineSpecification.Verbs)
+                from arguments in allArgumentsParser(commandLineSpecification)
+                select (verb.List.IsEmpty, arguments.List.IsEmpty) switch
+                {
+                    (true, true) => new CommandLineNode(flags),
+                    (false, true) => new CommandLineNodeWithVerb(flags, verb.List[0]),
+                    (true, false) => new CommandLineNodeWithArguments(flags, arguments),
+                    _ => throw new InvalidOperationException()
+                };
         }
+
+        /// <summary>
+        /// Create a <see cref="CommandLineParser{TResult}"/> which parse a command line according to given
+        /// <paramref name="commandLineSpecification"/> followed by end of command line.
+        /// </summary>
+        public static CommandLineParser<CommandLineNode> Create(CommandLineSpecification commandLineSpecification)
+
+            => from commandLineNode in CommandLinePartParser(commandLineSpecification)
+               from _ in SentinelParser()
+               select commandLineNode;
     }
 }

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
+using Luger.Configuration.CommandLine.Specifications;
+
 using Xunit;
 
 namespace Luger.Configuration.CommandLine.Tests
@@ -285,7 +287,7 @@ namespace Luger.Configuration.CommandLine.Tests
         public void ArgumentParserTest()
         {
             // Arrange
-            var argumentSpecification = new ArgumentSpecification("Name");
+            var argumentSpecification = new ArgumentSpecification(new("Name"));
             var tokens = ImmutableQueue.Create<TokenBase>(new ArgumentToken("Option=Value", 7));
             var state = new ParseState(tokens);
             var expected = ParseResult.Success(new ArgumentNode("Name", "Value"), ParseState.Empty);
@@ -343,11 +345,30 @@ namespace Luger.Configuration.CommandLine.Tests
         }
 
         [Fact]
+        public void MultiArgumentParserTest()
+        {
+            // Arrange
+            var multiArgumentSpecification = new MultiArgumentSpecification(new("MultiArgument"));
+            var tokens = ImmutableQueue.Create<TokenBase>(new ArgumentToken("banan", 0));
+            var state = new ParseState(tokens);
+            var item = new MultiArgumentNode("MultiArgument", 0, "banan");
+            var expected = ParseResult.Success<ListNode<MultiArgumentNode>>(new(ImmutableList.Create(item)), ParseState.Empty);
+
+            // Act
+            var actual = CommandLineParser.MultiArgumentParser(multiArgumentSpecification);
+
+            // Assert
+            var result = actual.Parse(state);
+            Assert.Equal(expected.Successes, result.Successes);
+            Assert.Equal(expected.Failures, result.Failures);
+        }
+
+        [Fact]
         public void ArgumentsParserTest()
         {
             // Arrange
             var source = new[] { 1, 2, 3 }.Select(i => (name: $"Arg{i}", value: $"Value{i}")).ToArray();
-            var argumentSpecifications = ImmutableList.CreateRange(source.Select(nvp => new ArgumentSpecification(nvp.name)));
+            var argumentSpecifications = ImmutableList.CreateRange(source.Select(nvp => new ArgumentSpecification(new(nvp.name))));
             var tokens = ImmutableQueue.CreateRange<TokenBase>(source.Select(nvp => new ArgumentToken(nvp.value, 0)));
             var state = new ParseState(tokens);
             var expected = ParseResult.Success(new ListNode<ArgumentNode>(
@@ -363,21 +384,21 @@ namespace Luger.Configuration.CommandLine.Tests
             Assert.Equal(expected.Failures, result.Failures);
         }
 
-        public static IEnumerable<object[]> FlagParserTestData => new (FlagSpecificationBase spec, TokenBase[] tokens, FlagNode[] nodes, TokenBase[] remaining)[]
+        public static IEnumerable<object[]> FlagParserTestData => new (FlagSpecification spec, TokenBase[] tokens, FlagNode[] nodes, TokenBase[] remaining)[]
         {
-            (new FlagSpecification("Name", "flag", 'f'),
+            (new FlagWithValueSpecification(new("Name"), new("flag"), new('f')),
              new[] { new ShortFlagToken("-f", 1) },
              new[] { new FlagNode("Name") },
              Array.Empty<TokenBase>()),
-            (new FlagSpecification("Name", "flag", 'f'),
+            (new FlagWithValueSpecification(new("Name"), new("flag"), new('f')),
              new[] { new LongFlagToken("--flag", 2..) },
              new[] { new FlagNode("Name") },
              Array.Empty<TokenBase>()),
-            (new FlagWithValueSpecification("Name", "flag", 'f'),
+            (new FlagWithArgumentSpecification(new("Name"), new("flag"), new('f')),
              new TokenBase[] { new ShortFlagToken("-f", 1), new ArgumentToken("arg", 0) },
              new[] { new FlagNode("Name", "arg") },
              Array.Empty<TokenBase>()),
-            (new FlagWithValueSpecification("Name", "flag", 'f'),
+            (new FlagWithArgumentSpecification(new("Name"), new("flag"), new('f')),
              new TokenBase[] { new LongFlagToken("--flag", 2..), new ArgumentToken("arg", 0) },
              new[] { new FlagNode("Name", "arg") },
              Array.Empty<TokenBase>()),
@@ -392,7 +413,7 @@ namespace Luger.Configuration.CommandLine.Tests
 
         [Theory]
         [MemberData(nameof(FlagParserTestData))]
-        public void FlagParserTest(FlagSpecificationBase flagSpecification, ParseState state, ParseResult<FlagNode> expected)
+        public void FlagParserTest(FlagSpecification flagSpecification, ParseState state, ParseResult<FlagNode> expected)
         {
             // Arrange
 
@@ -410,7 +431,7 @@ namespace Luger.Configuration.CommandLine.Tests
         {
             // Arrange
             var source = "abddf";
-            var flagSpecifications = "abcdef".Select(c => new FlagSpecification($"Name_{c}", $"name_c", c));
+            var flagSpecifications = "abcdef".Select(c => new FlagWithValueSpecification(new($"Name_{c}"), new($"name-{c}"), new(c)));
             var tokens = ImmutableQueue.CreateRange<TokenBase>(source.Select((c, i) => new ShortFlagToken(source, i)));
             var state = new ParseState(tokens);
             var expected = ParseResult.Success(new ListNode<FlagNode>(
@@ -430,7 +451,7 @@ namespace Luger.Configuration.CommandLine.Tests
         public void VerbParserTest()
         {
             // Arrange
-            var verbSpecification = new VerbSpecification("verb");
+            var verbSpecification = new VerbSpecification(new("verb"), CommandLineSpecification.Empty);
 
             var tokens = ImmutableQueue.Create<TokenBase>(new ArgumentToken("verb", Index.Start));
             var state = new ParseState(tokens);
@@ -454,7 +475,7 @@ namespace Luger.Configuration.CommandLine.Tests
         public void VerbsParserTest(string[] args, string verb)
         {
             // Arrange
-            var verbSpecifications = ImmutableList.Create(new VerbSpecification("verb"));
+            var verbSpecifications = ImmutableList.Create(new VerbSpecification(new("verb"), CommandLineSpecification.Empty));
 
             var tokens = ImmutableQueue.CreateRange<TokenBase>(from arg in args select new ArgumentToken(arg, Index.Start));
 

@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
+using Luger.Configuration.CommandLine.Specifications;
+
 using Microsoft.Extensions.Configuration;
 
 namespace Luger.Configuration.CommandLine
@@ -108,9 +110,9 @@ namespace Luger.Configuration.CommandLine
             // Tokenize arguments
             var tokens = ImmutableQueue.CreateRange(Args.SelectMany(CommandLineTokenizer.Tokenize));
 
+            // Parse tokens
             var state = new ParseState(tokens);
 
-            // Parse tokens
             var (successes, failures) = parser.Parse(state);
 
             if (failures.Any())

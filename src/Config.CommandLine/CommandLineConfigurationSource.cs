@@ -1,5 +1,7 @@
 using System;
 
+using Luger.Configuration.CommandLine.Specifications;
+
 using Microsoft.Extensions.Configuration;
 
 namespace Luger.Configuration.CommandLine
@@ -16,7 +18,7 @@ namespace Luger.Configuration.CommandLine
         public string[]? Args { get; set; }
 
         /// <summary>
-        /// The specification of the command line. If not set, an empty specification is used by provider.
+        /// The specification of the command line. If not configured, an empty specification is used by provider.
         /// </summary>
         public CommandLineSpecification? Specification { get; set; }
 
@@ -29,6 +31,12 @@ namespace Luger.Configuration.CommandLine
         /// The root configuration section for command line configuration items. If not set, configuration root is used.
         /// </summary>
         public string? CommandLineSection { get; set; }
+
+        public void ConfigureSpecification(
+            Func<CommandLineSpecification, CommandLineSpecification> specificationBuilder,
+            StringComparison nameComparison = StringComparison.OrdinalIgnoreCase)
+
+            => Specification = specificationBuilder(new CommandLineSpecification(nameComparison));
 
         public IConfigurationProvider Build(IConfigurationBuilder builder)
 

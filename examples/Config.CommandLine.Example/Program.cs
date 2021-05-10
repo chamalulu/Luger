@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 using Luger.Configuration;
 using Luger.Configuration.CommandLine;
+using Luger.Configuration.CommandLine.Specifications;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -13,7 +17,7 @@ namespace Config.CommandLine.Example
     {
         private static bool FailureSignalled;
 
-        private static void FailureCallback(string message, TokenBase token)
+        private static void FailureCallback(string message, TokenBase? token)
         {
             FailureSignalled = true;
 
@@ -24,7 +28,7 @@ namespace Config.CommandLine.Example
 
         private static IHostBuilder CreateHostBuilder(string[] args)
 
-            => Host.CreateDefaultBuilder(args)
+            => Host.CreateDefaultBuilder()  // N.B. Don't use the overload with args parameter.
                 .ConfigureHostConfiguration(configHost =>
                 {
                     configHost.AddCommandLineConfiguration(source =>
@@ -36,11 +40,17 @@ namespace Config.CommandLine.Example
                         // Is there a standard way to report configuration errors (not exceptions) during host configuration?
                         source.FailureCallback = FailureCallback;
 
-                        // Set command line specification.
+                        // Configure command line specification.
                         // I.e. the specification of how to parse and interpret the command line arguments.
-                        source.Specification = new CommandLineSpecification()
-                            .AddStandardFlags()
-                            .AddArgument(new MultiArgumentSpecification("Arguments"));
+                        source.ConfigureSpecification(specification
+                            => specification
+                                .AddStandardFlags()
+                                .AddMultiArgument("Arguments"));
+
+                        // Equivalent specification setup with lots of news.
+                        //source.Specification = new CommandLineSpecification()
+                        //    .AddStandardFlags()
+                        //    .Add(new MultiArgumentSpecification(new SpecificationName("Arguments")));
 
                         // Set configuration section for command line configuration.
                         // If unset (null), configuration items are rooted in configuration root.
@@ -57,7 +67,10 @@ namespace Config.CommandLine.Example
                 return 1;
             }
 
-            var configurationRoot = (ConfigurationRoot)host.Services.GetService(typeof(IConfiguration));
+            var configurationRoot = host.Services.GetService(typeof(IConfiguration)) as ConfigurationRoot
+                ?? throw new ApplicationException("Unable to get configuration service.");
+
+            PrintProviderInfo(configurationRoot);
 
             var commandLineSection = configurationRoot.GetSection("CommandLine");   // As set in CreateHostBuilder
 
@@ -72,6 +85,35 @@ namespace Config.CommandLine.Example
             await host.RunAsync();
 
             return Environment.ExitCode;
+        }
+
+        private static readonly Lazy<System.Reflection.FieldInfo?> ConfigFieldInfo = new(()
+
+            => typeof(ChainedConfigurationProvider).GetField(
+                "_config",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic));
+
+        private static void PrintProviderInfo(ConfigurationRoot configurationRoot)
+        {
+            static IEnumerable<TProvider> FindProvidersOfType<TProvider>(IConfigurationRoot root)
+
+                => root.Providers.OfType<TProvider>().Concat<TProvider>(
+                    second: root.Providers.OfType<ChainedConfigurationProvider>()
+                        .SelectMany<ChainedConfigurationProvider, TProvider>(
+                            selector: cp => ConfigFieldInfo.Value?.GetValue(cp) is IConfigurationRoot cr
+                                ? FindProvidersOfType<TProvider>(cr)
+                                : Enumerable.Empty<TProvider>()));
+
+            var provider = FindProvidersOfType<CommandLineConfigurationProvider>(configurationRoot).FirstOrDefault();
+
+            if (provider is not null)
+            {
+                Console.Write("Args: ");
+                Console.WriteLine(provider.Args.Count == 0 ? "[]" : $"[ \"{string.Join("\", \"", provider.Args)}\" ]");
+
+                Console.Write("Specification: ");
+                Console.WriteLine(provider.Specification);
+            }
         }
     }
 }
