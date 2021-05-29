@@ -10,6 +10,7 @@ namespace Luger.Functional
     /// <summary>
     /// Encapsulate options for the <see cref="TaskExtensions.ExponentialBackoff"/> extension method.
     /// </summary>
+    // TODO: Refactor as record.
     public class ExponentialBackoffOptions
     {
         /// <summary>
@@ -47,7 +48,8 @@ namespace Luger.Functional
         public CancellationToken CancellationToken { get; set; } = CancellationToken.None;
 
         /// <summary>
-        /// Deconstruct <see cref="ExponentialBackoffOptions"/> into tuple of <paramref name="retries"/>, <paramref name="baseDelay"/>, <paramref name="rng"/> and <paramref name="cancellationToken"/>.
+        /// Deconstruct <see cref="ExponentialBackoffOptions"/> into tuple of <paramref name="retries"/>,
+        /// <paramref name="baseDelay"/>, <paramref name="rng"/> and <paramref name="cancellationToken"/>.
         /// </summary>
         public void Deconstruct(
             out uint retries,
@@ -76,17 +78,16 @@ namespace Luger.Functional
         /// <typeparam name="TR">Type of map result</typeparam>
         /// <param name="task">Source task</param>
         /// <param name="f">Map function</param>
-        /// <param name="mapOnCapturedContext"><c>true</c> to attempt to marshal the mapping back to the original context captured; otherwise, <c>false</c>.</param>
+        /// <param name="mapOnCapturedContext">
+        /// <c>true</c> to attempt to marshal the mapping back to the original context captured; otherwise, <c>false</c>.
+        /// </param>
         /// <remarks>
-        /// Since C# does not support partial application but do support extension methods this functionally "backwards" parameter order is practical.
+        /// Since C# does not support partial application but do support extension methods this functionally "backwards" parameter
+        /// order is practical.
         /// </remarks>
         /// <returns>Task of mapped result</returns>
         public static async Task<TR> Map<T, TR>(this Task<T> task, Func<T, TR> f, bool mapOnCapturedContext = false)
         {
-            task = task ?? throw new ArgumentNullException(nameof(task));
-
-            f = f ?? throw new ArgumentNullException(nameof(f));
-
             var t = await task.ConfigureAwait(mapOnCapturedContext);
 
             return f(t);
@@ -118,7 +119,9 @@ namespace Luger.Functional
         /// <typeparam name="TR">Type of result</typeparam>
         /// <param name="tf">Function task</param>
         /// <param name="tt">Parameter task</param>
-        /// <param name="applyOnCapturedContext"><c>true</c> to attempt to marshal the application back to the original context captures; otherwise, <c>false</c>.</param>
+        /// <param name="applyOnCapturedContext">
+        /// <c>true</c> to attempt to marshal the application back to the original context captures; otherwise, <c>false</c>.
+        /// </param>
         /// <returns>Task of application result</returns>
         public static async Task<TR> Apply<T, TR>(this Task<Func<T, TR>> tf, Task<T> tt, bool applyOnCapturedContext = false)
         {
@@ -135,10 +138,16 @@ namespace Luger.Functional
         /// <typeparam name="TR">Type of result</typeparam>
         /// <param name="tf">Function task</param>
         /// <param name="tt">First parameter task</param>
-        /// <param name="applyOnCapturedContext"><c>true</c> to attempt to marshal the application back to the original context captures; otherwise, <c>false</c>.</param>
+        /// <param name="applyOnCapturedContext">
+        /// <c>true</c> to attempt to marshal the application back to the original context captures; otherwise, <c>false</c>.
+        /// </param>
         /// <returns>Task of partially applied binary function</returns>
-        public static Task<Func<T2, TR>> Apply<T1, T2, TR>(this Task<Func<T1, T2, TR>> tf, Task<T1> tt, bool applyOnCapturedContext = false) =>
-            tf.Map(FuncExt.Curry).Apply(tt, applyOnCapturedContext);
+        public static Task<Func<T2, TR>> Apply<T1, T2, TR>(
+            this Task<Func<T1, T2, TR>> tf,
+            Task<T1> tt,
+            bool applyOnCapturedContext = false)
+
+            => tf.Map(FuncExt.Curry).Apply(tt, applyOnCapturedContext);
 
         /// <summary>
         /// Partial ternary function application within applicative functor <see cref="Task{TResult}"/>.
@@ -149,10 +158,16 @@ namespace Luger.Functional
         /// <typeparam name="TR">Type of result</typeparam>
         /// <param name="tf">Function task</param>
         /// <param name="tt">First parameter task</param>
-        /// <param name="applyOnCapturedContext"><c>true</c> to attempt to marshal the application back to the original context captures; otherwise, <c>false</c>.</param>
+        /// <param name="applyOnCapturedContext">
+        /// <c>true</c> to attempt to marshal the application back to the original context captures; otherwise, <c>false</c>.
+        /// </param>
         /// <returns>Task of partially applied ternary function</returns>
-        public static Task<Func<T2, T3, TR>> Apply<T1, T2, T3, TR>(this Task<Func<T1, T2, T3, TR>> tf, Task<T1> tt, bool applyOnCapturedContext = false) =>
-            tf.Map(FuncExt.CurryFirst).Apply(tt, applyOnCapturedContext);
+        public static Task<Func<T2, T3, TR>> Apply<T1, T2, T3, TR>(
+            this Task<Func<T1, T2, T3, TR>> tf,
+            Task<T1> tt,
+            bool applyOnCapturedContext = false)
+
+            => tf.Map(FuncExt.CurryFirst).Apply(tt, applyOnCapturedContext);
 
         /// <summary>
         /// Bind within monad <see cref="Task{TResult}"/>.
@@ -161,14 +176,13 @@ namespace Luger.Functional
         /// <typeparam name="TR">Type of bound result</typeparam>
         /// <param name="task">Source task</param>
         /// <param name="f">Bound function</param>
-        /// <param name="bindOnCapturedContext"><c>true</c> to attempt to marshal the execution of bound function back to the original context captured; otherwise, <c>false</c>.</param>
+        /// <param name="bindOnCapturedContext">
+        /// <c>true</c> to attempt to marshal the execution of bound function back to the original context captured; otherwise,
+        /// <c>false</c>.
+        /// </param>
         /// <returns>Task of bound function result</returns>
         public static async Task<TR> Bind<T, TR>(this Task<T> task, Func<T, Task<TR>> f, bool bindOnCapturedContext = false)
         {
-            task = task ?? throw new ArgumentNullException(nameof(task));
-
-            f = f ?? throw new ArgumentNullException(nameof(f));
-
             var t = await task.ConfigureAwait(bindOnCapturedContext);
 
             return await f(t).ConfigureAwait(false);

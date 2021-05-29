@@ -11,19 +11,22 @@ namespace Luger.Functional
     public static class EnumerableExt
     {
         // Implement Map, Apply and Bind with framework Select and SelectMany.
-        public static IEnumerable<TR> Map<T, TR>(this IEnumerable<T> ts, Func<T, TR> f)
-            => Enumerable.Select(ts, f);
+        public static IEnumerable<TR> Map<T, TR>(this IEnumerable<T> ts, Func<T, TR> f) => Enumerable.Select(ts, f);
 
         public static IEnumerable<TR> Apply<T, TR>(this IEnumerable<Func<T, TR>> fs, IEnumerable<T> ts)
+
             => Enumerable.SelectMany(fs, _ => ts, (f, t) => f(t));
 
         public static IEnumerable<TR> Bind<T, TR>(this IEnumerable<T> ts, Func<T, IEnumerable<TR>> f)
+
             => Enumerable.SelectMany(ts, f);
 
         public static IEnumerable<T> Repeat<T>(T element, uint count)
         {
-            for (uint c = 0; c < count; c++)
+            for (var c = 0U; c < count; c++)
+            {
                 yield return element;
+            }
         }
 
         public static IEnumerable<T> Return<T>(T t) => Repeat(t, 1u);
@@ -33,13 +36,17 @@ namespace Luger.Functional
         private static IEnumerable<T> ContinueAsEnumerableNoneOrMore<T>(this IEnumerator<T> enumerator)
         {
             while (enumerator.MoveNext())
+            {
                 yield return enumerator.Current;
+            }
         }
 
         private static IEnumerable<T> ContinueAsEnumerableOneOrMore<T>(this IEnumerator<T> enumerator)
         {
             do
+            {
                 yield return enumerator.Current;
+            }
             while (enumerator.MoveNext());
         }
 
@@ -98,8 +105,7 @@ namespace Luger.Functional
             this IEnumerable<T> ts,
             Func<TR> none,
             Func<T, TR> one,
-            Func<IEnumerable<T>, TR> some
-        )
+            Func<IEnumerable<T>, TR> some)
         {
             ts = ts ?? throw new ArgumentNullException(nameof(ts));
             none = none ?? throw new ArgumentNullException(nameof(none));
@@ -117,7 +123,9 @@ namespace Luger.Functional
                     : one(first);
             }
             else
+            {
                 return none();
+            }
         }
 
         /// <summary>
@@ -152,17 +160,20 @@ namespace Luger.Functional
                     : one(first);
             }
             else
+            {
                 return none();
+            }
         }
 
-        public static void Deconstruct<T>(this IEnumerable<T> ts, out T head, out IEnumerable<T> tail) =>
-            (head, tail) = ts.Match(() => throw new InvalidOperationException(), (h, t) => (h, t));
+        public static void Deconstruct<T>(this IEnumerable<T> ts, out T head, out IEnumerable<T> tail)
 
-        public static Maybe<T> Head<T>(this IEnumerable<T> ts) =>
-            ts.Match(None<T>, (head, _) => Some(head));
+            => (head, tail) = ts.Match(() => throw new InvalidOperationException(), (h, t) => (h, t));
 
-        public static Maybe<IEnumerable<T>> Tail<T>(this IEnumerable<T> ts) =>
-            ts.Match(None<IEnumerable<T>>, (_, tail) => Some(tail));
+        public static Maybe<T> Head<T>(this IEnumerable<T> ts) => ts.Match(None<T>, (head, _) => Some(head));
+
+        public static Maybe<IEnumerable<T>> Tail<T>(this IEnumerable<T> ts)
+
+            => ts.Match(None<IEnumerable<T>>, (_, tail) => Some(tail));
 
         public static IEnumerable<(T value, uint index)> WithUInt32Index<T>(this IEnumerable<T> ts)
         {
@@ -171,7 +182,9 @@ namespace Luger.Functional
             var i = 0U;
 
             foreach (var t in ts)
+            {
                 yield return (t, checked(i++));
+            }
         }
 
         public static IEnumerable<(T value, ulong index)> WithUInt64Index<T>(this IEnumerable<T> ts)
@@ -181,20 +194,22 @@ namespace Luger.Functional
             var i = 0UL;
 
             foreach (var t in ts)
+            {
                 yield return (t, checked(i++));
+            }
         }
 
         public static IEnumerable<T> EveryNth<T>(this IEnumerable<T> ts, ulong n)
+
             => n > 0
                 ? from ti in ts.WithUInt64Index()
                   where ti.index % n == 0
                   select ti.value
                 : throw new ArgumentOutOfRangeException(nameof(n));
 
-        public static IEnumerable<T> EveryOther<T>(this IEnumerable<T> ts)
-            => ts.EveryNth(2);
+        public static IEnumerable<T> EveryOther<T>(this IEnumerable<T> ts) => ts.EveryNth(2);
 
-        public static IEnumerable<(T first, T second)> Pairwise<T>(this IEnumerable<T> ts)
+        public static IEnumerable<(T? first, T? second)> Pairwise<T>(this IEnumerable<T> ts)
         {
             ts = ts ?? throw new ArgumentNullException(nameof(ts));
 
@@ -229,9 +244,12 @@ namespace Luger.Functional
             static uint count(IEnumerable<T> sequence)
             {
                 var i = 0U;
-                using (var etor = sequence.GetEnumerator())
-                    while (etor.MoveNext())
-                        checked { i++; }
+                using var etor = sequence.GetEnumerator();
+
+                while (etor.MoveNext())
+                {
+                    checked { i++; }
+                }
 
                 return i;
             }
@@ -251,9 +269,12 @@ namespace Luger.Functional
             static ulong count(IEnumerable<T> sequence)
             {
                 var i = 0UL;
-                using (var etor = sequence.GetEnumerator())
-                    while (etor.MoveNext())
-                        checked { i++; }
+                using var etor = sequence.GetEnumerator();
+
+                while (etor.MoveNext())
+                {
+                    checked { i++; }
+                }
 
                 return i;
             }
@@ -274,15 +295,16 @@ namespace Luger.Functional
             var i = uint.MinValue;
 
             do
+            {
                 yield return i++;
+            }
             while (i > uint.MinValue);
         }
 
         /// <summary>
         /// Generates an ordered sequence of unsigned 32-bit numbers in the range [0 .. count).  
         /// </summary>
-        public static IEnumerable<uint> RangeUInt32(uint count)
-            => RangeUInt32().Take(count);
+        public static IEnumerable<uint> RangeUInt32(uint count) => RangeUInt32().Take(count);
 
         /// <summary>
         /// Generates a sequence of unsigned 32-bit numbers in the range [start .. start + count).
@@ -291,7 +313,6 @@ namespace Luger.Functional
         /// <exception cref="OverflowException">
         /// Thrown in checked context if and when sequence wraps around to 0.
         /// </exception>
-        public static IEnumerable<uint> RangeUInt32(uint start, uint count) =>
-            RangeUInt32(count).Map(i => i + start);
+        public static IEnumerable<uint> RangeUInt32(uint start, uint count) => RangeUInt32(count).Map(i => i + start);
     }
 }

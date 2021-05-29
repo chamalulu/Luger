@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using Xunit;
+
 using static Luger.Functional.Maybe;
 
 namespace Luger.Functional.Tests
@@ -187,34 +189,24 @@ namespace Luger.Functional.Tests
             Assert.Equal(expected, actual);
         }
 
-        [Fact(Skip = "Very slow test")]
-        public void RangeUInt32TestFirstLast()
+        [Fact]
+        public void RangeUInt32TestFirst()
         {
             var first = EnumerableExt.RangeUInt32().First();
-            var last = EnumerableExt.RangeUInt32().Last();
 
             Assert.Equal(0u, first);
-            Assert.Equal(uint.MaxValue, last);
         }
 
         [Theory]
-        [InlineData(0u, 0u, new uint[0], false)]
-        [InlineData(0u, 1u, new[] { 0u }, false)]
-        [InlineData(10u, 2u, new[] { 10u, 11u }, false)]
-        [InlineData(uint.MaxValue, 2u, new[] { uint.MaxValue, 0u }, true)]
-        public void RangeUInt32Test(uint start, uint count, IEnumerable<uint> expected, bool allowOEx)
+        [InlineData(0u, 0u, new uint[0])]
+        [InlineData(0u, 1u, new[] { 0u })]
+        [InlineData(10u, 2u, new[] { 10u, 11u })]
+        [InlineData(uint.MaxValue, 2u, new[] { uint.MaxValue, 0u })]
+        public void RangeUInt32Test(uint start, uint count, IEnumerable<uint> expected)
         {
             var actual = EnumerableExt.RangeUInt32(start, count);
 
-            try
-            {
-                Assert.Equal(expected, actual);
-            }
-            catch (OverflowException)
-            {
-                if (!allowOEx)
-                    throw;
-            }
+            Assert.Equal(expected, actual);
         }
     }
 }

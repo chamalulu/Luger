@@ -7,11 +7,9 @@ namespace Luger.Functional
     {
         #region Partial application
 
-        public static Func<T2, TR> Apply<T1, T2, TR>(this Func<T1, T2, TR> f, T1 p)
-            => p2 => f(p, p2);
+        public static Func<T2, TR> Apply<T1, T2, TR>(this Func<T1, T2, TR> f, T1 p) => p2 => f(p, p2);
 
-        public static Func<T2, T3, TR> Apply<T1, T2, T3, TR>(this Func<T1, T2, T3, TR> f, T1 p)
-            => (p2, p3) => f(p, p2, p3);
+        public static Func<T2, T3, TR> Apply<T1, T2, T3, TR>(this Func<T1, T2, T3, TR> f, T1 p) => (p2, p3) => f(p, p2, p3);
 
         #endregion
 
@@ -37,27 +35,20 @@ namespace Luger.Functional
 
         #endregion
 
-        public static Func<TR> Map<T, TR>(this Func<T> ft, Func<T, TR> f)
-            => () => f(ft());
+        public static Func<TR> Map<T, TR>(this Func<T> ft, Func<T, TR> f) => () => f(ft());
 
-        public static Func<TR> Apply<T, TR>(this Func<Func<T, TR>> af, Func<T> ft)
-            => () => af()(ft());
+        public static Func<TR> Apply<T, TR>(this Func<Func<T, TR>> af, Func<T> ft) => () => af()(ft());
 
-        public static Func<TR> Bind<T, TR>(this Func<T> ft, Func<T, Func<TR>> f)
-            => () => f(ft())();
+        public static Func<TR> Bind<T, TR>(this Func<T> ft, Func<T, Func<TR>> f) => () => f(ft())();
 
-        public static Func<T, TR> Compose<T, TC, TR>(this Func<TC, TR> g, Func<T, TC> f) =>
-            t => g(f(t));
+        public static Func<T, TR> Compose<T, TC, TR>(this Func<TC, TR> g, Func<T, TC> f) => t => g(f(t));
 
         #region LINQ method implementations
 
-        public static Func<TR> Select<T, TR>(this Func<T> ft, Func<T, TR> f)
-            => Map(ft, f);
-
-        public static Func<TR> SelectMany<T, TR>(this Func<T> ft, Func<T, Func<TR>> f)
-            => Bind(ft, f);
+        public static Func<TR> Select<T, TR>(this Func<T> ft, Func<T, TR> f) => Map(ft, f);
 
         public static Func<TR> SelectMany<T, TC, TR>(this Func<T> ft, Func<T, Func<TC>> f, Func<T, TC, TR> p)
+
             => () =>
             {
                 var t = ft();
@@ -70,7 +61,10 @@ namespace Luger.Functional
         {
             f = f ?? throw new ArgumentNullException(nameof(f));
 
-            while (true) yield return f();
+            while (true)
+            {
+                yield return f();
+            }
         }
     }
 }

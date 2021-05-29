@@ -54,6 +54,7 @@ namespace Luger.Functional
         /// <param name="func">Right case map function</param>
         /// <returns>Mapped value in right case. Casted original value in left case.</returns>
         public Either<TLeft, TResult> Map<TResult>(Func<TRight, TResult> func)
+
             => Match<Either<TLeft, TResult>>(
                 left: l => l,
                 right: r => func(r));
@@ -65,15 +66,14 @@ namespace Luger.Functional
         /// <param name="func">Right case bind function</param>
         /// <returns>Bound result in right case. Casted original value in left case.</returns>
         public Either<TLeft, TResult> Bind<TResult>(Func<TRight, Either<TLeft, TResult>> func)
+
             => Match(
                 left: l => l,
                 right: func);
 
-        public static implicit operator Either<TLeft, TRight>(TLeft value)
-            => new Either<TLeft, TRight>(value);
+        public static implicit operator Either<TLeft, TRight>(TLeft value) => new(value);
 
-        public static implicit operator Either<TLeft, TRight>(TRight value)
-            => new Either<TLeft, TRight>(value);
+        public static implicit operator Either<TLeft, TRight>(TRight value) => new(value);
     }
 
     public static class EitherExtensions
