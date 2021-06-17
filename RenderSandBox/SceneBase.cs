@@ -48,7 +48,7 @@ namespace RenderSandBox
             CancellationToken cancellationToken)
             where TPixel : unmanaged, IPixel<TPixel>
         {
-            var (target, rect) = job;
+            var rect = job.Rect;
 
             using var memOwner = MemoryPool<TScenePixel>.Shared.Rent(rect.Width);
             var rowBuffer = memOwner.Memory[..rect.Width];
@@ -62,7 +62,7 @@ namespace RenderSandBox
                 _pixelOperations.To(
                     _configuration,
                     rowBuffer.Span,
-                    target.GetPixelRowSpan(rect.Y + row)[rect.X..(rect.X + rect.Width)]);
+                    job.GetPixelRowSpan(row));
 
                 if (cancellationToken.IsCancellationRequested)
                 {

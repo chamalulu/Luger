@@ -15,7 +15,34 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace RenderSandBox
 {
-    internal record RenderJob(Image<Rgb48> Target, Rectangle Rect);
+    internal record RenderJob
+    {
+        public RenderJob(Image<Rgb48> target, Rectangle rect)
+        {
+            if (!target.Bounds().Contains(rect))
+            {
+                throw new ArgumentOutOfRangeException(nameof(rect));
+            }
+
+            Target = target;
+            Rect = rect;
+        }
+
+        public Image<Rgb48> Target { get; private init; }
+
+        public Rectangle Rect { get; private init; }
+
+        /// <summary>
+        /// Gets the representation of the pixels in <see cref="Target"/> as a <see cref="Span{T}"/> of contiguous memory at row
+        /// <paramref name="rowIndex"/> offset and bounded by <see cref="Rect"/>.
+        /// </summary>
+        /// <param name="rowIndex">Index of row relative to <see cref="Rect"/>.</param>
+        public Span<Rgb48> GetPixelRowSpan(int rowIndex)
+
+            => rowIndex >= 0 && rowIndex < Rect.Height
+                ? Target.GetPixelRowSpan(Rect.Y + rowIndex).Slice(Rect.X, Rect.Width)
+                : throw new ArgumentOutOfRangeException(nameof(rowIndex));
+    }
 
     internal record RenderProgress(RenderJob Job, float Percent);
 
