@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,8 +13,7 @@ namespace RenderSandBox
         public Rectangle View { get; }
 
         public ValueTask Render<TPixel>(
-            Rectangle rect,
-            TPixel[] buffer,
+            RenderJob job,
             IProgress<float> progress,
             CancellationToken cancellationToken)
             where TPixel : unmanaged, IPixel<TPixel>;
@@ -40,17 +40,18 @@ namespace RenderSandBox
 
         public Rectangle View { get; }
 
-        protected abstract ValueTask RenderRow(Rectangle rect, int row, TScenePixel[] buffer);
+        protected abstract ValueTask RenderRow(Rectangle rect, int row, Memory<TScenePixel> buffer);
 
         public async ValueTask Render<TPixel>(
-            Rectangle rect,
-            TPixel[] buffer,
+            RenderJob job,
             IProgress<float> progress,
             CancellationToken cancellationToken)
             where TPixel : unmanaged, IPixel<TPixel>
         {
-            // TODO: Render directly into image
-            var rowBuffer = new TScenePixel[rect.Width];
+            var (target, rect) = job;
+
+            using var memOwner = MemoryPool<TScenePixel>.Shared.Rent(rect.Width);
+            var rowBuffer = memOwner.Memory[..rect.Width];
 
             for (var row = 0; row < rect.Height; row++)
             {
@@ -58,7 +59,10 @@ namespace RenderSandBox
 
                 await RenderRow(rect, row, rowBuffer);
 
-                _pixelOperations.To(_configuration, rowBuffer, buffer.AsSpan(row * rect.Width, rect.Width));
+                _pixelOperations.To(
+                    _configuration,
+                    rowBuffer.Span,
+                    target.GetPixelRowSpan(rect.Y + row)[rect.X..(rect.X + rect.Width)]);
 
                 if (cancellationToken.IsCancellationRequested)
                 {

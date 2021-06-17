@@ -15,13 +15,13 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace RenderSandBox
 {
-    internal record RenderJob(Rectangle Rect);
+    internal record RenderJob(Image<Rgb48> Target, Rectangle Rect);
 
     internal record RenderProgress(RenderJob Job, float Percent);
 
     internal record RenderStarted(RenderJob Job) : RenderProgress(Job, 0f);
 
-    internal record RenderFinished(RenderJob Job, Image<Rgb48> Result) : RenderProgress(Job, 1f);
+    internal record RenderFinished(RenderJob Job) : RenderProgress(Job, 1f);
 
     internal class Program
     {
@@ -31,32 +31,13 @@ namespace RenderSandBox
         {
             observer.OnNext(new RenderStarted(job));
 
-            var (x, y, width, height) = job.Rect;
-
-            // TODO: Render directly into image
-            var buffer = new Rgb48[width * height];
-
             var progress = new Progress<float>(percent => observer.OnNext(new RenderProgress(job, percent)));
 
-            await Scene.Render(job.Rect, buffer, progress, cancellationToken);
+            await Scene.Render<Rgb48>(job, progress, cancellationToken);
 
-            var image = Image.LoadPixelData(buffer, width, height);
-
-            observer.OnNext(new RenderFinished(job, image));
+            observer.OnNext(new RenderFinished(job));
 
             observer.OnCompleted();
-        }
-
-        private static void CopyResultToBuffer(Image<Rgb48> image, RenderJob job, Image<Rgb48> result)
-        {
-            var rect = job.Rect;
-
-            for (var row = 0; row < result.Height; row++)
-            {
-                var resultRowSpan = result.GetPixelRowSpan(row);
-                var imageRowSpan = image.GetPixelRowSpan(rect.Y + row);
-                resultRowSpan.CopyTo(imageRowSpan[rect.X..]);
-            }
         }
 
         private static async Task<int> Main(string[] args)
@@ -70,15 +51,17 @@ namespace RenderSandBox
 
             var jobRectSize = new Size(Scene.View.Width / xParts, Scene.View.Height / yParts);
 
-            var jobs = Enumerable.Range(0, yParts)
-                .SelectMany(
-                    _ => Enumerable.Range(0, xParts),
-                    (y, x) => new RenderJob(new Rectangle(new Point(x * jobRectSize.Width, y * jobRectSize.Height), jobRectSize)))
-                .ToList();
-
             using var memOwner = MemoryPool<Rgb48>.Shared.Rent(width * height);
 
             var image = Image.WrapMemory(memOwner, width, height);
+
+            var jobs = Enumerable.Range(0, yParts)
+                .SelectMany(
+                    _ => Enumerable.Range(0, xParts),
+                    (y, x) => new RenderJob(
+                        image,
+                        new Rectangle(new Point(x * jobRectSize.Width, y * jobRectSize.Height), jobRectSize)))
+                .ToList();
 
             IObservable<RenderProgress> render(RenderJob job)
                 => Observable.Create<RenderProgress>((observer, cancellationToken)
@@ -111,8 +94,7 @@ namespace RenderSandBox
                 .WithLatestFrom(progressPercent)
                 .ForEachAsync(pair =>
                 {
-                    var ((job, result), percent) = pair;
-                    CopyResultToBuffer(image, job, result);
+                    var ((job, _), percent) = pair;
                     Console.Error.WriteLine($"[{percent:P}] Rendering finished for {job}.");
                 });
 
@@ -127,7 +109,7 @@ namespace RenderSandBox
             {
                 BitDepth = PngBitDepth.Bit16,
                 ColorType = PngColorType.Rgb,
-                CompressionLevel = PngCompressionLevel.BestCompression,
+                //CompressionLevel = PngCompressionLevel.BestCompression,
             };
 
             var fileName = "render.png";

@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 
 using SixLabors.ImageSharp;
@@ -9,9 +10,13 @@ namespace RenderSandBox
     {
         public TestScene(Size size, int jitter = 0) : base(new(Point.Empty, size), jitter: jitter) { }
 
-        protected override ValueTask RenderRow(Rectangle rect, int row, RgbaVector[] buffer)
+        protected override ValueTask RenderRow(Rectangle rect, int row, Memory<RgbaVector> buffer)
         {
             var rwh = (float)(rect.Width * rect.Height);
+
+            /* We can have a local span here only because this method is not async.
+             * In a more complex scene, we'd pass buffer down the call chain. */
+            var span = buffer.Span;
 
             for (var i = 0; i < buffer.Length; i++)
             {
@@ -19,7 +24,7 @@ namespace RenderSandBox
                 var r = rect.X * k / View.Width;
                 var b = rect.Y * k / View.Height;
 
-                buffer[i] = new RgbaVector(r, r * b, b);
+                span[i] = new RgbaVector(r, r * b, b);
             }
 
             return ValueTask.CompletedTask;
