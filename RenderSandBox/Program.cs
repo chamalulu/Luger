@@ -132,20 +132,18 @@ namespace RenderSandBox
 
             Console.Error.WriteLine("All rendering finished.");
 
-            var encoder = new PngEncoder
-            {
-                BitDepth = PngBitDepth.Bit16,
-                ColorType = PngColorType.Rgb,
-                //CompressionLevel = PngCompressionLevel.BestCompression,
-            };
-
-            var fileName = "render.png";
-
-            var fileInfo = new FileInfo(fileName);
+            var fileInfo = new FileInfo("render.png");
 
             Console.Error.Write($"Saving image to {fileInfo.FullName} ... ");
 
-            image.Save("render.png", encoder);
+            await image.SaveAsPngAsync(
+                path: fileInfo.FullName,
+                encoder: new PngEncoder
+                {
+                    BitDepth = PngBitDepth.Bit16,
+                    ColorType = PngColorType.Rgb,
+                    //CompressionLevel = PngCompressionLevel.BestCompression,
+                });
 
             Console.Error.WriteLine("Done.");
 
