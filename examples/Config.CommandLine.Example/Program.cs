@@ -14,17 +14,6 @@ namespace Config.CommandLine.Example
 {
     internal class Program
     {
-        private static bool FailureSignalled;
-
-        private static void FailureCallback(string message, TokenBase? token)
-        {
-            FailureSignalled = true;
-
-            Console.WriteLine();
-            Console.WriteLine("Command Line Configuration failed with the following error.");
-            Console.WriteLine(token is null ? $"Message: {message}" : $"Message: {message}, Token: {token}");
-        }
-
         private static IHostBuilder CreateHostBuilder(string[] args)
 
             => Host.CreateDefaultBuilder()  // N.B. Don't use the overload with args parameter.
@@ -34,10 +23,6 @@ namespace Config.CommandLine.Example
                     {
                         // Set args. Not really needed. Default is taken from Environment.GetCommandLineArgs().
                         source.Args = args;
-
-                        // Set failure callback where configuration can report configuration errors.
-                        // Is there a standard way to report configuration errors (not exceptions) during host configuration?
-                        source.FailureCallback = FailureCallback;
 
                         // Configure command line specification.
                         // I.e. the specification of how to parse and interpret the command line arguments.
@@ -59,31 +44,41 @@ namespace Config.CommandLine.Example
 
         private static async Task<int> Main(string[] args)
         {
-            using var host = CreateHostBuilder(args).Build();
-
-            if (FailureSignalled)
+            try
             {
+                using var host = CreateHostBuilder(args).Build();
+
+                var configurationRoot = host.Services.GetService(typeof(IConfiguration)) as ConfigurationRoot
+                    ?? throw new ApplicationException("Unable to get configuration service.");
+
+                PrintProviderInfo(configurationRoot);
+
+                var commandLineSection = configurationRoot.GetSection("CommandLine");   // As set in CreateHostBuilder
+
+                foreach (var (key, value) in commandLineSection.AsEnumerable())
+                {
+                    Console.WriteLine($"{key}:\t{value}");
+                }
+
+                Console.WriteLine();
+                Console.WriteLine("Press Ctrl-C to exit.");
+
+                await host.RunAsync();
+
+                return Environment.ExitCode;
+            }
+            catch (ParseFailuresException pfex)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Command Line Configuration failed with the following error(s).");
+
+                foreach (var (message, token) in pfex.Failures)
+                {
+                    Console.WriteLine(token is null ? $"Message: {message}" : $"Message: {message}, Token: {token}");
+                }
+
                 return 1;
             }
-
-            var configurationRoot = host.Services.GetService(typeof(IConfiguration)) as ConfigurationRoot
-                ?? throw new ApplicationException("Unable to get configuration service.");
-
-            PrintProviderInfo(configurationRoot);
-
-            var commandLineSection = configurationRoot.GetSection("CommandLine");   // As set in CreateHostBuilder
-
-            foreach (var (key, value) in commandLineSection.AsEnumerable())
-            {
-                Console.WriteLine($"{key}:\t{value}");
-            }
-
-            Console.WriteLine();
-            Console.WriteLine("Press Ctrl-C to exit.");
-
-            await host.RunAsync();
-
-            return Environment.ExitCode;
         }
 
         private static readonly Lazy<System.Reflection.FieldInfo?> ConfigFieldInfo = new(()

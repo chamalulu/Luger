@@ -15,21 +15,18 @@ namespace Luger.Configuration
         /// <param name="configurationBuilder">Configuration builder provided by host builder.</param>
         /// <param name="args">Command line arguments to parse.</param>
         /// <param name="specification">Specification for parsing and interpreting command line arguments.</param>
-        /// <param name="failureCallback">Callback for provider to report parsing errors.</param>
         /// <param name="commandLineSection">Configuration section to root configuration items in.</param>
         /// <returns>The configuration builder.</returns>
         public static IConfigurationBuilder AddCommandLineConfiguration(
             this IConfigurationBuilder configurationBuilder,
             string[]? args = null,
             CommandLineSpecification? specification = null,
-            FailureCallback? failureCallback = null,
             string? commandLineSection = null)
         {
             var source = new CommandLineConfigurationSource
             {
                 Args = args,
                 Specification = specification,
-                FailureCallback = failureCallback,
                 CommandLineSection = commandLineSection
             };
 

@@ -23,11 +23,6 @@ namespace Luger.Configuration.CommandLine
         public CommandLineSpecification? Specification { get; set; }
 
         /// <summary>
-        /// Callback for reporting failures in parsing arguments. If not set, failures are not reported.
-        /// </summary>
-        public FailureCallback? FailureCallback { get; set; }
-
-        /// <summary>
         /// The root configuration section for command line configuration items. If not set, configuration root is used.
         /// </summary>
         public string? CommandLineSection { get; set; }
@@ -41,9 +36,8 @@ namespace Luger.Configuration.CommandLine
         public IConfigurationProvider Build(IConfigurationBuilder builder)
 
             => new CommandLineConfigurationProvider(
-                args: Args ?? Environment.GetCommandLineArgs(),
+                args: Args ?? Environment.GetCommandLineArgs()[1..],
                 specification: Specification,
-                failureCallback: FailureCallback,
                 commandLineSection: CommandLineSection);
     }
 }

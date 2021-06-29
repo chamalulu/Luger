@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.Serialization;
 
 using Luger.Configuration.CommandLine.Specifications;
 
@@ -8,12 +10,19 @@ using Microsoft.Extensions.Configuration;
 
 namespace Luger.Configuration.CommandLine
 {
-    /// <summary>
-    /// Delegate for callback used to report errors in configuration.
-    /// </summary>
-    /// <param name="message">Error message.</param>
-    /// <param name="token">Optional token.</param>
-    public delegate void FailureCallback(string message, TokenBase? token);
+    public class ParseFailuresException : Exception
+    {
+        private readonly ImmutableList<(string message, ParseState state)> _failures;
+
+        public ParseFailuresException(ImmutableList<(string message, ParseState state)> failures) : base(failures[0].message)
+
+            => _failures = failures;
+
+        public IEnumerable<(string message, TokenBase? token)> Failures
+
+            => from failure in _failures
+               select (failure.message, failure.state.Tokens.FirstOrDefault());
+    }
 
     /// <summary>
     /// Configuration provider parsing command line arguments according to given specification.
@@ -32,12 +41,10 @@ namespace Luger.Configuration.CommandLine
         public CommandLineConfigurationProvider(
             string[] args,
             CommandLineSpecification? specification = null,
-            FailureCallback? failureCallback = null,
             string? commandLineSection = null)
         {
             Args = ImmutableList.CreateRange(args);
             Specification = specification ?? CommandLineSpecification.Empty;
-            FailureCallback = failureCallback;
             CommandLineSection = commandLineSection;
         }
 
@@ -52,31 +59,9 @@ namespace Luger.Configuration.CommandLine
         public CommandLineSpecification Specification { get; }
 
         /// <summary>
-        /// Callback used to report parsing errors. If null, errors are not reported.
-        /// </summary>
-        protected FailureCallback? FailureCallback { get; }
-
-        /// <summary>
         /// Configuration section to root configuration items in. If null, configuration root is used.
         /// </summary>
         protected string? CommandLineSection { get; }
-
-        /// <summary>
-        /// Report failures using <see cref="FailureCallback"/> if set. Otherwise a noop.
-        /// </summary>
-        /// <param name="failures">
-        /// List of failures to report. For each failure, only the first remaining token, if any, is reported.
-        /// </param>
-        protected virtual void ReportFailures(ImmutableList<(string message, ParseState state)> failures)
-        {
-            if (FailureCallback is not null)
-            {
-                foreach (var (message, state) in failures)
-                {
-                    FailureCallback.Invoke(message, state.Tokens.FirstOrDefault());
-                }
-            }
-        }
 
         /// <summary>
         /// Set configuration items in <see cref="ConfigurationProvider.Data"/>.
@@ -118,8 +103,7 @@ namespace Luger.Configuration.CommandLine
             if (failures.Any())
             {
                 // Failed to parse command line given these command line arguments and specification
-                // Report failures to client provided callback.
-                ReportFailures(failures);
+                throw new ParseFailuresException(failures);
             }
             else
             {

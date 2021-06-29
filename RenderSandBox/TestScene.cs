@@ -1,33 +1,58 @@
 using System;
+using System.Numerics;
+using System.Threading;
 using System.Threading.Tasks;
-
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace RenderSandBox
 {
-    internal class TestScene : SceneBase<RgbaVector>
+    internal class TestScene : IScene
     {
-        public TestScene(Size size, int jitter = 0) : base(new(Point.Empty, size), jitter: jitter) { }
+        private Matrix3x2 RedTransform, GreenTransform, BlueTransform;
 
-        protected override ValueTask RenderRow(Rectangle rect, int row, Memory<RgbaVector> buffer)
+        public float ViewRadius => 1f;
+
+        private static Matrix3x2 CreateM32(Random rng)
         {
-            var rwh = (float)(rect.Width * rect.Height);
+            var tx = (float)rng.NextDouble();
+            var ty = (float)rng.NextDouble();
+            var theta = (float)rng.NextDouble() * MathF.PI * .25f;
+            var scale = (float)rng.NextDouble() * 15f + 1f;
 
-            /* We can have a local span here only because this method is not async.
-             * In a more complex scene, we'd pass buffer down the call chain. */
-            var span = buffer.Span;
+            return Matrix3x2.Identity
+                * Matrix3x2.CreateTranslation(tx, ty)
+                * Matrix3x2.CreateRotation(theta)
+                * Matrix3x2.CreateScale(scale);
+        }
 
-            for (var i = 0; i < buffer.Length; i++)
-            {
-                var k = i * row / rwh;
-                var r = rect.X * k / View.Width;
-                var b = rect.Y * k / View.Height;
+        public TestScene()
+        {
+            var rng = new Random();
+            RedTransform = CreateM32(rng);
+            GreenTransform = CreateM32(rng);
+            BlueTransform = CreateM32(rng);
+        }
 
-                span[i] = new RgbaVector(r, r * b, b);
-            }
+        private static Vector2 Center = Vector2.One / 2f;
 
-            return ValueTask.CompletedTask;
+        private static float XY2I(Vector2 xy)
+        {
+            var xFloor = MathF.Floor(xy.X);
+            var yFloor = MathF.Floor(xy.Y);
+            var xyRemainder = xy - new Vector2(xFloor, yFloor);
+
+            var distance = Vector2.Distance(xyRemainder, Center);
+
+            return distance < .5f
+                ? 1f/* - distance * 2f*/
+                : 0f;
+        }
+
+        public ValueTask<Vector4> GetColor(Vector2 point, Vector2 size, CancellationToken cancellationToken)
+        {
+            var r = XY2I(Vector2.Transform(point, RedTransform));
+            var g = XY2I(Vector2.Transform(point, GreenTransform));
+            var b = XY2I(Vector2.Transform(point, BlueTransform));
+            return ValueTask.FromResult(new Vector4(r, g, b, 1f));
         }
     }
 }
