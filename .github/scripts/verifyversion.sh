@@ -13,7 +13,7 @@ then
 	echo "Finding VersionPrefix element..."
 
 	VERSION_PREFIX=$(xmllint --xpath "/Project/PropertyGroup/VersionPrefix/text()" $2)
-	
+
 	if [ $? -eq 0 ]
 	then
 		echo "VersionPrefix element found with content \"$VERSION_PREFIX\"."
@@ -23,7 +23,7 @@ then
 		echo "Finding VersionSuffix element..."
 
 		VERSION_SUFFIX=$(xmllint --xpath "/Project/PropertyGroup/VersionSuffix/text()" $2)
-		
+
 		if [ $? -eq 0 ] && [ -n $VERSION_SUFFIX ]
 		then
 			echo "VersionSuffix element found with content \"$VERSION_SUFFIX\"."
@@ -34,7 +34,7 @@ then
 		fi
 	else
 		echo "VersionPrefix element not found."
-        echo "No project version specified. Go ahead and use tagged version."
+		echo "No project version specified. Go ahead and use tagged version."
 
 		exit 0
 	fi
@@ -50,4 +50,3 @@ else
 	echo "Not equal. Fail."
 	exit 1
 fi
-
