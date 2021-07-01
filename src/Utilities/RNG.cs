@@ -5,8 +5,6 @@ using System.Numerics;
 
 using Luger.Functional;
 
-#pragma warning disable CA1303 // Do not pass literals as localized parameters
-
 namespace Luger.Utilities
 {
     public interface IRNGState
@@ -40,7 +38,7 @@ namespace Luger.Utilities
         /// </summary>
         public static Transition<IRNGState, IEnumerable<byte>> NextBytes(uint count)
 
-            => new Transition<IRNGState, IEnumerable<byte>>(state => (state.NextBytes(count), state));
+            => new(state => (state.NextBytes(count), state));
 
         /// <summary>
         /// Return next random ulong in range [0 .. maxValue)
@@ -98,7 +96,7 @@ namespace Luger.Utilities
             => NextUInt64().Map(ul =>
             {
                 long exponent = ul == 0 ? 0 : BitOperations.Log2(ul) + 959;
-                long mantissa = (long)ul & 0xF_FFFF_FFFF_FFFF;
+                var mantissa = (long)ul & 0xF_FFFF_FFFF_FFFF;
 
                 return BitConverter.Int64BitsToDouble(exponent << 52 | mantissa);
             });
@@ -133,7 +131,9 @@ namespace Luger.Utilities
         public ulong NextUInt64()
         {
             if (_freshBytes < sizeof(ulong))
+            {
                 FillBuffer();
+            }
 
             var startIndex = _buffer.Length - _freshBytes;
 
@@ -147,9 +147,11 @@ namespace Luger.Utilities
             for (uint c = 0; c < count; c++)
             {
                 if (_freshBytes == 0)
+                {
                     FillBuffer();
+                }
 
-                byte nextByte = _buffer[^_freshBytes];
+                var nextByte = _buffer[^_freshBytes];
 
                 _freshBytes -= 1;
 
@@ -181,7 +183,9 @@ namespace Luger.Utilities
         public IEnumerable<byte> NextBytes(uint count)
         {
             if (count == 0)
+            {
                 return Enumerable.Empty<byte>();
+            }
 
             // This expression would work for signed count even when count is 0.
             var ulongCount = (count - 1) / sizeof(ulong) + 1;
@@ -217,12 +221,12 @@ namespace Luger.Utilities
         public XorShift64StarRNGState(ulong seed) : base(seed, XorShift64Star)
         {
             if (seed == 0)
+            {
                 throw new ArgumentOutOfRangeException(nameof(seed), $"{nameof(seed)} = 0");
+            }
         }
 
         // Don't run this just around midnight, January 1, 0001 :)
-        public static XorShift64StarRNGState FromClock()
-
-            => new XorShift64StarRNGState(unchecked((ulong)DateTime.Now.Ticks));
+        public static XorShift64StarRNGState FromClock() => new(unchecked((ulong)DateTime.Now.Ticks));
     }
 }

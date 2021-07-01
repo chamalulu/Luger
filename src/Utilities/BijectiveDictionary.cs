@@ -20,7 +20,11 @@ namespace Luger.Utilities
         /// <typeparam name="TI">Type of item</typeparam>
         /// <typeparam name="TCI">Type of co-item</typeparam>
         /// <returns>An empty bijective dictionary with default comparers.</returns>
-        public static BijectiveDictionary<TI, TCI> Create<TI, TCI>() => BijectiveDictionary<TI, TCI>.Empty;
+        public static BijectiveDictionary<TI, TCI> Create<TI, TCI>()
+            where TI : notnull
+            where TCI : notnull
+
+            => BijectiveDictionary<TI, TCI>.Empty;
 
         /// <summary>
         /// Creates an empty bijective dictionary with specified comparers.
@@ -32,6 +36,8 @@ namespace Luger.Utilities
         public static BijectiveDictionary<TI, TCI> Create<TI, TCI>(
             IEqualityComparer<TI> itemComparer,
             IEqualityComparer<TCI> coItemComparer)
+            where TI : notnull
+            where TCI : notnull
 
             => Create<TI, TCI>().WithComparers(itemComparer, coItemComparer);
 
@@ -50,6 +56,8 @@ namespace Luger.Utilities
             BijectiveDictionary<TI, TCI> seed,
             Func<TSource, TI> itemSelector,
             Func<TSource, TCI> coItemSelector)
+            where TI : notnull
+            where TCI : notnull
 
             => source.Aggregate(seed, (bd, s) => bd.Add(itemSelector(s), coItemSelector(s)));
 
@@ -61,6 +69,8 @@ namespace Luger.Utilities
             this IEnumerable<TSource> source,
             Func<TSource, TI> itemSelector,
             Func<TSource, TCI> coItemSelector)
+            where TI : notnull
+            where TCI : notnull
 
             => AggregateSource(source, Create<TI, TCI>(), itemSelector, coItemSelector);
 
@@ -75,6 +85,8 @@ namespace Luger.Utilities
             Func<TSource, TCI> coItemSelector,
             IEqualityComparer<TI> itemComparer,
             IEqualityComparer<TCI> coItemComparer)
+            where TI : notnull
+            where TCI : notnull
 
             => AggregateSource(source, Create(itemComparer, coItemComparer), itemSelector, coItemSelector);
 
@@ -86,6 +98,8 @@ namespace Luger.Utilities
         /// <inheritdoc cref="Create{TI, TCI}"/>
         public static BijectiveDictionary<TI, TCI> ToBijectiveDictionary<TI, TCI>(
             this IEnumerable<KeyValuePair<TI, TCI>> pairs)
+            where TI : notnull
+            where TCI : notnull
 
             => AggregateSource(pairs, Create<TI, TCI>(), kvp => kvp.Key, kvp => kvp.Value);
 
@@ -98,6 +112,8 @@ namespace Luger.Utilities
             this IEnumerable<KeyValuePair<TI, TCI>> pairs,
             IEqualityComparer<TI> itemComparer,
             IEqualityComparer<TCI> coItemComparer)
+            where TI : notnull
+            where TCI : notnull
 
             => AggregateSource(pairs, Create(itemComparer, coItemComparer), kvp => kvp.Key, kvp => kvp.Value);
     }
@@ -114,6 +130,8 @@ namespace Luger.Utilities
     ///  manipulations applied and a new <see cref="BijectiveDictionary{TI, TCI}"/> is returned.
     /// </remarks>
     public class BijectiveDictionary<TI, TCI> : IEnumerable<(TI Item, TCI CoItem)>
+        where TI : notnull
+        where TCI : notnull
     {
         private readonly ImmutableDictionary<TI, TCI> _itemDict;
         private readonly ImmutableDictionary<TCI, TI> _coItemDict;
@@ -135,9 +153,9 @@ namespace Luger.Utilities
         /// <summary>
         /// Gets an empty bijective dictionary.
         /// </summary>
-        public readonly static BijectiveDictionary<TI, TCI> Empty = new BijectiveDictionary<TI, TCI>(
-                ImmutableDictionary<TI, TCI>.Empty,
-                ImmutableDictionary<TCI, TI>.Empty);
+        public static readonly BijectiveDictionary<TI, TCI> Empty = new(
+            ImmutableDictionary<TI, TCI>.Empty,
+            ImmutableDictionary<TCI, TI>.Empty);
 
         /// <summary>
         /// Gets the number of associations in the bijective dictionary.
@@ -235,7 +253,7 @@ namespace Luger.Utilities
         public BijectiveDictionary<TI, TCI> Clear() => With(_itemDict.Clear(), _coItemDict.Clear());
 
         public bool Contains(TI item, TCI coItem)
-            => _itemDict.TryGetValue(item, out TCI ci) && _itemDict.ValueComparer.Equals(coItem, ci);
+            => _itemDict.TryGetValue(item, out var ci) && _itemDict.ValueComparer.Equals(coItem, ci);
 
         public bool Contains(TI item) => _itemDict.ContainsKey(item);
 

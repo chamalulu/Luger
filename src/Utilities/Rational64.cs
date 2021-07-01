@@ -23,38 +23,38 @@ namespace Luger.Utilities
         /// <summary>
         /// Represents canonical 0 of Rational64. Internally (0/1u).
         /// </summary>
-        public static readonly Rational64 Zero = new Rational64(0, 1);
+        public static readonly Rational64 Zero = new(0, 1);
 
         /// <summary>
         /// Represents the smallest positive Rational64 value that is greater than zero.
         /// </summary>
-        public static readonly Rational64 Epsilon = new Rational64(1, uint.MaxValue);
+        public static readonly Rational64 Epsilon = new(1, uint.MaxValue);
 
         /// <summary>
         /// Represents the largest possible value of Rational64.
         /// </summary>
-        public static readonly Rational64 MaxValue = new Rational64(int.MaxValue, 1);
+        public static readonly Rational64 MaxValue = new(int.MaxValue, 1);
 
         /// <summary>
         /// Represents the smallest possible value of Rational64.
         /// </summary>
-        public static readonly Rational64 MinValue = new Rational64(int.MinValue, 1);
+        public static readonly Rational64 MinValue = new(int.MinValue, 1);
 
         /// <summary>
         /// Represents a value that is not a number (NaN).
         /// This is the default value of Rational64.
         /// </summary>
-        public static readonly Rational64 NaN = new Rational64(0, 0);
+        public static readonly Rational64 NaN = new(0, 0);
 
         /// <summary>
         /// Represents positive infinity.
         /// </summary>
-        public static readonly Rational64 PositiveInfinity = new Rational64(1, 0);
+        public static readonly Rational64 PositiveInfinity = new(1, 0);
 
         /// <summary>
         /// Represents negative infinity.
         /// </summary>
-        public static readonly Rational64 NegativeInfinity = new Rational64(-1, 0);
+        public static readonly Rational64 NegativeInfinity = new(-1, 0);
 
         public readonly int _numerator;
         public readonly uint _denominator;
@@ -71,44 +71,51 @@ namespace Luger.Utilities
         public static Rational64 Create(int numerator, uint denominator)
         {
             if (denominator == 0)
+            {
                 throw new DivideByZeroException();
+            }
 
             // Check corner case where (int)gcd becomes int.MinValue
             if (numerator == int.MinValue && denominator == 0x8000_0000u)
+            {
                 return new Rational64(-1, 1);
+            }
 
-            uint gcd = IntExt.Gcd(IntExt.Abs(numerator), denominator);
+            var gcd = IntExt.Gcd(IntExt.Abs(numerator), denominator);
 
             return new Rational64(numerator / (int)gcd, denominator / gcd);
         }
 
         // Delegate non-normal comparison and representation to System.Double
 
-        public int CompareTo(Rational64 other) =>
-            IsNormal(this) && IsNormal(other)
+        public int CompareTo(Rational64 other)
+
+            => IsNormal(this) && IsNormal(other)
                 ? (_numerator * other._denominator).CompareTo(other._numerator * _denominator)
                 : ((double)this).CompareTo((double)other);
 
-        public bool Equals(Rational64 other) =>
-            IsNormal(this) && IsNormal(other)
+        public bool Equals(Rational64 other)
+
+            => IsNormal(this) && IsNormal(other)
                 ? (_numerator * other._denominator).Equals(other._numerator * _denominator)
                 : ((double)this).Equals((double)other);
 
-        public override bool Equals(object obj) => obj is Rational64 r && Equals(r);
+        public override bool Equals(object? obj) => obj is Rational64 r && Equals(r);
 
-        public override int GetHashCode() =>
-            HashCode.Combine(_numerator, _denominator);
+        public override int GetHashCode() => HashCode.Combine(_numerator, _denominator);
 
-        public string ToString(string format, IFormatProvider provider)
+        public string ToString(string? format, IFormatProvider? provider)
         {
             if (IsNormal(this))
             {
-                string nRepr = _numerator.ToString(format, provider);
-                string dRepr = _denominator.ToString(format, provider);
+                var nRepr = _numerator.ToString(format, provider);
+                var dRepr = _denominator.ToString(format, provider);
                 return $"{nRepr}/{dRepr}";
             }
             else
+            {
                 return ((double)this).ToString(format, provider);
+            }
         }
 
         public string ToString(IFormatProvider provider) => ToString(null, provider);
@@ -117,43 +124,46 @@ namespace Luger.Utilities
 
         public override string ToString() => ToString(null, null);
 
-        public static bool IsInfinity(Rational64 value) =>
-            value._denominator == 0 && value._numerator != 0;
+        public static bool IsInfinity(Rational64 value) => value._denominator == 0 && value._numerator != 0;
 
-        public static bool IsNaN(Rational64 value) =>
-            value._denominator == 0 && value._numerator == 0;
+        public static bool IsNaN(Rational64 value) => value._denominator == 0 && value._numerator == 0;
 
-        public static bool IsNegativeInfinity(Rational64 value) =>
-            value._denominator == 0 && value._numerator < 0;
+        public static bool IsNegativeInfinity(Rational64 value) => value._denominator == 0 && value._numerator < 0;
 
-        public static bool IsNormal(Rational64 value) =>
-            value._denominator != 0;
+        public static bool IsNormal(Rational64 value) => value._denominator != 0;
 
-        public static bool IsPositiveInfinity(Rational64 value) =>
-            value._denominator == 0 && value._numerator > 0;
+        public static bool IsPositiveInfinity(Rational64 value) => value._denominator == 0 && value._numerator > 0;
 
-        public static implicit operator Rational64(int value) =>
-            new Rational64(value, 1);
+        public static implicit operator Rational64(int value) => new(value, 1);
 
-        public static explicit operator int(Rational64 value) =>
-            IsNormal(value)
+        public static explicit operator int(Rational64 value)
+
+            => IsNormal(value)
                 ? (int)(value._numerator / value._denominator)
                 : throw new InvalidCastException();
 
         public static explicit operator Rational64(double value)
         {
             if (double.IsNaN(value))
+            {
                 return NaN;
+            }
 
             if (double.IsNegativeInfinity(value))
+            {
                 return NegativeInfinity;
+            }
 
             if (double.IsPositiveInfinity(value))
+            {
                 return PositiveInfinity;
+            }
 
             if (value < int.MinValue / 2 || value > int.MaxValue / 2)
+            {
                 // May throw overflow exception in checked environment
-                return new Rational64((int)value, 1);
+                return new((int)value, 1);
+            }
 
             /* Since a normal (IEEE 754) double is always a (dyadic) rational,
              *  I was initially tempted to just bit-massage it into a Rational64
@@ -163,23 +173,25 @@ namespace Luger.Utilities
              *  rational approximation of the "real" value.
              */
 
-            double t = Math.Floor(value);
+            var t = Math.Floor(value);
 
             var (a, b, c, d) = ((int)t, 1, 1u, 0u);
 
-            while (value != t) checked
+            while (value != t)
             {
-                value = 1d / (value - t);
-                t = Math.Floor(value);
+                checked
+                {
+                    value = 1d / (value - t);
+                    t = Math.Floor(value);
 
-                try
-                {
-                    (a, b, c, d) =
-                        (a * (int)t + b, a, c * (uint)t + d, c);
-                }
-                catch (OverflowException)
-                {
-                    break;
+                    try
+                    {
+                        (a, b, c, d) = (a * (int)t + b, a, c * (uint)t + d, c);
+                    }
+                    catch (OverflowException)
+                    {
+                        break;
+                    }
                 }
             }
 
@@ -189,52 +201,51 @@ namespace Luger.Utilities
         public static explicit operator double(Rational64 value)
         {
             if (IsNormal(value))
-                return (double)value._numerator / (double)value._denominator;
+            {
+                return (double)value._numerator / value._denominator;
+            }
 
             if (IsNegativeInfinity(value))
+            {
                 return double.NegativeInfinity;
+            }
 
             if (IsPositiveInfinity(value))
+            {
                 return double.PositiveInfinity;
+            }
 
             return double.NaN;
         }
 
         public static Rational64 operator +(Rational64 value) => value;
 
-        public static Rational64 operator -(Rational64 value) => new Rational64(-value._numerator, value._denominator);
+        public static Rational64 operator -(Rational64 value) => new(-value._numerator, value._denominator);
 
-        public static Rational64 operator !(Rational64 value)
+        public static Rational64 operator !(Rational64 value) => (value._numerator, value._denominator) switch
         {
-            if (IsNormal(value))
-            {
-                var cmp = value.CompareTo(Zero);
-
-                if (cmp < 0)
-                    return new Rational64(-(int)value._denominator, IntExt.Abs(value._numerator));
-
-                if (cmp > 0)
-                    return new Rational64((int)value._denominator, IntExt.Abs(value._numerator));
-
-                return PositiveInfinity;
-            }
-
-            if (IsInfinity(value))
-                return Zero;
-
-            return NaN;
-        }
+            // NaN
+            (0, 0) => NaN,
+            // Infinity
+            (_, 0) => Zero,
+            // Negative
+            ( < 0, _) => new(-(int)value._denominator, IntExt.Abs(value._numerator)),
+            // Positive
+            ( > 0, _) => new((int)value._denominator, (uint)value._numerator),
+            // Zero
+            (0, _) => PositiveInfinity
+        };
 
         public static Rational64 operator +(Rational64 x, Rational64 y)
         {
             if (IsNormal(x) && IsNormal(y))
             {
-                uint gcd = IntExt.Gcd(x._denominator, y._denominator);
+                var gcd = IntExt.Gcd(x._denominator, y._denominator);
 
-                long numerator = x._numerator * (y._denominator / gcd) + y._numerator * (x._denominator / gcd);
-                uint denominator = x._denominator * (y._denominator / gcd);
+                var numerator = x._numerator * (y._denominator / gcd) + y._numerator * (x._denominator / gcd);
+                var denominator = x._denominator * (y._denominator / gcd);
 
-                return new Rational64((int)numerator, denominator);
+                return new((int)numerator, denominator);
             }
 
             return (Rational64)((double)x + (double)y);
@@ -244,12 +255,12 @@ namespace Luger.Utilities
         {
             if (IsNormal(x) && IsNormal(y))
             {
-                uint gcd = IntExt.Gcd(x._denominator, y._denominator);
+                var gcd = IntExt.Gcd(x._denominator, y._denominator);
 
-                long numerator = x._numerator * (y._denominator / gcd) - y._numerator * (x._denominator / gcd);
-                uint denominator = x._denominator * (y._denominator / gcd);
+                var numerator = x._numerator * (y._denominator / gcd) - y._numerator * (x._denominator / gcd);
+                var denominator = x._denominator * (y._denominator / gcd);
 
-                return new Rational64((int)numerator, denominator);
+                return new((int)numerator, denominator);
             }
 
             return (Rational64)((double)x - (double)y);
@@ -259,12 +270,12 @@ namespace Luger.Utilities
         {
             if (IsNormal(x) && IsNormal(y))
             {
-                long numerator = (long)x._numerator * (long)y._numerator;
-                ulong denominator = (ulong)x._denominator * (ulong)y._denominator;
+                var numerator = (long)x._numerator * y._numerator;
+                var denominator = (ulong)x._denominator * y._denominator;
 
-                ulong gcd = IntExt.Gcd(IntExt.Abs(numerator), denominator);
+                var gcd = IntExt.Gcd(IntExt.Abs(numerator), denominator);
 
-                return new Rational64((int)(numerator / (long)gcd), (uint)(denominator / gcd));
+                return new((int)(numerator / (long)gcd), (uint)(denominator / gcd));
             }
 
             return (Rational64)((double)x * (double)y);
@@ -274,24 +285,38 @@ namespace Luger.Utilities
         {
             if (IsNormal(x) && IsNormal(y))
             {
-                long numerator = x._numerator * y._denominator;
-                long signed_denominator = x._denominator * y._numerator;
+                var numerator = x._numerator * y._denominator;
+                var signed_denominator = x._denominator * y._numerator;
                 ulong denominator;
 
                 if (signed_denominator < 0)
                 {
                     numerator = -numerator;
-                    denominator = (ulong)(-signed_denominator);
+                    denominator = (ulong)-signed_denominator;
                 }
                 else
+                {
                     denominator = (ulong)signed_denominator;
+                }
 
-                ulong gcd = IntExt.Gcd(IntExt.Abs(numerator), denominator);
+                var gcd = IntExt.Gcd(IntExt.Abs(numerator), denominator);
 
-                return new Rational64((int)(numerator / (long)gcd), (uint)(denominator / gcd));
+                return new((int)(numerator / (long)gcd), (uint)(denominator / gcd));
             }
 
             return (Rational64)((double)x / (double)y);
         }
+
+        public static bool operator ==(Rational64 left, Rational64 right) => left.Equals(right);
+
+        public static bool operator !=(Rational64 left, Rational64 right) => !(left == right);
+
+        public static bool operator <(Rational64 left, Rational64 right) => left.CompareTo(right) < 0;
+
+        public static bool operator <=(Rational64 left, Rational64 right) => left.CompareTo(right) <= 0;
+
+        public static bool operator >(Rational64 left, Rational64 right) => left.CompareTo(right) > 0;
+
+        public static bool operator >=(Rational64 left, Rational64 right) => left.CompareTo(right) >= 0;
     }
 }

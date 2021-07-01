@@ -15,13 +15,13 @@ namespace Luger.Utilities.Tests
 
         public IntExtTests(ITestOutputHelper output) => _output = output;
 
-        private const uint multestcount = 3;
+        private const uint MULTESTCOUNT = 3;
 
         public static IEnumerable<object[]> Mul64HiTestData()
-            => from x in EnumerableExt.RangeUInt32(multestcount)
-               from y in EnumerableExt.RangeUInt32(multestcount)
-               let bix = ((BigInteger)x << 64) / multestcount
-               let biy = ((BigInteger)y << 64) / multestcount
+            => from x in EnumerableExt.RangeUInt32(MULTESTCOUNT)
+               from y in EnumerableExt.RangeUInt32(MULTESTCOUNT)
+               let bix = ((BigInteger)x << 64) / MULTESTCOUNT
+               let biy = ((BigInteger)y << 64) / MULTESTCOUNT
                let bia = bix * biy >> 64
                select new object[] { (ulong)bix, (ulong)biy, (ulong)bia };
 
@@ -85,11 +85,11 @@ namespace Luger.Utilities.Tests
         [InlineData(48, 32, 0x0123_5555_5555_CDEFUL)]
         public void CopyBitsTest(int offset, int width, ulong expected)
         {
-            ulong actual = CopyBits(
+            var actual = CopyBits(
                 target: CBT_Target,
                 source: CBT_Source,
-                offset: (UInt6)offset,
-                width: (byte)width);
+                offset: offset,
+                width: width);
 
             Assert.Equal(expected, actual);
         }
@@ -101,12 +101,12 @@ namespace Luger.Utilities.Tests
         public void CopyBitsShiftTest(
             int targetOffset, int sourceOffset, int width, ulong expected)
         {
-            ulong actual = CopyBits(
-                  target: CBT_Target,
-                  source: CBT_Source,
-                  targetOffset: (UInt6)targetOffset,
-                  sourceOffset: (UInt6)sourceOffset,
-                  width: (byte)width);
+            var actual = CopyBits(
+                target: CBT_Target,
+                source: CBT_Source,
+                targetOffset: targetOffset,
+                sourceOffset: sourceOffset,
+                width: width);
 
             Assert.Equal(expected, actual);
         }

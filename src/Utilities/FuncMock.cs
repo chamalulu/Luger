@@ -4,9 +4,6 @@ using Void = System.ValueTuple;
 
 namespace Luger.Utilities
 {
-
-#pragma warning disable CA1815 // Override equals and operator equals on value types
-
     public readonly struct Invocation<T, TR>
     {
         public DateTime Time { get; }
@@ -20,8 +17,6 @@ namespace Luger.Utilities
             ReturnValue = returnValue;
         }
     }
-
-#pragma warning restore CA1815 // Override equals and operator equals on value types
 
     public abstract class FuncMockBase<T, TR>
     {

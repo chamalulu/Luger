@@ -33,14 +33,15 @@ namespace Luger.Utilities
         /// </summary>
         private readonly IEnumerator<T> _enumerator;
 
-        internal EnumeratorMultiplexer(IEnumerator<T> enumerator) =>
-            _enumerator = enumerator ?? throw new ArgumentNullException(nameof(enumerator));
+        internal EnumeratorMultiplexer(IEnumerator<T> enumerator)
+
+            => _enumerator = enumerator ?? throw new ArgumentNullException(nameof(enumerator));
 
 
         /// <summary>
         /// Lock object for serialization of ProduceNext()
         /// </summary>
-        private readonly object _producerLock = new object();
+        private readonly object _producerLock = new();
 
         /// <summary>
         /// Produce next node of enumerator.
@@ -52,9 +53,11 @@ namespace Luger.Utilities
         internal Maybe<EnumeratorMultiplexerNode<T>> ProduceNext()
         {
             lock (_producerLock)
+            {
                 return _enumerator.MoveNext()
                     ? Some(new EnumeratorMultiplexerNode<T>(this, _enumerator.Current))
                     : None<EnumeratorMultiplexerNode<T>>();
+            }
         }
 
         /// <summary>
@@ -70,8 +73,9 @@ namespace Luger.Utilities
         /// </remarks>
         /// <returns>Returns first node or None if enumerator is exhausted</returns>
         /// <exception cref="InvalidOperationException">Thrown if invoked more than once</exception>
-        public Maybe<EnumeratorMultiplexerNode<T>> MoveNext() =>
-            Interlocked.Exchange(ref _started, 1) == 0
+        public Maybe<EnumeratorMultiplexerNode<T>> MoveNext()
+
+            => Interlocked.Exchange(ref _started, 1) == 0
                 ? ProduceNext()
                 : throw new InvalidOperationException();
 
@@ -119,12 +123,14 @@ namespace Luger.Utilities
             }
 
             lock (_next)
+            {
                 return _next switch
                 {
                     EnumeratorMultiplexerNode<T> node => Some(node),
                     EnumeratorMultiplexer<T> multiplexer => multiplexer.ProduceNext().Match(some, None<EnumeratorMultiplexerNode<T>>),
                     _ => throw new InvalidOperationException()
                 };
+            }
         }
     }
 }

@@ -2,12 +2,7 @@ using System;
 
 namespace Luger.Utilities
 {
-
-#pragma warning disable CA1032 // Implement standard exception constructors
-
     public class NonConsecutiveSpansException : InvalidOperationException { }
-
-#pragma warning restore CA1032 // Implement standard exception constructors
 
     public static class SpanExt
     {
@@ -20,7 +15,9 @@ namespace Luger.Utilities
         public static unsafe long Offset<T>(this ReadOnlySpan<T> relSpan, ReadOnlySpan<T> baseSpan) where T : unmanaged
         {
             fixed (T* relPtr = relSpan, basePtr = baseSpan)
+            {
                 return relPtr - basePtr;
+            }
         }
 
         /// <inheritdoc cref="Offset{T}(ReadOnlySpan{T}, ReadOnlySpan{T})"/>
@@ -62,10 +59,16 @@ namespace Luger.Utilities
         public static unsafe ReadOnlySpan<T> ConcatConsecutive<T>(ReadOnlySpan<T> left, ReadOnlySpan<T> right) where T : unmanaged
         {
             if (AreConsecutive(left, right))
+            {
                 fixed (T* lptr = left, rptr = right)
+                {
                     return new ReadOnlySpan<T>(lptr, left.Length + right.Length);
+                }
+            }
             else
+            {
                 throw new NonConsecutiveSpansException();
+            }
         }
 
         /// <inheritdoc cref="ConcatConsecutive{T}(ReadOnlySpan{T}, ReadOnlySpan{T})"/>
@@ -85,10 +88,16 @@ namespace Luger.Utilities
         public static unsafe Span<T> ConcatConsecutive<T>(Span<T> left, Span<T> right) where T : unmanaged
         {
             if (AreConsecutive(left, right))
+            {
                 fixed (T* lptr = left, rptr = right)
+                {
                     return new Span<T>(lptr, left.Length + right.Length);
+                }
+            }
             else
+            {
                 throw new NonConsecutiveSpansException();
+            }
         }
     }
 }

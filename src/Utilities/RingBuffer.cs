@@ -20,7 +20,9 @@ namespace Luger.Utilities
         public IEnumerator<T> GetEnumerator()
         {
             for (var i = 0; i < Capacity; i++)
+            {
                 yield return _buffer[(_position + i) % Capacity];
+            }
         }
 
         public RingBuffer<T> Push(T value)
@@ -30,17 +32,19 @@ namespace Luger.Utilities
             return this;
         }
 
-#pragma warning disable CA1303 // Do not pass literals as localized parameters
-
         public RingBuffer<T> Push(T[] buffer, uint index, uint count)
         {
             buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
 
             if (index + count > buffer.Length)
+            {
                 throw new ArgumentException("index + count > buffer.Length");
+            }
 
             if (count > Capacity)
+            {
                 (index, count) = (index + count - Capacity, Capacity);
+            }
 
             var headLength = Capacity - _position;
             var tailLength = count - headLength;
@@ -51,8 +55,6 @@ namespace Luger.Utilities
             _position = (_position + count) % Capacity;
             return this;
         }
-
-#pragma warning restore CA1303 // Do not pass literals as localized parameters
 
         public RingBuffer<T> Push(T[] buffer)
         {

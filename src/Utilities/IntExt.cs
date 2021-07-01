@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 
 namespace Luger.Utilities
 {
@@ -33,36 +34,33 @@ namespace Luger.Utilities
             return (acc2 >> 32) + carry + xh * yh;  // Can not overflow
         }
 
+        [Obsolete("Any sane person would use System.Numerics.BitOperations.RotateLeft instead.")]
         public static ulong RotateLeft(ulong value, UInt6 n) => value << n | value >> 64 - n;
 
+        [Obsolete("Any sane person would use System.Numerics.BitOperations.RotateRight instead.")]
         public static ulong RotateRight(ulong value, UInt6 n) => value >> n | value << 64 - n;
 
-        public static ulong CopyBits(ulong target, ulong source, UInt6 offset, byte width)
+        public static ulong CopyBits(ulong target, ulong source, int offset, int width)
         {
-            if (width > 64)
-                throw new ArgumentOutOfRangeException(nameof(width));
+            var mask = BitOperations.RotateLeft((1ul << width) - 1, offset);
 
-            switch (width)
+            return width switch
             {
-                case 0:
-                    return target;
-                case 64:
-                    return source;
-                default:
-                    var mask = RotateLeft((1ul << width) - 1, offset);
-                    return target & ~mask | source & mask;
-            }
+                0 => target,
+                64 => source,
+                > 64 => throw new ArgumentOutOfRangeException(nameof(width)),
+                _ => target & ~mask | source & mask,
+            };
         }
 
-        public static ulong CopyBits(ulong target, ulong source, UInt6 targetOffset, UInt6 sourceOffset, byte width)
-        {
-            if (targetOffset < sourceOffset)
-                return CopyBits(target, RotateRight(source, sourceOffset - targetOffset), targetOffset, width);
-            else if (targetOffset > sourceOffset)
-                return CopyBits(target, RotateLeft(source, targetOffset - sourceOffset), targetOffset, width);
-            else
-                return CopyBits(target, source, targetOffset, width);
-        }
+        public static ulong CopyBits(ulong target, ulong source, int targetOffset, int sourceOffset, int width)
+
+            => targetOffset.CompareTo(sourceOffset) switch
+            {
+                < 0 => CopyBits(target, BitOperations.RotateRight(source, sourceOffset - targetOffset), targetOffset, width),
+                > 0 => CopyBits(target, BitOperations.RotateLeft(source, targetOffset - sourceOffset), targetOffset, width),
+                _ => CopyBits(target, source, targetOffset, width)
+            };
 
         public static uint Gcd(uint a, uint b) => b == 0 ? a : Gcd(b, a % b);
 
@@ -70,13 +68,13 @@ namespace Luger.Utilities
 
         public static uint Abs(int n)
         {
-            int mask = n >> ((sizeof(int) << 3) - 1);
+            var mask = n >> ((sizeof(int) << 3) - 1);
             return unchecked((uint)((n + mask) ^ mask));
         }
 
         public static ulong Abs(long n)
         {
-            long mask = n >> ((sizeof(long) << 3) - 1);
+            var mask = n >> ((sizeof(long) << 3) - 1);
             return unchecked((ulong)((n + mask) ^ mask));
         }
     }
