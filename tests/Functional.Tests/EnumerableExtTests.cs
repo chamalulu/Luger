@@ -91,20 +91,6 @@ namespace Luger.Functional.Tests
             Assert.Equal(expected, actual);
         }
 
-        [Fact]
-        public void DeconstructIOExTest() =>
-            Assert.Throws<InvalidOperationException>(() => { var (actualHead, actualTail) = Enumerable.Empty<int>(); });
-
-        [Theory]
-        [InlineData(new[] { 1 }, 1, new int[0])]
-        [InlineData(new[] { 1, 2, 3 }, 1, new[] { 2, 3 })]
-        public void DeconstructTest(IEnumerable<int> source, int expectedHead, IEnumerable<int> expectedTail)
-        {
-            var (actualHead, actualTail) = source;
-            Assert.Equal(expectedHead, actualHead);
-            Assert.Equal(expectedTail, actualTail);
-        }
-
         private class OptionalEnumerableEqualityComparer<T> : IEqualityComparer<Maybe<IEnumerable<T>>>
         {
             public bool Equals(Maybe<IEnumerable<T>> x, Maybe<IEnumerable<T>> y) =>
@@ -131,21 +117,6 @@ namespace Luger.Functional.Tests
             Assert.Equal(expected, actual);
         }
 
-        public static IEnumerable<object[]> TailTestData => new[]
-        {
-            new object[] { Array.Empty<int>(), None<IEnumerable<int>>() },
-            new object[] { new [] { 1 },       Some<IEnumerable<int>>(Array.Empty<int>()) },
-            new object[] { new [] { 1, 2, 3 }, Some<IEnumerable<int>>(new[] { 2, 3 }) }
-        };
-
-        [Theory]
-        [MemberData(nameof(TailTestData))]
-        public void TailTest(IEnumerable<int> source, Maybe<IEnumerable<int>> expected)
-        {
-            var actual = source.Tail();
-            Assert.Equal(expected, actual, new OptionalEnumerableEqualityComparer<int>());
-        }
-
         [Theory]
         [InlineData(1, new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 })]
         [InlineData(2, new[] { 0, 2, 4, 6, 8 })]
@@ -159,17 +130,17 @@ namespace Luger.Functional.Tests
         public static IEnumerable<object[]> PairwiseTestData => new[]
         {
             new object[] { Array.Empty<int>()  , Array.Empty<(int, int)>() },
-            new object[] { new[] { 0 }         , new[] { (0, 0) }          },
+            new object[] { new[] { 0 }         , Array.Empty<(int, int)>() },
             new object[] { new[] { 0, 1 }      , new[] { (0, 1) }          },
-            new object[] { new[] { 0, 1, 2 }   , new[] { (0, 1), (2, 0) }  },
+            new object[] { new[] { 0, 1, 2 }   , new[] { (0, 1) }          },
             new object[] { new[] { 0, 1, 2, 3 }, new[] { (0, 1), (2, 3) }  }
         };
 
         [Theory]
         [MemberData(nameof(PairwiseTestData))]
-        public void PairwiseTest(IEnumerable<int> source, IEnumerable<(int, int)> expected)
+        public void SequentialPairsTest(IEnumerable<int> source, IEnumerable<(int, int)> expected)
         {
-            var actual = source.Pairwise();
+            var actual = source.SequentialPairs();
             Assert.Equal(expected, actual);
         }
 

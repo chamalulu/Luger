@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Luger.Functional
 {
@@ -118,6 +119,6 @@ namespace Luger.Functional
 
             => maybeT.MatchInternal(
                 some: EnumerableExt.Return,
-                none: EnumerableExt.Empty<T>);
+                none: Enumerable.Empty<T>);
     }
 }

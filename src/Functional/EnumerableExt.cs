@@ -21,19 +21,59 @@ namespace Luger.Functional
 
             => Enumerable.SelectMany(ts, f);
 
-        public static IEnumerable<T> Repeat<T>(T element, uint count)
+        public static IEnumerable<T> Repeat<T>(T element)
         {
-            for (var c = 0U; c < count; c++)
+            while (true)
             {
                 yield return element;
             }
         }
 
-        public static IEnumerable<T> Return<T>(T t) => Repeat(t, 1u);
+        public static IEnumerable<T> Repeat<T>(T element, uint count)
+        {
+            for (uint c = 0; c < count; c++)
+            {
+                yield return element;
+            }
+        }
 
-        public static IEnumerable<T> Empty<T>() => Repeat(default(T)!, 0u);
+        private struct SingletonEnumerator<T> : IEnumerator<T>
+        {
+            private readonly T _element;
+            private bool _exhausted;
 
-        private static IEnumerable<T> ContinueAsEnumerableNoneOrMore<T>(this IEnumerator<T> enumerator)
+            public SingletonEnumerator(T element)
+            {
+                _element = element;
+                _exhausted = false;
+            }
+
+            public T Current => _element;
+
+            object? IEnumerator.Current => _element;
+
+            public void Dispose() => _exhausted = true;
+
+            public bool MoveNext() => !_exhausted;
+
+            public void Reset() => _exhausted = false;
+        }
+
+        private readonly struct SingletonEnumerable<T> : IEnumerable<T>
+        {
+            private readonly T _element;
+
+            public SingletonEnumerable(T element) => _element = element;
+
+            public IEnumerator<T> GetEnumerator() => new SingletonEnumerator<T>(_element);
+
+            IEnumerator IEnumerable.GetEnumerator() => new SingletonEnumerator<T>(_element);
+        }
+
+        // TODO: Add unit test
+        public static IEnumerable<T> Return<T>(T element) => new SingletonEnumerable<T>(element);
+
+        private static IEnumerable<T> FromEnumerator<T>(this IEnumerator<T> enumerator)
         {
             while (enumerator.MoveNext())
             {
@@ -41,7 +81,7 @@ namespace Luger.Functional
             }
         }
 
-        private static IEnumerable<T> ContinueAsEnumerableOneOrMore<T>(this IEnumerator<T> enumerator)
+        private static IEnumerable<T> FromEnumeratorCurrent<T>(this IEnumerator<T> enumerator)
         {
             do
             {
@@ -60,14 +100,10 @@ namespace Luger.Functional
         /// <param name="some">Map of other sequence to result</param>
         public static TR Match<T, TR>(this IEnumerable<T> ts, Func<TR> none, Func<IEnumerable<T>, TR> some)
         {
-            ts = ts ?? throw new ArgumentNullException(nameof(ts));
-            none = none ?? throw new ArgumentNullException(nameof(none));
-            some = some ?? throw new ArgumentNullException(nameof(some));
-
             using var enumerator = ts.GetEnumerator();
 
             return enumerator.MoveNext()
-                ? some(enumerator.ContinueAsEnumerableOneOrMore())
+                ? some(FromEnumeratorCurrent(enumerator))
                 : none();
         }
 
@@ -81,14 +117,10 @@ namespace Luger.Functional
         /// <param name="some">Map of head element and tail sequence to result</param>
         public static TR Match<T, TR>(this IEnumerable<T> ts, Func<TR> none, Func<T, IEnumerable<T>, TR> some)
         {
-            ts = ts ?? throw new ArgumentNullException(nameof(ts));
-            none = none ?? throw new ArgumentNullException(nameof(none));
-            some = some ?? throw new ArgumentNullException(nameof(some));
-
             using var enumerator = ts.GetEnumerator();
 
             return enumerator.MoveNext()
-                ? some(enumerator.Current, enumerator.ContinueAsEnumerableNoneOrMore())
+                ? some(enumerator.Current, FromEnumerator(enumerator))
                 : none();
         }
 
@@ -107,11 +139,6 @@ namespace Luger.Functional
             Func<T, TR> one,
             Func<IEnumerable<T>, TR> some)
         {
-            ts = ts ?? throw new ArgumentNullException(nameof(ts));
-            none = none ?? throw new ArgumentNullException(nameof(none));
-            one = one ?? throw new ArgumentNullException(nameof(one));
-            some = some ?? throw new ArgumentNullException(nameof(some));
-
             using var enumerator = ts.GetEnumerator();
 
             if (enumerator.MoveNext())
@@ -119,7 +146,7 @@ namespace Luger.Functional
                 var first = enumerator.Current;
 
                 return enumerator.MoveNext()
-                    ? some(enumerator.ContinueAsEnumerableOneOrMore().Prepend(first))
+                    ? some(FromEnumeratorCurrent(enumerator).Prepend(first))
                     : one(first);
             }
             else
@@ -144,11 +171,6 @@ namespace Luger.Functional
             Func<T, IEnumerable<T>, TR> some
         )
         {
-            ts = ts ?? throw new ArgumentNullException(nameof(ts));
-            none = none ?? throw new ArgumentNullException(nameof(none));
-            one = one ?? throw new ArgumentNullException(nameof(one));
-            some = some ?? throw new ArgumentNullException(nameof(some));
-
             using var enumerator = ts.GetEnumerator();
 
             if (enumerator.MoveNext())
@@ -156,7 +178,7 @@ namespace Luger.Functional
                 var first = enumerator.Current;
 
                 return enumerator.MoveNext()
-                    ? some(first, enumerator.ContinueAsEnumerableOneOrMore())
+                    ? some(first, FromEnumeratorCurrent(enumerator))
                     : one(first);
             }
             else
@@ -165,126 +187,164 @@ namespace Luger.Functional
             }
         }
 
-        public static void Deconstruct<T>(this IEnumerable<T> ts, out T head, out IEnumerable<T> tail)
-
-            => (head, tail) = ts.Match(() => throw new InvalidOperationException(), (h, t) => (h, t));
-
-        public static Maybe<T> Head<T>(this IEnumerable<T> ts) => ts.Match(None<T>, (head, _) => Some(head));
-
-        public static Maybe<IEnumerable<T>> Tail<T>(this IEnumerable<T> ts)
-
-            => ts.Match(None<IEnumerable<T>>, (_, tail) => Some(tail));
-
-        public static IEnumerable<(T value, uint index)> WithUInt32Index<T>(this IEnumerable<T> ts)
+        /// <summary>
+        /// Produce head of sequence if any.
+        /// </summary>
+        /// <typeparam name="T">Type of element.</typeparam>
+        /// <param name="ts">Source sequence.</param>
+        /// <returns><see cref="Maybe{T}"/> with zero or one element first in sequence.</returns>
+        /// <remarks>
+        /// This is functionally analogous to <see cref="Enumerable.FirstOrDefault{TSource}(IEnumerable{TSource})"/>.
+        /// </remarks>
+        public static Maybe<T> Head<T>(this IEnumerable<T> ts) where T : notnull
         {
-            ts = ts ?? throw new ArgumentNullException(nameof(ts));
+            using var enumerator = ts.GetEnumerator();
 
-            var i = 0U;
-
-            foreach (var t in ts)
-            {
-                yield return (t, checked(i++));
-            }
+            return enumerator.MoveNext()
+                ? Some(enumerator.Current)
+                : None<T>();
         }
 
-        public static IEnumerable<(T value, ulong index)> WithUInt64Index<T>(this IEnumerable<T> ts)
+        /// <summary>
+        /// Convert an empty or singleton <see cref="IEnumerable{T}"/> to a <see cref="Maybe{T}"/>
+        /// </summary>
+        /// <typeparam name="T">Type of element.</typeparam>
+        /// <param name="ts">Sequence to convert.</param>
+        /// <returns><see cref="Maybe{T}"/> with zero or one element from source sequence.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if <paramref name="ts"/> contains more than one element.</exception>
+        /// <remarks>
+        /// This is functionally analogous to <see cref="Enumerable.SingleOrDefault{TSource}(IEnumerable{TSource})"/>.
+        /// </remarks>
+        // TODO: Add unit tests
+        public static Maybe<T> ToMaybe<T>(this IEnumerable<T> ts) where T : notnull
         {
-            ts = ts ?? throw new ArgumentNullException(nameof(ts));
+            using var enumerator = ts.GetEnumerator();
 
-            var i = 0UL;
-
-            foreach (var t in ts)
+            if (enumerator.MoveNext())
             {
-                yield return (t, checked(i++));
+                var element = enumerator.Current;
+
+                if (enumerator.MoveNext())
+                {
+                    throw new InvalidOperationException();
+                }
+
+                return Some(element);
+            }
+            else
+            {
+                return None<T>();
             }
         }
 
         public static IEnumerable<T> EveryNth<T>(this IEnumerable<T> ts, ulong n)
-
-            => n > 0
-                ? from ti in ts.WithUInt64Index()
-                  where ti.index % n == 0
-                  select ti.value
-                : throw new ArgumentOutOfRangeException(nameof(n));
-
-        public static IEnumerable<T> EveryOther<T>(this IEnumerable<T> ts) => ts.EveryNth(2);
-
-        public static IEnumerable<(T? first, T? second)> Pairwise<T>(this IEnumerable<T> ts)
         {
-            ts = ts ?? throw new ArgumentNullException(nameof(ts));
-
-            using var etor = ts.GetEnumerator();
-
-            while (etor.MoveNext())
+            if (n == 0)
             {
-                var first = etor.Current;
-                var second = etor.MoveNext() ? etor.Current : default;
+                throw new ArgumentOutOfRangeException(nameof(n));
+            }
 
-                yield return (first, second);
+            ulong p = 0;
+
+            foreach (var element in ts)
+            {
+                if (p == 0)
+                {
+                    yield return element;
+                    p = n;
+                }
+
+                p -= 1;
             }
         }
 
-        public static IEnumerable<T> Take<T>(this IEnumerable<T> source, uint count)
+        // TODO: Add unit tests
+        public static IEnumerable<T> EveryOther<T>(this IEnumerable<T> ts)// => ts.EveryNth(2);
         {
-            source = source ?? throw new ArgumentNullException(nameof(source));
+            var other = true;
 
-            using var etor = source.GetEnumerator();
-
-            while (count > 0 && etor.MoveNext())
+            foreach (var element in ts)
             {
-                yield return etor.Current;
+                if (other)
+                {
+                    yield return element;
+                }
+
+                other = !other;
+            }
+        }
+
+        /// <summary>
+        /// Yield sequential pairs of source.
+        /// </summary>
+        /// <typeparam name="T">Type of element.</typeparam>
+        /// <param name="ts">Source sequence.</param>
+        /// <returns>Sequence of sequential pairs.</returns>
+        /// <remarks>Number of pairs is #ts / 2. Last item in source with odd number of elements will be discarded.</remarks>
+        public static IEnumerable<(T first, T second)> SequentialPairs<T>(this IEnumerable<T> ts)
+        {
+            using var enumerator = ts.GetEnumerator();
+
+            while (enumerator.MoveNext())
+            {
+                var first = enumerator.Current;
+
+                if (enumerator.MoveNext())
+                {
+                    yield return (first, enumerator.Current);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Yield overlapping pairs of source. 
+        /// </summary>
+        /// <typeparam name="T">Type of element.</typeparam>
+        /// <param name="ts">Source sequence.</param>
+        /// <returns>Sequence of overlapping pairs.</returns>
+        /// <remarks>Number of pairs is #ts - 1. I.e. a singleton source will not yield any pairs.</remarks>
+        // TODO: Add unit tests
+        public static IEnumerable<(T first, T second)> OverlappingPairs<T>(this IEnumerable<T> ts)
+        {
+            using var enumerator = ts.GetEnumerator();
+
+            if (enumerator.MoveNext())
+            {
+                var previous = enumerator.Current;
+
+                while (enumerator.MoveNext())
+                {
+                    yield return (_, previous) = (previous, enumerator.Current);
+                }
+            }
+        }
+
+        public static IEnumerable<T> Take<T>(this IEnumerable<T> ts, uint count)
+        {
+            using var enumerator = ts.GetEnumerator();
+
+            while (count > 0 && enumerator.MoveNext())
+            {
+                yield return enumerator.Current;
                 count--;
             }
         }
 
-        public static uint UInt32Count<T>(this IEnumerable<T> sequence)
+        public static uint UCount<T>(this IEnumerable<T> sequence)
         {
-            sequence = sequence ?? throw new ArgumentNullException(nameof(sequence));
+            using var etor = sequence.GetEnumerator();
 
-            static uint count(IEnumerable<T> sequence)
+            uint count = 0;
+
+            while (etor.MoveNext())
             {
-                var i = 0U;
-                using var etor = sequence.GetEnumerator();
-
-                while (etor.MoveNext())
+                checked
                 {
-                    checked { i++; }
+                    count += 1;
                 }
-
-                return i;
             }
 
-            return sequence switch
-            {
-                ICollection<T> collection => (uint)collection.Count,
-                ICollection collection => (uint)collection.Count,
-                _ => count(sequence),
-            };
-        }
-
-        public static ulong UInt64Count<T>(this IEnumerable<T> sequence)
-        {
-            sequence = sequence ?? throw new ArgumentNullException(nameof(sequence));
-
-            static ulong count(IEnumerable<T> sequence)
-            {
-                var i = 0UL;
-                using var etor = sequence.GetEnumerator();
-
-                while (etor.MoveNext())
-                {
-                    checked { i++; }
-                }
-
-                return i;
-            }
-
-            return sequence switch
-            {
-                ICollection<T> collection => (ulong)collection.Count,
-                ICollection collection => (ulong)collection.Count,
-                _ => count(sequence),
-            };
+            return count;
         }
 
         /// <summary>
@@ -292,27 +352,38 @@ namespace Luger.Functional
         /// </summary>
         public static IEnumerable<uint> RangeUInt32()
         {
-            var i = uint.MinValue;
+            uint i = 0;
 
             do
             {
-                yield return i++;
+                yield return unchecked(i++);
             }
-            while (i > uint.MinValue);
+            while (i > 0);
         }
 
         /// <summary>
         /// Generates an ordered sequence of unsigned 32-bit numbers in the range [0 .. count).  
         /// </summary>
-        public static IEnumerable<uint> RangeUInt32(uint count) => RangeUInt32().Take(count);
+        public static IEnumerable<uint> RangeUInt32(uint count)
+        {
+            for (uint i = 0; i < count; i++)
+            {
+                yield return i;
+            }
+        }
 
         /// <summary>
         /// Generates a sequence of unsigned 32-bit numbers in the range [start .. start + count).
-        /// May wrap around to 0 in unchecked context.
         /// </summary>
-        /// <exception cref="OverflowException">
-        /// Thrown in checked context if and when sequence wraps around to 0.
-        /// </exception>
-        public static IEnumerable<uint> RangeUInt32(uint start, uint count) => RangeUInt32(count).Map(i => i + start);
+        /// <remarks>
+        /// Wraps around to 0 if start + count > 2^32.
+        /// </remarks>
+        public static IEnumerable<uint> RangeUInt32(uint start, uint count)
+        {
+            while (count-- > 0)
+            {
+                yield return unchecked(start++);
+            }
+        }
     }
 }
