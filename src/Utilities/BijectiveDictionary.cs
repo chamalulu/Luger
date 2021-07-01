@@ -151,11 +151,11 @@ namespace Luger.Utilities
         }
 
         /// <summary>
-        /// Gets an empty bijective dictionary.
+        /// Gets the empty bijective dictionary.
         /// </summary>
-        public static readonly BijectiveDictionary<TI, TCI> Empty = new(
-            ImmutableDictionary<TI, TCI>.Empty,
-            ImmutableDictionary<TCI, TI>.Empty);
+        public static readonly BijectiveDictionary<TI, TCI> Empty
+
+            = new(ImmutableDictionary<TI, TCI>.Empty, ImmutableDictionary<TCI, TI>.Empty);
 
         /// <summary>
         /// Gets the number of associations in the bijective dictionary.
@@ -209,7 +209,10 @@ namespace Luger.Utilities
         /// </summary>
         /// <param name="itemDict">Item dictionary</param>
         /// <param name="coItemDict">Co-item dictionary</param>
-        /// <returns>A new bijective dictionary with the given items and co-items if any of item or co-item dictionaries were manipulated; otherwise, the same instance.</returns>
+        /// <returns>
+        /// A new bijective dictionary with the given items and co-items if any of item or co-item dictionaries were manipulated;
+        /// otherwise, the same instance.
+        /// </returns>
         private BijectiveDictionary<TI, TCI> With(
             ImmutableDictionary<TI, TCI> itemDict,
             ImmutableDictionary<TCI, TI> coItemDict)
@@ -224,7 +227,9 @@ namespace Luger.Utilities
         /// <param name="item">The item to add.</param>
         /// <param name="coItem">The co-item to add.</param>
         /// <returns>A new bijective dictionary that contains the additional association.</returns>
-        public BijectiveDictionary<TI, TCI> Add(TI item, TCI coItem) => With(_itemDict.Add(item, coItem), _coItemDict.Add(coItem, item));
+        public BijectiveDictionary<TI, TCI> Add(TI item, TCI coItem)
+
+            => With(_itemDict.Add(item, coItem), _coItemDict.Add(coItem, item));
 
         /// <summary>
         /// Adds the specified item/co-item pairs to the bijective dictionary.
@@ -253,6 +258,7 @@ namespace Luger.Utilities
         public BijectiveDictionary<TI, TCI> Clear() => With(_itemDict.Clear(), _coItemDict.Clear());
 
         public bool Contains(TI item, TCI coItem)
+
             => _itemDict.TryGetValue(item, out var ci) && _itemDict.ValueComparer.Equals(coItem, ci);
 
         public bool Contains(TI item) => _itemDict.ContainsKey(item);
@@ -260,106 +266,133 @@ namespace Luger.Utilities
         public bool Contains(TCI coItem) => _coItemDict.ContainsKey(coItem);
 
         public IEnumerator<(TI Item, TCI CoItem)> GetEnumerator()
+
             => _itemDict.Select(kvp => (kvp.Key, kvp.Value)).GetEnumerator();
 
         /// <summary>
         /// Removes the association with the specified item from the bijective dictionary.
         /// </summary>
         /// <param name="item">The specified item</param>
-        /// <returns>A new bijective dictionary with the specified association removed; or this instance if the specified item cannot be found in the dictionary.</returns>
+        /// <returns>
+        /// A new bijective dictionary with the specified association removed;
+        /// or this instance if the specified item cannot be found in the dictionary.
+        /// </returns>
         public BijectiveDictionary<TI, TCI> Remove(TI item)
 
-            => With(_itemDict.Remove(item), _coItemDict.Remove(_itemDict[item]));
+            => _itemDict.TryGetValue(item, out var coItem)
+                ? With(_itemDict.Remove(item), _coItemDict.Remove(coItem))
+                : this;
 
         /// <summary>
         /// Removes the association with the specified co-item from the bijective dictionary.
         /// </summary>
         /// <param name="coItem">The specified co-item</param>
-        /// <returns>A new bijective dictionary with the specified association removed; or this instance if the specified co-item cannot be found in the dictionary.</returns>
+        /// <returns>
+        /// A new bijective dictionary with the specified association removed;
+        /// or this instance if the specified co-item cannot be found in the dictionary.
+        /// </returns>
         public BijectiveDictionary<TI, TCI> Remove(TCI coItem)
 
-            => With(_itemDict.Remove(_coItemDict[coItem]), _coItemDict.Remove(coItem));
+            => _coItemDict.TryGetValue(coItem, out var item)
+                ? With(_itemDict.Remove(item), _coItemDict.Remove(coItem))
+                : this;
 
         /// <summary>
         /// Private helper to remove range of associations.
         /// </summary>
-        /// <param name="iciArray">Materialized range of associations to remove</param>
-        /// <returns>A new bijective dictionary with the specified associations removed; or this instance if the specified associations cannot be found in the dictionary.</returns>
+        /// <param name="associations">List of associations to remove</param>
+        /// <returns>
+        /// A new bijective dictionary with the specified associations removed; or this instance if the specified associations
+        /// cannot be found in the dictionary.
+        /// </returns>
         /// <remarks>
-        /// For performance reasons we materialize item/co-item pairs and remove them from inner dictionaries with ImmutableDictionary<TKey, TValue>.RemoveRange.
-        /// The alternative of aggregating removals with BijectiveDictionary<TI, TCI>.Remove would probably be slower.
+        /// For performance reasons we materialize item/co-item pairs and remove them from inner dictionaries with
+        /// <see cref="ImmutableDictionary{TKey, TValue}.RemoveRange(IEnumerable{TKey})"/>. The alternative of aggregating removals
+        /// with <see cref="BijectiveDictionary{TI, TCI}.Remove(TI)"/> would probably be slower.
         /// </remarks>
-        private BijectiveDictionary<TI, TCI> RemoveRange(IEnumerable<(TI item, TCI coItem)> iciArray)
+        private BijectiveDictionary<TI, TCI> RemoveRange(IEnumerable<(TI item, TCI coItem)> associations)
+        {
+            if (associations is not List<(TI, TCI)>)
+            {
+                associations = associations.ToList();
+            }
 
-            => With(
-                _itemDict.RemoveRange(from ici in iciArray select ici.item),
-                _coItemDict.RemoveRange(from ici in iciArray select ici.coItem));
+            return With(
+                _itemDict.RemoveRange(from a in associations select a.item),
+                _coItemDict.RemoveRange(from a in associations select a.coItem));
+        }
 
         /// <summary>
         /// Removes the associations with the specified items from the bijective dictionary.
         /// </summary>
         /// <param name="items">The items of the associations to remove.</param>
-        /// <returns>A new bijective dictionary with the specified associations removed; or this instance if the specified items cannot be found in the dictionary.</returns>
+        /// <returns>
+        /// A new bijective dictionary with the specified associations removed;
+        /// or this instance if the specified items cannot be found in the dictionary.
+        /// </returns>
         public BijectiveDictionary<TI, TCI> RemoveRange(IEnumerable<TI> items)
-        {
-            var filterExistingPairs = from i in items
-                                      from ci in this[i].AsEnumerable()
-                                      select (item: i, coItem: ci);
 
-            return RemoveRange(filterExistingPairs.ToArray());
-        }
+            => RemoveRange(
+                from i in items
+                from ci in this[i]
+                select (item: i, coItem: ci));
 
         /// <summary>
         /// Removes the associations with the specified co-items from the bijective dictionary.
         /// </summary>
         /// <param name="coItems">The co-items of the associations to remove.</param>
-        /// <returns>A new bijective dictionary with the specified associations removed; or this instance if the specified co-items cannot be found in the dictionary.</returns>
+        /// <returns>
+        /// A new bijective dictionary with the specified associations removed;
+        /// or this instance if the specified co-items cannot be found in the dictionary.
+        /// </returns>
         public BijectiveDictionary<TI, TCI> RemoveRange(IEnumerable<TCI> coItems)
-        {
-            var filterExistingPairs = from ci in coItems
-                                      from i in this[ci].AsEnumerable()
-                                      select (item: i, coItem: ci);
 
-            return RemoveRange(filterExistingPairs.ToArray());
-        }
+            => RemoveRange(
+                from ci in coItems
+                from i in this[ci]
+                select (item: i, coItem: ci));
 
         /// <summary>
-        /// Sets the specified item and co-item association in the bijective dictionary, possibly overwriting removing one or two previous associations.
+        /// Sets the specified item and co-item association in the bijective dictionary, possibly removing one or two previous
+        /// associations.
         /// </summary>
         /// <param name="item">The item of the association to set.</param>
         /// <param name="coItem">The co-item of the association to set.</param>
         /// <returns>A new bijective dictionary that contains the specified association.</returns>
         /// <remarks>
-        /// If the specified association already exist in the dictionary, this method returns the existing instance of the dictionary.
-        /// If the item and/or co-item already exist but with different association(s), this method returns a new instance of the dictionary with it or them replaced by the specified association.
+        /// If the specified association already exist in the dictionary, this method returns the existing instance of the
+        /// dictionary.
+        /// If the item and/or co-item already exist but with different association(s), this method returns a new instance of the
+        /// dictionary with it or them replaced by the specified association.
         /// </remarks>
         public BijectiveDictionary<TI, TCI> SetItem(TI item, TCI coItem)
 
             => Contains(item, coItem)
                 ? this
-                : Remove(item)
-                 .Remove(coItem)
-                 .Add(item, coItem);
+                : Remove(item).Remove(coItem).Add(item, coItem);
 
         /// <summary>
-        /// Sets the specified associations in the bijective dictionary, possibly overwriting on or two previous associations per new association.
+        /// Sets the specified associations in the bijective dictionary, possibly overwriting one or two previous associations per
+        /// new association.
         /// </summary>
         /// <param name="pairs">The associations to set.</param>
         /// <returns>A new bijective dictionary that contains the specified associations.</returns>
         /// <remarks>
-        /// If all the specified associations already exist in the dictionary, this method returns the existing instance of the dictionary.
-        /// If any specified item or co-item already exist but with different association(s), this method returns a new instance of the dictionary with it or them replaced by the specified association(s).
+        /// If all the specified associations already exist in the dictionary, this method returns the existing instance of the
+        /// dictionary.
+        /// If any specified item or co-item already exist but with different association(s), this method returns a new instance of
+        /// the dictionary with it or them replaced by the specified association(s).
         /// This implementation can probably be more efficient. The cleverness of a community is welcome.
         /// </remarks>
         public BijectiveDictionary<TI, TCI> SetItems(IEnumerable<(TI item, TCI coItem)> pairs)
         {
-            var newPairs = pairs.Where(p => !Contains(p.item, p.coItem)).ToArray();
+            var newPairs = pairs.Where(p => !Contains(p.item, p.coItem)).ToList();
+            var newItems = from p in newPairs select p.item;
+            var newCoItems = from p in newPairs select p.coItem;
 
-            return newPairs.Length == 0
+            return newPairs.Count != 0
                 ? this
-                : RemoveRange(from p in newPairs select p.item)
-                 .RemoveRange(from p in newPairs select p.coItem)
-                 .AddRange(newPairs);
+                : RemoveRange(newItems).RemoveRange(newCoItems).AddRange(newPairs);
         }
 
         /// <summary>
@@ -367,9 +400,13 @@ namespace Luger.Utilities
         /// </summary>
         /// <param name="itemComparer">Comparer to use to determine the equality of items in the dictionary.</param>
         /// <param name="coItemComparer">Comparer to use to determine the equality of co-items in the dictionary.</param>
-        /// <returns>A new bijective dictionary that uses the given comparers if any comparer is different from the current ones; otherwise, the same instance.</returns>
+        /// <returns>
+        /// A new bijective dictionary that uses the given comparers if any comparer is different from the current ones;
+        /// otherwise, the same instance.
+        /// </returns>
         /// <remarks>
-        /// The equallity comparison of comparers is done by the implementation of <see cref="ImmutableDictionary{TKey, TValue}.WithComparers(IEqualityComparer{TKey}, IEqualityComparer{TValue})"/>.
+        /// The equallity comparison of comparers is done by the implementation of
+        /// <see cref="ImmutableDictionary{TKey, TValue}.WithComparers(IEqualityComparer{TKey}, IEqualityComparer{TValue})"/>.
         /// </remarks>
         public BijectiveDictionary<TI, TCI> WithComparers(
             IEqualityComparer<TI> itemComparer,
