@@ -187,12 +187,11 @@ namespace Luger.Utilities
                 return Enumerable.Empty<byte>();
             }
 
-            // This expression would work for signed count even when count is 0.
-            var ulongCount = (count - 1) / sizeof(ulong) + 1;
+            var qwordCount = (count - 1) / sizeof(ulong) + 1;
 
             static IEnumerable<byte> GetBytes(IEnumerable<ulong> qwords) => qwords.Bind(BitConverter.GetBytes);
 
-            var bytesGenerator = EnumerableExt.RangeUInt32(ulongCount)
+            var bytesGenerator = EnumerableExt.RangeUInt32(qwordCount)
                 .TraverseM(_ => _prng)
                 .Map(GetBytes);
 

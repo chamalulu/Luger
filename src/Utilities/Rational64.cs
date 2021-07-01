@@ -104,6 +104,8 @@ namespace Luger.Utilities
 
         public override int GetHashCode() => HashCode.Combine(_numerator, _denominator);
 
+        /// <remarks>Falls back to <see cref="double.ToString(string?, IFormatProvider?)"/> for non-normal numbers.</remarks>
+        /// <inheritdoc cref="IFormattable.ToString(string?, IFormatProvider?)"/>
         public string ToString(string? format, IFormatProvider? provider)
         {
             if (IsNormal(this))
