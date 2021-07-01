@@ -1,6 +1,8 @@
 using System;
 using System.Numerics;
 
+using Luger.Functional;
+
 namespace Luger.Utilities
 {
     public static class IntExt
@@ -77,5 +79,11 @@ namespace Luger.Utilities
             var mask = n >> ((sizeof(long) << 3) - 1);
             return unchecked((ulong)((n + mask) ^ mask));
         }
+
+        public static Maybe<int> ParseMaybe(string s)
+
+            => int.TryParse(s, out var result)
+                ? Maybe.Some(result)
+                : Maybe.None<int>();
     }
 }
