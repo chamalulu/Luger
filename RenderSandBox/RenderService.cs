@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Numerics;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
@@ -38,7 +39,11 @@ namespace RenderSandBox
 
         private async Task<IScene> CreateScene()
         {
-            IScene scene = new TestScene();
+            IScene scene = new MandelbrotScene
+            {
+                Palette = new Vector4[] { new(0, 0, 0, 0), new(.5f, .5f, .5f, 1), new(.25f, .5f, .75f, 1), new(.8f, .4f, 0, 1) }
+            };
+            //IScene scene = new TestScene();
             scene = scene.SupersampleTwice();
             return scene;
         }
