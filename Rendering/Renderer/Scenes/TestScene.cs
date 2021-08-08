@@ -3,13 +3,11 @@ using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace RenderSandBox
+namespace Luger.Rendering.Renderer.Scenes
 {
-    internal class TestScene : IScene
+    public class TestScene : IScene
     {
         private Matrix3x2 RedTransform, GreenTransform, BlueTransform;
-
-        public float ViewRadius => 1f;
 
         private static Matrix3x2 CreateM32(Random rng)
         {
@@ -34,6 +32,8 @@ namespace RenderSandBox
 
         private static Vector2 Center = Vector2.One / 2f;
 
+        public RectF ViewArea { get; } = new(0, 0, 1, 1);
+
         private static float XY2I(Vector2 xy)
         {
             var xFloor = MathF.Floor(xy.X);
@@ -47,12 +47,13 @@ namespace RenderSandBox
                 : 0f;
         }
 
-        public ValueTask<Vector4> GetColor(Vector2 point, Vector2 size, CancellationToken cancellationToken)
+        public Vector4 GetColor(Vector2 point, Vector2 size)
         {
             var r = XY2I(Vector2.Transform(point, RedTransform));
             var g = XY2I(Vector2.Transform(point, GreenTransform));
             var b = XY2I(Vector2.Transform(point, BlueTransform));
-            return ValueTask.FromResult(new Vector4(r, g, b, 1f));
+
+            return new Vector4(r, g, b, 1f);
         }
     }
 }

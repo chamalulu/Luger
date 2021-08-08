@@ -5,6 +5,8 @@
     <TargetFramework>net5.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
+    <AssemblyName>Luger.Rendering</AssemblyName>
+    <RootNamespace>Luger.Rendering.CLI</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,8 +17,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\Config.CommandLine\Config.CommandLine.csproj" />
-    <ProjectReference Include="..\src\Utilities\Utilities.csproj" />
+    <ProjectReference Include="..\..\src\Config.CommandLine\Config.CommandLine.csproj" />
+    <ProjectReference Include="..\..\src\Utilities\Utilities.csproj" />
+    <ProjectReference Include="..\Renderer\Renderer.csproj" />
   </ItemGroup>
 
 </Project>

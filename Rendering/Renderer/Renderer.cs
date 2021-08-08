@@ -10,12 +10,12 @@ using System.Threading.Tasks;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace RenderSandBox
+namespace Luger.Rendering.Renderer
 {
     public class Renderer<TPixel> where TPixel : unmanaged, IPixel<TPixel>
     {
-        private volatile int _availableTasks;
-        private volatile int _pixelsComplete = 0;
+        private int _availableTasks;
+        private int _pixelsComplete = 0;
         private readonly object _lock = new();
         private Task _renderTask = Task.CompletedTask;
         private CancellationToken _cancellationToken;
@@ -38,7 +38,10 @@ namespace RenderSandBox
 
         public Image<TPixel> Image { get; }
 
-        public IObservable<(int pixels, float progress, float pixelsPerSecond)> GetProgress(double intervalMs = 1000d)
+        public IObservable<(int pixels, float progress, float pixelsPerSecond)> GetProgress(
+            double intervalMs = 1000d,
+            CancellationToken cancellationToken = default,
+            IScheduler? scheduler = null)
         {
             var slexiPlatoT = 1f / (Image.Width * Image.Height);
             var interval = TimeSpan.FromMilliseconds(intervalMs);
@@ -57,17 +60,17 @@ namespace RenderSandBox
             return Observable
                 .Generate(
                     initialState: this,
-                    condition: r => !r._renderTask.IsCompleted,
+                    condition: r => !cancellationToken.IsCancellationRequested,
                     iterate: r => r,
                     resultSelector: r => (r._pixelsComplete, r._pixelsComplete * slexiPlatoT),
                     timeSelector: _ => interval,
-                    scheduler: TaskPoolScheduler.Default)
+                    scheduler: scheduler ?? TaskPoolScheduler.Default)
                 .Timestamp()
                 .Buffer(2, 1)
                 .Select(calculatePPS);
         }
 
-        public Task Render(RectF sceneArea, CancellationToken cancellationToken = default)
+        public Task StartRenderTask(CancellationToken cancellationToken = default)
         {
             lock (_lock)
             {
@@ -79,14 +82,47 @@ namespace RenderSandBox
                 _pixelsComplete = 0;
                 _cancellationToken = cancellationToken;
 
-                var renderNode = new RenderNode(sceneArea, new RectI(0, 0, Image.Width, Image.Height));
-                _renderTask = Render(renderNode).AsTask();
+                // Make scene area contain the scene view area with maintained aspect ratio and orientation
+                var viewArea = Scene.ViewArea;
+
+                // Create transformation from largest centered square in image to largest centered square in scene view area
+
+                // Translate from center of image to 0
+                var transformation = Matrix3x2.CreateTranslation(Image.Width / -2f, Image.Height / -2f);
+
+                // Scale from image to unit square maintaining aspect ratio
+                var imageAreaScale = Image.Width > Image.Height
+                    ? 1f / Image.Height
+                    : 1f / Image.Width;
+
+                transformation *= Matrix3x2.CreateScale(imageAreaScale);
+
+                // Scale from unit square to view area maintaining aspect ratio and orientation
+                var viewAreaScales = MathF.Abs(viewArea.Width) > MathF.Abs(viewArea.Height)
+                    ? new Vector2(MathF.Abs(viewArea.Height) * MathF.Sign(viewArea.Width), viewArea.Height)
+                    : new Vector2(viewArea.Width, MathF.Abs(viewArea.Width) * MathF.Sign(viewArea.Height));
+
+                transformation *= Matrix3x2.CreateScale(viewAreaScales);
+
+                // Translate from 0 to center of scene view area
+                transformation *= Matrix3x2.CreateTranslation(viewArea.X + viewArea.Width / 2, viewArea.Y + viewArea.Height / 2);
+
+                // Transform image resolution to scene area
+                var xy = Vector2.Transform(Vector2.Zero, transformation);
+                var wh = Vector2.Transform(new(Image.Width, Image.Height), transformation) - xy;
+
+                var renderNode = new RenderNode(new RectF(xy.X, xy.Y, wh.X, wh.Y), new RectI(0, 0, Image.Width, Image.Height));
+
+                /* Render typically does not yield before first synchronous partition (of size ~ 1/maxConcurrency) is finished,
+                 * So we schedule it on a worker thread.
+                 */
+                _renderTask = Task.Run(() => Render(renderNode).AsTask(), cancellationToken);
 
                 return _renderTask;
             }
         }
 
-        private async ValueTask RenderPixel(RenderNode renderNode)
+        private ValueTask RenderPixel(RenderNode renderNode)
         {
             var ((sx, sy, sw, sh), (ix, iy, _, _)) = renderNode;
 
@@ -94,10 +130,12 @@ namespace RenderSandBox
             var size = new Vector2(sw, sh);
 
             TPixel pixel = default;
-            pixel.FromScaledVector4(await Scene.GetColor(point, size, _cancellationToken).ConfigureAwait(false));
+            pixel.FromScaledVector4(Scene.GetColor(point, size));
             Image[ix, iy] = pixel;
 
             _ = Interlocked.Increment(ref _pixelsComplete);
+
+            return ValueTask.CompletedTask;
         }
 
         private async ValueTask RenderImage(RenderNode renderNode)
