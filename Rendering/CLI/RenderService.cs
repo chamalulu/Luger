@@ -60,6 +60,75 @@ namespace RenderSandBox
             return scene.SupersampleTwice().GammaCorrect();
         }
 
+        private readonly struct PixelsPerSecond : ISpanFormattable
+        {
+            public readonly float Value;
+
+            public PixelsPerSecond(float value) => Value = value;
+
+            public override string ToString() => ToString(null, null);
+
+            private const string UnitPrefixes = " kMGT";
+            private const int MaxLog1k = 4;
+
+            private static (float mantissa, char unitPrefix) GetUnitPrefix(float value, int maxLog1k)
+            {
+                var log1k = Math.Clamp((int)MathF.Log10(value) / 3, 0, maxLog1k);
+                var mantissa = value / MathF.Pow(1000f, log1k);
+                return (mantissa, UnitPrefixes[log1k]);
+            }
+
+            public string ToString(string? format, IFormatProvider? formatProvider)
+            {
+                var (mantissa, unitPrefix) = GetUnitPrefix(Value, MaxLog1k);
+                var sb = new StringBuilder();
+
+                sb.Append(mantissa.ToString(format, formatProvider));
+                sb.Append(" Pps");
+
+                if (unitPrefix != ' ')
+                {
+                    sb.Insert(sb.Length - 3, unitPrefix);
+                }
+
+                return sb.ToString();
+            }
+
+            public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
+            {
+                var (mantissa, unitPrefix) = GetUnitPrefix(Value, MaxLog1k);
+
+                static bool TryAppendChar(char c, Span<char> destination, ref int charsWritten)
+                {
+                    var success = charsWritten < destination.Length;
+
+                    if (success)
+                    {
+                        destination[charsWritten++] = c;
+                    }
+
+                    return success;
+                }
+
+                static bool TryAppendString(string s, Span<char> destination, ref int charsWritten)
+                {
+                    var success = s.TryCopyTo(destination[charsWritten..]);
+
+                    if (success)
+                    {
+                        charsWritten += s.Length;
+                    }
+
+                    return success;
+                }
+
+                return mantissa.TryFormat(destination, out charsWritten, format, provider)
+                    && TryAppendChar(' ', destination, ref charsWritten)
+                    && (unitPrefix == ' ' || TryAppendChar(unitPrefix, destination, ref charsWritten))
+                    && TryAppendString("Pps", destination, ref charsWritten);
+            }
+        }
+
         private async Task Main()
         {
             // Produce size of image from options
@@ -75,31 +144,17 @@ namespace RenderSandBox
             var stopWatch = Stopwatch.StartNew();
             var renderTask = renderer.StartRenderTask(_applicationLifetime.ApplicationStopping);
 
-            // Subscribe to render progress, start and await render task.
+            // Subscribe to render progress and await render task.
             using (renderer.GetProgress(
                 intervalMs: 500d,
                 cancellationToken: _applicationLifetime.ApplicationStopping)
                 .Subscribe(
-                    onNext: progress =>
-                    {
-                        var message = new StringBuilder();
-                        message.Append("Pixels: ").Append(progress.pixels.ToString("N0")).Append('\t');
-                        message.Append("Progress: ").Append(progress.progress.ToString("P2")).Append('\t');
-
-                        var log1000 = (int)MathF.Log10(progress.pixelsPerSecond) / 3;
-                        var ppsMantissa = progress.pixelsPerSecond / MathF.Pow(1000f, log1000);
-
-                        message.Append("Rate: ").Append(ppsMantissa.ToString("N2")).Append(' ');
-
-                        if (log1000 > 0)
-                        {
-                            message.Append(" KMGT"[log1000]);
-                        }
-
-                        message.Append("Pps");
-
-                        _logger.LogInformation(message.ToString(), progress);
-                    },
+                    onNext: progress => _logger.LogInformation(
+                        "Stage: {stage}\tPixels: {pixels:N0}\tProgress: {percentage:P2}\tRate: {rate:N2}",
+                        progress.Stage,
+                        progress.Pixels,
+                        progress.Percentage,
+                        new PixelsPerSecond(progress.PixelsPerSecond)),
                     onError: ex => _logger.LogError(ex, "Progress sequence faulted with the message: {message}", ex.Message)))
             {
                 _logger.LogInformation("Render task started. It's in status {status}", renderTask.Status);

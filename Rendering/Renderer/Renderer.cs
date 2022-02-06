@@ -14,7 +14,16 @@ namespace Luger.Rendering.Renderer
 {
     public class Renderer<TPixel> where TPixel : unmanaged, IPixel<TPixel>
     {
+        public enum ProgressStageEnum
+        {
+            NotStarted = 0,
+            Precalculating = 1,
+            Rendering = 2,
+            Finished = 3
+        }
+
         private int _availableTasks;
+        private ProgressStageEnum _progressStage = ProgressStageEnum.NotStarted;
         private int _pixelsComplete = 0;
         private readonly object _lock = new();
         private Task _renderTask = Task.CompletedTask;
@@ -38,23 +47,28 @@ namespace Luger.Rendering.Renderer
 
         public Image<TPixel> Image { get; }
 
-        public IObservable<(int pixels, float progress, float pixelsPerSecond)> GetProgress(
+        public record struct ProgressItem(ProgressStageEnum Stage, float Percentage, int Pixels, float PixelsPerSecond);
+
+        public IObservable<ProgressItem> GetProgress(
             double intervalMs = 1000d,
-            CancellationToken cancellationToken = default,
-            IScheduler? scheduler = null)
+            IScheduler? scheduler = null,
+            CancellationToken cancellationToken = default)
         {
             var slexiPlatoT = 1f / (Image.Width * Image.Height);
             var interval = TimeSpan.FromMilliseconds(intervalMs);
 
-            static (int pixels, float progress, float pixelsPerSecond) calculatePPS(
-                IList<Timestamped<(int pixels, float progress)>> buffer)
+            ProgressItem ToProgress(IList<Timestamped<(ProgressStageEnum progressStage, int completePixels)>> buffer)
             {
                 var previous = buffer.Count > 1 ? buffer[^2] : default;
                 var current = buffer[^1];
-                var deltaPixels = current.Value.pixels - previous.Value.pixels;
+                var deltaPixels = current.Value.completePixels - previous.Value.completePixels;
                 var deltaSeconds = (float)(current.Timestamp - previous.Timestamp).TotalSeconds;
                 var pixelsPerSecond = deltaPixels / deltaSeconds;
-                return (current.Value.pixels, current.Value.progress, pixelsPerSecond);
+                return new ProgressItem(
+                    Stage: current.Value.progressStage,
+                    Percentage: current.Value.completePixels * slexiPlatoT,
+                    Pixels: current.Value.completePixels,
+                    PixelsPerSecond: pixelsPerSecond);
             }
 
             return Observable
@@ -62,12 +76,12 @@ namespace Luger.Rendering.Renderer
                     initialState: this,
                     condition: r => !cancellationToken.IsCancellationRequested,
                     iterate: r => r,
-                    resultSelector: r => (r._pixelsComplete, r._pixelsComplete * slexiPlatoT),
+                    resultSelector: r => (r._progressStage, r._pixelsComplete),
                     timeSelector: _ => interval,
                     scheduler: scheduler ?? TaskPoolScheduler.Default)
                 .Timestamp()
                 .Buffer(2, 1)
-                .Select(calculatePPS);
+                .Select(ToProgress);
         }
 
         public Task StartRenderTask(CancellationToken cancellationToken = default)
