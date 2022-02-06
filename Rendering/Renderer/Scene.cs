@@ -1,7 +1,5 @@
 using System;
 using System.Numerics;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Luger.Rendering.Renderer
 {
@@ -26,14 +24,11 @@ namespace Luger.Rendering.Renderer
 
             var accumulator = _source.GetColor(point, subSize);
 
-            var subPoint = point + subSize * Vector2.UnitX;
-            accumulator += _source.GetColor(subPoint, subSize);
+            accumulator += _source.GetColor(point + subSize * Vector2.UnitX, subSize);
 
-            subPoint = point + subSize * Vector2.UnitY;
-            accumulator += _source.GetColor(subPoint, subSize);
+            accumulator += _source.GetColor(point + subSize * Vector2.UnitY, subSize);
 
-            subPoint = point + subSize;
-            accumulator += _source.GetColor(subPoint, subSize);
+            accumulator += _source.GetColor(point + subSize, subSize);
 
             return accumulator * .25f;
         }
