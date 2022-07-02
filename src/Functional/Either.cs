@@ -4,30 +4,27 @@ using System.Diagnostics;
 namespace Luger.Functional
 {
     /// <summary>
-    /// A discriminated union of <typeparamref name="TLeft"/> and <typeparamref name="TRight"/> with
-    /// Railway-oriented, functional map and bind methods.
+    /// A discriminated union of <typeparamref name="TLeft"/> and <typeparamref name="TRight"/> with Railway-oriented,
+    /// functional map and bind methods.
     /// </summary>
     /// <typeparam name="TLeft">Type of left (derailing) value</typeparam>
     /// <typeparam name="TRight">Type of right (on track) value</typeparam>
     [DebuggerStepThrough]
-    public struct Either<TLeft, TRight>
+    public struct Either<TLeft, TRight> where TLeft : class
     {
-        private readonly TLeft _left;
+        private readonly TLeft? _left;
         private readonly TRight _right;
-        private readonly bool _isRight;
 
         private Either(TLeft left)
         {
             _left = left;
             _right = default!;
-            _isRight = false;
         }
 
         private Either(TRight right)
         {
-            _left = default!;
+            _left = null;
             _right = right;
-            _isRight = true;
         }
 
         /// <summary>
@@ -39,10 +36,10 @@ namespace Luger.Functional
         /// <returns>Result of either left or right case function depending on value</returns>
         public TResult Match<TResult>(Func<TLeft, TResult> left, Func<TRight, TResult> right)
         {
-            left = left ?? throw new ArgumentNullException(nameof(left));
-            right = right ?? throw new ArgumentNullException(nameof(right));
+            ArgumentNullException.ThrowIfNull(left);
+            ArgumentNullException.ThrowIfNull(right);
 
-            return _isRight
+            return _left is null
                 ? right(_right)
                 : left(_left);
         }
@@ -71,7 +68,12 @@ namespace Luger.Functional
                 left: l => l,
                 right: func);
 
-        public static implicit operator Either<TLeft, TRight>(TLeft value) => new(value);
+        public static implicit operator Either<TLeft, TRight>(TLeft value)
+        {
+            ArgumentNullException.ThrowIfNull(value);
+
+            return new(value);
+        }
 
         public static implicit operator Either<TLeft, TRight>(TRight value) => new(value);
     }
@@ -79,7 +81,8 @@ namespace Luger.Functional
     public static class EitherExtensions
     {
         /// <summary>
-        /// LINQ query extension method for mapping a <paramref name="selector"/> function over the functor <see cref="Either{TLeft, TRight}"/>
+        /// LINQ query extension method for mapping a <paramref name="selector"/> function over the functor
+        /// <see cref="Either{TLeft, TRight}"/>
         /// </summary>
         /// <remarks>
         /// The expression
@@ -95,11 +98,13 @@ namespace Luger.Functional
         public static Either<TLeft, TResult> Select<TLeft, TSource, TResult>(
             this Either<TLeft, TSource> source,
             Func<TSource, TResult> selector)
+            where TLeft : class
 
             => source.Map(selector);
 
         /// <summary>
-        /// LINQ query extension method for binding a <paramref name="selector"/> function over the monad <see cref="Either{TLeft, TRight}"/>
+        /// LINQ query extension method for binding a <paramref name="selector"/> function over the monad
+        /// <see cref="Either{TLeft, TRight}"/>
         /// </summary>
         /// <remarks>
         /// The expression
@@ -117,6 +122,7 @@ namespace Luger.Functional
             this Either<TLeft, TSource> source,
             Func<TSource, Either<TLeft, TNext>> selector,
             Func<TSource, TNext, TResult> projection)
+            where TLeft : class
 
             => source.Bind(s => selector(s).Map(n => projection(s, n)));
     }
