@@ -91,17 +91,17 @@ namespace Luger.Functional.Tests
             Assert.Equal(expected, actual);
         }
 
-        private class OptionalEnumerableEqualityComparer<T> : IEqualityComparer<Maybe<IEnumerable<T>>>
-        {
-            public bool Equals(Maybe<IEnumerable<T>> x, Maybe<IEnumerable<T>> y) =>
-                x.Match(
-                    some: xs => y.Match(
-                        some: ys => xs.SequenceEqual(ys),
-                        none: () => false),
-                    none: () => !y.IsSome);
+        //private class MaybeEnumerableEqualityComparer<T> : IEqualityComparer<Maybe<IEnumerable<T>>>
+        //{
+        //    public bool Equals(Maybe<IEnumerable<T>> x, Maybe<IEnumerable<T>> y) =>
+        //        x.Match(
+        //            some: xs => y.Match(
+        //                some: ys => xs.SequenceEqual(ys),
+        //                none: () => false),
+        //            none: () => !y.IsSome);
 
-            public int GetHashCode(Maybe<IEnumerable<T>> obj) => throw new NotImplementedException();
-        }
+        //    public int GetHashCode(Maybe<IEnumerable<T>> obj) => throw new NotImplementedException();
+        //}
 
         public static IEnumerable<object[]> HeadTestData => new[]
         {
