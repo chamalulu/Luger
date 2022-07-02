@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyName>Luger.Functional.Tests</AssemblyName>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <RootNamespace>Luger.Functional.Tests</RootNamespace>
   </PropertyGroup>
