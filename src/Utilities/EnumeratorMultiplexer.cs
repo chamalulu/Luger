@@ -116,20 +116,26 @@ namespace Luger.Utilities
         /// </summary>
         public Maybe<EnumeratorMultiplexerNode<T>> MoveNext()
         {
-            Maybe<EnumeratorMultiplexerNode<T>> some(EnumeratorMultiplexerNode<T> node)
-            {
-                _next = node;
-                return Some(node);
-            }
-
             lock (_next)
             {
-                return _next switch
+                switch (_next)
                 {
-                    EnumeratorMultiplexerNode<T> node => Some(node),
-                    EnumeratorMultiplexer<T> multiplexer => multiplexer.ProduceNext().Match(some, None<EnumeratorMultiplexerNode<T>>),
-                    _ => throw new InvalidOperationException()
-                };
+                    case EnumeratorMultiplexerNode<T> node:
+                        return Some(node);
+                    case EnumeratorMultiplexer<T> multiplexer:
+                        if (multiplexer.ProduceNext() is [var firstNode])
+                        {
+                            _next = firstNode;
+                            return Some(firstNode);
+                        }
+                        else
+                        {
+                            return None<EnumeratorMultiplexerNode<T>>();
+                        }
+
+                    default:
+                        throw new InvalidOperationException();
+                }
             }
         }
     }
