@@ -38,7 +38,7 @@ namespace Luger.Functional
     /// for none or some respectively. This enables <see cref="Maybe{T}"/> to be functionally bound (flattened) together
     /// with any <see cref="IEnumerable{T}"/>.
     /// <code>
-    /// var flattened = from x in xs from t in funcMaybe(x) select t; // none results from funcMaybe(x) are filtered.
+    /// var flattened = from x in xs from t in funcMaybe(x) select t; // some results from funcMaybe(x) are filtered.
     /// </code>
     /// </para>
     /// <para>
@@ -57,6 +57,10 @@ namespace Luger.Functional
     [DebuggerStepThrough]
     public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerable<T> where T : notnull
     {
+        /* I've tried using T? as inner state but it gets nasty as it is a T or Nullable<T> at runtime.
+         * The nullability stuff in C# could need some reworking but since that would certainly become backwards
+         * incompatible maybe C# just has to bite the bullet and leave strong typing to modern languages.
+         */
         private readonly bool _isSome;
         private readonly T _value;
 
@@ -87,7 +91,7 @@ namespace Luger.Functional
         /// </remarks>
         /// <returns>Value if this is some and <paramref name="index"/> is 0.</returns>
         /// <exception cref="InvalidOperationException">Thrown if this is none.</exception>
-        /// <exception cref="IndexOutOfRangeException">Thrown if index is not 0.</exception>
+        /// <exception cref="IndexOutOfRangeException">Thrown if <paramref name="index"/> is not 0.</exception>
         [EditorBrowsable(EditorBrowsableState.Never)]
         public T this[int index]
 
@@ -446,11 +450,11 @@ namespace Luger.Functional
         /// <code>
         /// source.SelectMany(selector, resultSelector)
         /// </code>
-        /// The difference between <c>Bind</c> and <c>SelectMany</c> is that <c>SelectMany</c> takes a projection
+        /// The difference between <c>Bind</c> and <c>SelectMany</c> is that <c>SelectMany</c> takes a binary projection
         /// function, <paramref name="resultSelector"/>, as a parameter and as such can chain calls to <c>SelectMany</c>
         /// instead of encapsulating calls to <c>Bind</c> in nested closures.<br/>
         /// <c>SelectMany</c> can be implemented in terms of <c>Bind</c> and <c>Map</c> but type-specific
-        /// implementations (instances in Haskell) are probably more efficient.
+        /// implementations are probably more efficient.
         /// </remarks>
         public static Maybe<TResult> SelectMany<TSource, TNext, TResult>(
             this Maybe<TSource> source,
@@ -532,7 +536,7 @@ namespace Luger.Functional
                 : None<T>();
 
         /// <summary>
-        /// Conversion from nullable reference type <typeparamref name="T"/> to <see cref="Maybe{T}"/>
+        /// Conversion from nullable reference type <typeparamref name="T"/>? to <see cref="Maybe{T}"/>
         /// </summary>
         /// <typeparam name="T">Type of some value</typeparam>
         /// <param name="value">Nullable reference to convert</param>
