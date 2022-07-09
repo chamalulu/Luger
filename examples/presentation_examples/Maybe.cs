@@ -5,7 +5,7 @@ using System;
 using static Luger.Functional.Maybe;
 
 
-namespace Luger.Examples.Maybe
+namespace Luger.Examples.presentation_examples
 {
     // Example of code using null to indicate missing value.
     namespace NullBased
@@ -33,20 +33,32 @@ namespace Luger.Examples.Maybe
 
         class AgeService : IAgeService
         {
-            private readonly IRepository repo;
+            readonly IRepository repo;
 
             public AgeService(IRepository repo) => this.repo = repo;
 
-            // The implementation is made a little more concise by using C# 6 null-conditional member access.
+            // The implementation can be made pretty concise due to pattern matching with inline variable declarations.
             public TimeSpan? GetAgeById(Guid id, DateTime date)
             {
-                DateTime? dob = repo.Find(id)?.DateOfBirth;
-
-                if (dob.HasValue)
-                    return date - dob.Value;
+                if (repo.Find(id) is Person person && person.DateOfBirth is DateTime dob)
+                {
+                    return date - dob;
+                }
                 else
+                {
                     return null;
+                }
             }
+
+            /* The implementation can be made even more concise due to C# 6 null-conditional member access and nullable
+             * lifted operators but takes some careful reading to examine all the null handling.
+             * In the expression below there are two distinct null checks.
+             * The first one is somewhat obvious and made descreetly explicit by the elvis operator (?.).
+             * The second one is not that obvious.
+             */
+            public TimeSpan? GetAgeByIdConciseButLessReadable(Guid id, DateTime date)
+
+                => date - repo.Find(id)?.DateOfBirth;
         }
     }
 
@@ -78,27 +90,37 @@ namespace Luger.Examples.Maybe
         // Also implements MaybeBased.IAgeService to illustrate bridging styles.
         class AgeService : IAgeService, MaybeBased.IAgeService
         {
-            private readonly IRepository repo;
+            readonly IRepository repo;
 
             public AgeService(IRepository repo) => this.repo = repo;
 
             // Some local state juggling is necessary to combine missing cases.
             public bool TryGetAgeById(Guid id, DateTime date, out TimeSpan age)
             {
-                bool success;
-
-                (success, age) = repo.TryFind(id, out Person person) && person.DateOfBirth.HasValue
-                    ? (true, date - person.DateOfBirth.Value)
-                    : (false, default);
-
-                return success;
+                if (repo.TryFind(id, out var person) && person.DateOfBirth is DateTime dob)
+                {
+                    age = date - dob;
+                    return true;
+                }
+                else
+                {
+                    age = default;
+                    return false;
+                }
             }
 
             // Combining missing cases becomes a little simpler without out parameters.
             Maybe<TimeSpan> MaybeBased.IAgeService.GetAgeById(Guid id, DateTime date)
-                => repo.TryFind(id, out Person person) && person.DateOfBirth.HasValue
-                    ? Some(date - person.DateOfBirth.Value)
-                    : None<TimeSpan>();
+            {
+                if (TryGetAgeById(id, date, out var age))
+                {
+                    return age;
+                }
+                else
+                {
+                    return default;
+                }
+            }
         }
     }
 
@@ -129,33 +151,26 @@ namespace Luger.Examples.Maybe
         // Also implements NullBased.IAgeService and TryBased.IAgeService to illustrate bridging styles.
         class AgeService : IAgeService, NullBased.IAgeService, TryBased.IAgeService
         {
-            private readonly IRepository repo;
+            readonly IRepository repo;
 
             public AgeService(IRepository repo) => this.repo = repo;
 
             // Very readable and concise due to C# LINQ integration with Maybe<> monad.
             public Maybe<TimeSpan> GetAgeById(Guid id, DateTime date)
+
                 => from person in repo.Find(id)
                    from dob in person.DateOfBirth
                    select date - dob;
 
-            // Translating Maybe<> to Nullable<> is done by pattern matching with Maybe<>.Match .
+            // Translating Maybe<> to Nullable<> is provided by ToNullable extension method.
             TimeSpan? NullBased.IAgeService.GetAgeById(Guid id, DateTime date)
-                => GetAgeById(id, date).Match<TimeSpan?>(
-                    some: ts => ts,
-                    none: () => null);
 
-            // Translating Maybe<> to Try* pattern is done by pattern matching with Maybe<>.Match . But still the awkward local state juggling.
+                => GetAgeById(id, date).ToNullable();
+
+            // With Maybe exposing the Try extension using Try* pattern is straightforward.
             bool TryBased.IAgeService.TryGetAgeById(Guid id, DateTime date, out TimeSpan age)
-            {
-                bool success;
 
-                (success, age) = GetAgeById(id, date).Match(
-                    some: dob => (true, dob),
-                    none: () => (false, default));
-
-                return success;
-            }
+                => GetAgeById(id, date).Try(out age);
         }
     }
 }

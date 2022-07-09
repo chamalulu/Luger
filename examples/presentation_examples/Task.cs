@@ -2,12 +2,12 @@ using Luger.Functional;
 
 using System.Threading.Tasks;
 
-namespace Luger.Examples
+namespace Luger.Examples.presentation_examples
 {
-    interface ILogService
+    interface IRepository
     {
         // Task has no result.
-        Task WriteAsync(string message);
+        Task StoreAsync(object? value);
     }
 
     interface IProcessor<TIn, TOut>
@@ -18,13 +18,13 @@ namespace Luger.Examples
 
     class TaskExample<TIn, TOut>
     {
-        private readonly IProcessor<TIn, TOut> processor;
-        private readonly ILogService logService;
+        readonly IProcessor<TIn, TOut> processor;
+        readonly IRepository repository;
 
-        public TaskExample(IProcessor<TIn, TOut> processor, ILogService logService)
+        public TaskExample(IProcessor<TIn, TOut> processor, IRepository repository)
         {
             this.processor = processor;
-            this.logService = logService;
+            this.repository = repository;
         }
 
         public async Task<TOut> ProcessAndLog(TIn input)
@@ -33,7 +33,7 @@ namespace Luger.Examples
             var result = await processor.Process(input);
 
             // Await logging
-            await logService.WriteAsync("Processed something");
+            await repository.StoreAsync(result);
 
             // Return result.
             return result;
@@ -43,8 +43,9 @@ namespace Luger.Examples
         // AsVoidTask wraps Task in Task<ValueTuple>.
         // ValueTuple is a 0-dimensional tuple and can only have one value: default. It's like a typed void.
         public Task<TOut> ProcessAndLog2(TIn input)
+
             => from result in processor.Process(input)
-               from _ in logService.WriteAsync("Processed something").AsVoidTask()
+               from _ in repository.StoreAsync(result).AsVoidTask()
                select result;
     }
 }
