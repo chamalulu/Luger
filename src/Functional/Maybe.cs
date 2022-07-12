@@ -61,10 +61,10 @@ namespace Luger.Functional
          * The nullability stuff in C# could need some reworking but since that would certainly become backwards
          * incompatible maybe C# just has to bite the bullet and leave strong typing to modern languages.
          */
-        private readonly bool _isSome;
-        private readonly T _value;
+        readonly bool _isSome;
+        readonly T _value;
 
-        private Maybe(T value)
+        Maybe(T value)
         {
             _isSome = true;
             _value = value;
@@ -101,7 +101,7 @@ namespace Luger.Functional
                     : throw new InvalidOperationException()
                 : throw new IndexOutOfRangeException();
 
-        private static readonly IEqualityComparer<T> ValueEqualityComparer = EqualityComparer<T>.Default;
+        static readonly IEqualityComparer<T> ValueEqualityComparer = EqualityComparer<T>.Default;
 
         /// <summary>
         /// Non-boxing equality comparison. Delegates to <see cref="IEqualityComparer{T}.Equals(T?, T?)"/> of
