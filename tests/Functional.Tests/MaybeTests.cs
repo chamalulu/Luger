@@ -19,12 +19,12 @@ namespace Luger.Functional.Tests
         public void IndexSomeFirst() => Assert.Equal(42, Some(42)[0]);
 
         [Theory]
-        [InlineData(null, 0, typeof(InvalidOperationException))]
-        [InlineData(null, 1, typeof(IndexOutOfRangeException))]
-        [InlineData(42, 1, typeof(IndexOutOfRangeException))]
-        public void IndexThrowsTheory(int? maybe, int index, Type exceptionType)
+        [InlineData(null, 0)]
+        [InlineData(null, 1)]
+        [InlineData(42, 1)]
+        public void IndexThrowsTheory(int? maybe, int index)
 
-            => Assert.Throws(exceptionType, () => FromNullable(maybe)[index]);
+            => Assert.Throws<IndexOutOfRangeException>(() => FromNullable(maybe)[index]);
 
         [Fact]
         public void ListPatternNoneMatchEmpty() => Assert.True(None<int>() is []);
@@ -85,7 +85,7 @@ namespace Luger.Functional.Tests
         [InlineData(1000, "N2", "sv-SE", "[1\x00A0000,00]")]    // So, the Swedish thousand separator is a non-breaking space. Obviously.
         public void FormattableToStringTheory(int? maybe, string? format, string? cultureName, string expected)
         {
-            var formatProvider = cultureName is string
+            var formatProvider = cultureName is not null
                 ? System.Globalization.CultureInfo.GetCultureInfo(cultureName)
                 : null;
 
@@ -159,11 +159,9 @@ namespace Luger.Functional.Tests
         [Fact]
         public void OpImplicitReference() => Assert.True(((Maybe<string>)"banan") is ["banan"]);
 
-        private static int ApplyTestFunction(int k, int m, int x) => k * x + m;
-
         public static IEnumerable<object[]> ApplyTheoryArguments
 
-            => from f in new Func<int,int,int,int>?[] { null, ApplyTestFunction }
+            => from f in new Func<int,int,int,int>?[] { null, (k, m, x) => k * x + m }
                from k in new int?[] { null, 2 }
                from m in new int?[] { null, 1 }
                from x in new int?[] { null, 42 }
@@ -192,7 +190,11 @@ namespace Luger.Functional.Tests
 
             => Assert.Equal(expected, maybeFunc.Apply(maybeK).Apply(maybeM).Apply(maybeX));
 
-        private static Maybe<int> ParseInt(string s) => int.TryParse(s, out var i) ? i : default(Maybe<int>);
+        static Maybe<int> ParseInt(string s)
+
+            => int.TryParse(s, out var i)
+                ? Some(i)
+                : default;
 
         [Theory]
         [InlineData(null, null)]

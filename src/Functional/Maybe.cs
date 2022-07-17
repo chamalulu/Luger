@@ -75,7 +75,7 @@ namespace Luger.Functional
         /// </summary>
         /// <remarks>
         /// Provided for support of List Pattern of C# 11.<br/>
-        /// Use this property if you like, but it'll look rather silly.
+        /// Use this property directly if you like, but it'll look rather silly.
         /// </remarks>
         /// <value>1 if this is some; otherwise 0.</value>
         [EditorBrowsable(EditorBrowsableState.Advanced)]
@@ -87,18 +87,15 @@ namespace Luger.Functional
         /// <param name="index">Index of value. Must be 0.</param>
         /// <remarks>
         /// Provided for support of List Pattern of C# 11.<br/>
-        /// Don't use this property. It's as misbehaving as <see cref="Nullable{T}.Value"/>.
+        /// Don't use this property directly. It's as misbehaving as <see cref="Nullable{T}.Value"/>.
         /// </remarks>
         /// <returns>Value if this is some and <paramref name="index"/> is 0.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if this is none.</exception>
-        /// <exception cref="IndexOutOfRangeException">Thrown if <paramref name="index"/> is not 0.</exception>
+        /// <exception cref="IndexOutOfRangeException">Thrown if this is none or <paramref name="index"/> is not 0.</exception>
         [EditorBrowsable(EditorBrowsableState.Never)]
         public T this[int index]
 
-            => index == 0
-                ? _isSome
-                    ? _value
-                    : throw new InvalidOperationException()
+            => _isSome && index == 0
+                ? _value
                 : throw new IndexOutOfRangeException();
 
         static readonly IEqualityComparer<T> ValueEqualityComparer = EqualityComparer<T>.Default;
