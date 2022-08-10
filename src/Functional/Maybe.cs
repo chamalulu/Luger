@@ -71,7 +71,7 @@ namespace Luger.Functional
         }
 
         /// <summary>
-        /// Length of this <see cref="Maybe{T}"/>
+        /// Gets the number of elements contained in the <see cref="Maybe{T}"/>
         /// </summary>
         /// <remarks>
         /// Provided for support of List Pattern of C# 11.<br/>
@@ -79,10 +79,10 @@ namespace Luger.Functional
         /// </remarks>
         /// <value>1 if this is some; otherwise 0.</value>
         [EditorBrowsable(EditorBrowsableState.Advanced)]
-        public int Length => _isSome ? 1 : 0;
+        public int Count => _isSome ? 1 : 0;
 
         /// <summary>
-        /// Index property into this <see cref="Maybe{T}"/>
+        /// Gets the element at the specified <paramref name="index"/>
         /// </summary>
         /// <param name="index">Index of value. Must be 0.</param>
         /// <remarks>

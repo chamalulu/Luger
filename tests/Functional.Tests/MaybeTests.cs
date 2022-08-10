@@ -13,7 +13,7 @@ namespace Luger.Functional.Tests
         [Theory]
         [InlineData(null, 0)]
         [InlineData(42, 1)]
-        public void LengthTheory(int? maybe, int expected) => Assert.Equal(expected, FromNullable(maybe).Length);
+        public void CountTheory(int? maybe, int expected) => Assert.Equal(expected, FromNullable(maybe).Count);
 
         [Fact]
         public void IndexSomeFirst() => Assert.Equal(42, Some(42)[0]);
@@ -65,7 +65,7 @@ namespace Luger.Functional.Tests
         public void ObjectEqualsFalse(int? maybeThis, object? obj) => Assert.False(FromNullable(maybeThis).Equals(obj));
 
         [Fact]
-        public void GethashCodeNoneFact() => Assert.Equal(0, None<int>().GetHashCode());
+        public void GetHashCodeNoneFact() => Assert.Equal(0, None<int>().GetHashCode());
 
         [Theory]
         [InlineData(0)]
