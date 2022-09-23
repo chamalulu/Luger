@@ -18,7 +18,9 @@ namespace Luger.Functional
     /// </para>
     /// <para>
     /// You can pattern match against values of <see cref="Maybe{T}"/> by using C# 11
-    /// <see href="https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/operators/patterns#list-patterns">List Patterns</see>.
+    /// <see href="https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/operators/patterns#list-patterns">
+    /// List Patterns
+    /// </see>.
     /// <code>
     /// Console.WriteLine(maybeT is [var t] ? $"Got some {t}!" : "Got none.");
     /// Console.WriteLine(maybeT is [] ? "Got none." : "Got some!"); 
@@ -44,7 +46,8 @@ namespace Luger.Functional
     /// <para>
     /// <see cref="Maybe{T}"/> implements truth (<c>true</c>, <c>false</c>) and logical conjunction (<c>&amp;</c>) and
     /// disjunction (<c>|</c>) operators. This combination also provides conditional logical operators
-    /// (<c>&amp;&amp;</c>, <c>||</c>). This enables chaining of <see cref="Maybe{T}"/> values in logical expressions.<br/>
+    /// (<c>&amp;&amp;</c>, <c>||</c>). This enables chaining of <see cref="Maybe{T}"/> values in logical expressions.
+    /// <br/>
     /// Using the conditional operators enables on-demand evaluation as expected.<br/>
     /// </para>
     /// <para>
@@ -57,7 +60,8 @@ namespace Luger.Functional
     [DebuggerStepThrough]
     public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerable<T> where T : notnull
     {
-        /* I've tried using T? as inner state but it gets nasty as it is a T or Nullable<T> at runtime.
+        /* I've tried using T? as inner state but it gets nasty as it is a T or Nullable<T> at runtime depending on
+         * wether T is a reference or value type.
          * The nullability stuff in C# could need some reworking but since that would certainly become backwards
          * incompatible maybe C# just has to bite the bullet and leave strong typing to modern languages.
          */
@@ -90,7 +94,9 @@ namespace Luger.Functional
         /// Don't use this property directly. It's as misbehaving as <see cref="Nullable{T}.Value"/>.
         /// </remarks>
         /// <returns>Value if this is some and <paramref name="index"/> is 0.</returns>
-        /// <exception cref="IndexOutOfRangeException">Thrown if this is none or <paramref name="index"/> is not 0.</exception>
+        /// <exception cref="IndexOutOfRangeException">
+        /// Thrown if this is none or <paramref name="index"/> is not 0.
+        /// </exception>
         [EditorBrowsable(EditorBrowsableState.Never)]
         public T this[int index]
 
@@ -110,7 +116,9 @@ namespace Luger.Functional
         /// </returns>
         public bool Equals(Maybe<T> other)
 
-            => _isSome ? other._isSome && ValueEqualityComparer.Equals(_value, other._value) : !other._isSome;
+            => _isSome
+                ? other._isSome && ValueEqualityComparer.Equals(_value, other._value)
+                : !other._isSome;
 
         /// <summary>
         /// Possibly boxing equality comparison. Delegates to <see cref="T.Equals(object?)"/> in some case.
@@ -128,19 +136,31 @@ namespace Luger.Functional
         /// <returns>Hash code of value in some case; otherwise 0.</returns>
         public override int GetHashCode() => _isSome ? ValueEqualityComparer.GetHashCode(_value) : 0;
 
+        struct Enumerator : IEnumerator<T>
+        {
+            readonly Maybe<T> _maybe;
+            bool _moved;
+
+            public Enumerator(Maybe<T> maybe) => _maybe = maybe;
+
+            public T Current => _maybe._value;
+
+            object IEnumerator.Current => Current;
+
+            public void Dispose() { }
+
+            public bool MoveNext() => !_moved && _maybe._isSome && (_moved = true);
+
+            public void Reset() => _moved = false;
+        }
+
         /// <summary>
         /// Produces an <see cref="IEnumerator{T}"/> over this <see cref="Maybe{T}"/>.
         /// </summary>
         /// <returns>
         /// An enumerator yielding the value in some case; otherwise not yielding any value.
         /// </returns>
-        public IEnumerator<T> GetEnumerator()
-        {
-            if (_isSome)
-            {
-                yield return _value;
-            }
-        }
+        public IEnumerator<T> GetEnumerator() => new Enumerator(this);
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
