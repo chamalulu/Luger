@@ -14,7 +14,7 @@ namespace Luger.Functional
     /// The values can be in one of two main states; Some or None.<br/>
     /// Some is analogous to a <see cref="Nullable{T}"/> or nullable reference with a value.<br/>
     /// None is analogous to a <see cref="Nullable{T}"/> or nullable reference without a value, i.e. the infamous
-    /// <c>null</c>.
+    /// <see langword="null"/>.
     /// </para>
     /// <para>
     /// You can pattern match against values of <see cref="Maybe{T}"/> by using C# 11
@@ -44,10 +44,10 @@ namespace Luger.Functional
     /// </code>
     /// </para>
     /// <para>
-    /// <see cref="Maybe{T}"/> implements truth (<c>true</c>, <c>false</c>) and logical conjunction (<c>&amp;</c>) and
-    /// disjunction (<c>|</c>) operators. This combination also provides conditional logical operators
-    /// (<c>&amp;&amp;</c>, <c>||</c>). This enables chaining of <see cref="Maybe{T}"/> values in logical expressions.
-    /// <br/>
+    /// <see cref="Maybe{T}"/> implements truth (<see langword="true"/>, <see langword="false"/>) and logical
+    /// conjunction (<see langword="&amp;"/>) and disjunction (<see langword="|"/>) operators. This combination also
+    /// provides conditional logical operators (<see langword="&amp;&amp;"/>, <see langword="||"/>). This enables
+    /// chaining of <see cref="Maybe{T}"/> values in logical expressions.<br/>
     /// Using the conditional operators enables on-demand evaluation as expected.<br/>
     /// </para>
     /// <para>
@@ -60,8 +60,8 @@ namespace Luger.Functional
     [DebuggerStepThrough]
     public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerable<T> where T : notnull
     {
-        /* I've tried using T? as inner state but it gets nasty as it is a T or Nullable<T> at runtime depending on
-         * wether T is a reference or value type.
+        /* I've tried using T? as inner state but it gets nasty as it is either a T or a Nullable<T> at runtime
+         * depending on wether T is a reference type or value type.
          * The nullability stuff in C# could need some reworking but since that would certainly become backwards
          * incompatible maybe C# just has to bite the bullet and leave strong typing to modern languages.
          */
@@ -95,7 +95,8 @@ namespace Luger.Functional
         /// </remarks>
         /// <returns>Value if this is some and <paramref name="index"/> is 0.</returns>
         /// <exception cref="IndexOutOfRangeException">
-        /// Thrown if this is none or <paramref name="index"/> is not 0.
+        /// Thrown if this is none or <paramref name="index"/> is not 0.</br>
+        /// I trust the C# compiler never to trigger this.
         /// </exception>
         [EditorBrowsable(EditorBrowsableState.Never)]
         public T this[int index]
@@ -112,7 +113,8 @@ namespace Luger.Functional
         /// </summary>
         /// <param name="other"><see cref="Maybe{T}"/> comparand</param>
         /// <returns>
-        /// <c>true</c> if values have the same state and if some, the same value; otherwise <c>false</c>.
+        /// <see langword="true"/> if values have the same state and if some, the same value;
+        /// otherwise <see langword="false"/>.
         /// </returns>
         public bool Equals(Maybe<T> other)
 
@@ -123,9 +125,10 @@ namespace Luger.Functional
         /// <summary>
         /// Possibly boxing equality comparison. Delegates to <see cref="T.Equals(object?)"/> in some case.
         /// </summary>
-        /// <param name="obj"><see cref="object?"/> comparand</param>
+        /// <param name="obj">comparand</param>
         /// <returns>
-        /// <c>true</c> if some and value equals <paramref name="obj"/> or none and null; otherwise <c>false</c>.
+        /// <see langword="true"/> if some and value equals <paramref name="obj"/> or none and <see langword="null"/>;
+        /// otherwise <see langword="false"/>.
         /// </returns>
         public override bool Equals(object? obj) => _isSome ? _value.Equals(obj) : obj is null;
 
@@ -208,22 +211,22 @@ namespace Luger.Functional
         /// </summary>
         /// <remarks>
         /// This operator is used when a <see cref="Maybe{T}"/> value is used in a controlling conditional expression
-        /// in e.g. <c>if</c>, <c>do</c>, <c>while</c> and <c>for</c> statements and the ternary conditional operator
-        /// (<c>?:</c>).<br/>
-        /// It also plays a role implementing the conditional logical disjunction operator (<c>||</c>) together with the
-        /// logical disjunction operator (<c>|</c>).
+        /// in e.g. <see langword="if"/>, <see langword="do"/>, <see langword="while"/> and <see langword="for"/>
+        /// statements and the ternary conditional operator (<see langword="?:"/>).<br/>
+        /// It also plays a role implementing the conditional logical disjunction operator (<see langword="||"/>)
+        /// together with the logical disjunction operator (<see langword="|"/>).
         /// </remarks>
-        /// <returns><c>true</c> in some case; otherwise <c>false</c></returns>
+        /// <returns><see langword="true"/> in some case; otherwise <see langword="false"/></returns>
         public static bool operator true(Maybe<T> value) => value._isSome;
 
         /// <summary>
         /// Falsity value of <paramref name="value"/>
         /// </summary>
         /// <remarks>
-        /// This operator plays a role implementing the conditional logical conjunction operator (<c>&amp;&amp;</c>)
-        /// together with the logical conjunction operator (<c>&amp;</c>).
+        /// This operator plays a role implementing the conditional logical conjunction operator
+        /// (<see langword="&amp;&amp;"/>) together with the logical conjunction operator (<see langword="&amp;"/>).
         /// </remarks>
-        /// <returns><c>true</c> in none case; otherwise <c>false</c></returns>
+        /// <returns><see langword="true"/> in none case; otherwise <see langword="false"/></returns>
         public static bool operator false(Maybe<T> value) => !value._isSome;
 
         /// <summary>
@@ -261,7 +264,8 @@ namespace Luger.Functional
         /// Equality operator of operands <paramref name="left"/> and <paramref name="right"/>
         /// </summary>
         /// <returns>
-        /// <c>true</c> if operands have same state and in some case, the same value; otherwise <c>false</c>
+        /// <see langword="true"/> if operands have same state and in some case, the same value;
+        /// otherwise <see langword="false"/>
         /// </returns>
         public static bool operator ==(Maybe<T> left, Maybe<T> right) => left.Equals(right);
 
@@ -269,7 +273,8 @@ namespace Luger.Functional
         /// Inequality operator of operands <paramref name="left"/> and <paramref name="right"/>
         /// </summary>
         /// <returns>
-        /// <c>true</c> if operands have different state or in some case, different value; otherwise <c>false</c>
+        /// <see langword="true"/> if operands have different state or in some case, different value;
+        /// otherwise <see langword="false"/>
         /// </returns>
         public static bool operator !=(Maybe<T> left, Maybe<T> right) => !left.Equals(right);
 
@@ -302,7 +307,9 @@ namespace Luger.Functional
         /// <typeparam name="TR">Type of return value</typeparam>
         /// <param name="maybeFunc">Lifted unary function</param>
         /// <param name="maybeT">Lifted parameter</param>
-        /// <remarks>This is the equvalent of the infix operator <c>&lt;*&gt;</c> of Applicative in Haskell.</remarks>
+        /// <remarks>
+        /// This is the equvalent of the infix operator <see langword="&lt;*&gt;"/> of Applicative in Haskell.
+        /// </remarks>
         /// <returns>Lifted return value</returns>
         public static Maybe<TR> Apply<T, TR>(this Maybe<Func<T, TR>> maybeFunc, Maybe<T> maybeT)
             where T : notnull
@@ -322,8 +329,8 @@ namespace Luger.Functional
         /// <param name="maybeFunc">Lifted binary function</param>
         /// <param name="maybeT1">Lifted parameter</param>
         /// <remarks>
-        /// With a littlie squinting and currying, this is the equvalent of the infix operator <c>&lt;*&gt;</c> of
-        /// Applicative in Haskell.
+        /// With a littlie squinting and currying, this is the equvalent of the infix operator
+        /// <see langword="&lt;*&gt;"/> of Applicative in Haskell.
         /// </remarks>
         /// <returns>Lifted unary, since partially applied, function</returns>
         public static Maybe<Func<T2, TR>> Apply<T1, T2, TR>(this Maybe<Func<T1, T2, TR>> maybeFunc, Maybe<T1> maybeT1)
@@ -344,8 +351,8 @@ namespace Luger.Functional
         /// <param name="maybeFunc">Lifted ternary function</param>
         /// <param name="maybeT1">Lifted parameter</param>
         /// <remarks>
-        /// With a littlie squinting and currying, this is the equvalent of the infix operator <c>&lt;*&gt;</c> of
-        /// Applicative in Haskell.
+        /// With a littlie squinting and currying, this is the equvalent of the infix operator
+        /// <see langword="&lt;*&gt;"/> of Applicative in Haskell.
         /// </remarks>
         /// <returns>Lifted binary, since partially applied, function</returns>
         public static Maybe<Func<T2, T3, TR>> Apply<T1, T2, T3, TR>(
@@ -366,7 +373,7 @@ namespace Luger.Functional
         /// <param name="maybeT">Lifted parameter</param>
         /// <param name="func">Function to bind</param>
         /// <remarks>
-        /// This is the equivalent of the infix operator <c>&gt;&gt;=</c> of Monad in Haskell.
+        /// This is the equivalent of the infix operator <see langword="&gt;&gt;="/> of Monad in Haskell.
         /// </remarks>
         /// <returns>Lifted return value</returns>
         public static Maybe<TR> Bind<T, TR>(this Maybe<T> maybeT, Func<T, Maybe<TR>> func)
@@ -385,7 +392,7 @@ namespace Luger.Functional
         /// <param name="maybeT">Lifted parameter</param>
         /// <param name="func">Mapping function</param>
         /// <remarks>
-        /// This is the equivalent of the infix operator <c>&lt;$&gt;</c> of Functor in Haskell.
+        /// This is the equivalent of the infix operator <see langword="&lt;$&gt;"/> of Functor in Haskell.
         /// </remarks>
         /// <returns>Lifted return value</returns>
         public static Maybe<TR> Map<T, TR>(this Maybe<T> maybeT, Func<T, TR> func)
@@ -490,8 +497,10 @@ namespace Luger.Functional
         /// </summary>
         /// <typeparam name="T">Type of value</typeparam>
         /// <param name="maybeT">Maybe value</param>
-        /// <param name="value">Inner value in some case; otherwise undefined (<c>default!</c> really).</param>
-        /// <returns><c>true</c> in some case; otherwise <c>false</c></returns>
+        /// <param name="value">
+        /// Inner value in some case; otherwise undefined (<see langword="default"/>! really).
+        /// </param>
+        /// <returns><see langword="true"/> in some case; otherwise <see langword="false"/></returns>
         /// <remarks>
         /// Try-style methods are methods with signature <c>bool TrySomething&lt;T&gt;(out T result)</c> which offer
         /// better composability than their exception-throwing counterparts. This style can be used to extract the
@@ -581,7 +590,9 @@ namespace Luger.Functional
         /// </summary>
         /// <typeparam name="T">Type of some value</typeparam>
         /// <param name="value"><see cref="Maybe{T}"/> to convert</param>
-        /// <returns>A nullable reference to value of <paramref name="value"/> in some case; otherwise null.</returns>
+        /// <returns>
+        /// A nullable reference to value of <paramref name="value"/> in some case; otherwise <see langword="null"/>.
+        /// </returns>
         public static T? ToReference<T>(this Maybe<T> value) where T : class
 
             => value is [var t] ? t : null;
