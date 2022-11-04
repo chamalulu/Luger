@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29306.81
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Functional", "src\Functional\Functional.csproj", "{5F78CCB2-CD11-40D3-8302-4F388D00A1A0}"
 EndProject
@@ -35,6 +35,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{7FD405C9-F59C-4F56-9DCB-BA0A4445B435}"
 	ProjectSection(SolutionItems) = preProject
 		.github\workflows\config.commandline_release.yml = .github\workflows\config.commandline_release.yml
+		.github\workflows\functional.maybe_release.yml = .github\workflows\functional.maybe_release.yml
 		.github\workflows\solutionwide_ci.yml = .github\workflows\solutionwide_ci.yml
 	EndProjectSection
 EndProject
@@ -47,7 +48,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{4E1D
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{028E80BC-F4FB-4062-B5B1-EE67DD52EF3B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Config.CommandLine.Example", "examples\Config.CommandLine.Example\Config.CommandLine.Example.csproj", "{AFF38FF7-9DD6-4507-B332-43CAC67F89F1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Config.CommandLine.Example", "examples\Config.CommandLine.Example\Config.CommandLine.Example.csproj", "{AFF38FF7-9DD6-4507-B332-43CAC67F89F1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Functional", "Functional", "{918F0F9C-49A4-493C-B47A-C94D8BFFEC94}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Maybe", "Maybe", "{574F1197-207F-4630-9F0B-251BFCEC5EA6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Functional.Maybe", "Functional\Maybe\src\Functional.Maybe.csproj", "{D8DEB18F-2050-4455-B564-BCDCE3ED5929}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Functional.Maybe.Tests", "Functional\Maybe\tests\Functional.Maybe.Tests.csproj", "{674C2C1C-C2E4-48DC-B39C-3AE556087CA4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -191,6 +200,30 @@ Global
 		{AFF38FF7-9DD6-4507-B332-43CAC67F89F1}.Release|x64.Build.0 = Release|Any CPU
 		{AFF38FF7-9DD6-4507-B332-43CAC67F89F1}.Release|x86.ActiveCfg = Release|Any CPU
 		{AFF38FF7-9DD6-4507-B332-43CAC67F89F1}.Release|x86.Build.0 = Release|Any CPU
+		{D8DEB18F-2050-4455-B564-BCDCE3ED5929}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8DEB18F-2050-4455-B564-BCDCE3ED5929}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8DEB18F-2050-4455-B564-BCDCE3ED5929}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D8DEB18F-2050-4455-B564-BCDCE3ED5929}.Debug|x64.Build.0 = Debug|Any CPU
+		{D8DEB18F-2050-4455-B564-BCDCE3ED5929}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D8DEB18F-2050-4455-B564-BCDCE3ED5929}.Debug|x86.Build.0 = Debug|Any CPU
+		{D8DEB18F-2050-4455-B564-BCDCE3ED5929}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8DEB18F-2050-4455-B564-BCDCE3ED5929}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8DEB18F-2050-4455-B564-BCDCE3ED5929}.Release|x64.ActiveCfg = Release|Any CPU
+		{D8DEB18F-2050-4455-B564-BCDCE3ED5929}.Release|x64.Build.0 = Release|Any CPU
+		{D8DEB18F-2050-4455-B564-BCDCE3ED5929}.Release|x86.ActiveCfg = Release|Any CPU
+		{D8DEB18F-2050-4455-B564-BCDCE3ED5929}.Release|x86.Build.0 = Release|Any CPU
+		{674C2C1C-C2E4-48DC-B39C-3AE556087CA4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{674C2C1C-C2E4-48DC-B39C-3AE556087CA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{674C2C1C-C2E4-48DC-B39C-3AE556087CA4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{674C2C1C-C2E4-48DC-B39C-3AE556087CA4}.Debug|x64.Build.0 = Debug|Any CPU
+		{674C2C1C-C2E4-48DC-B39C-3AE556087CA4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{674C2C1C-C2E4-48DC-B39C-3AE556087CA4}.Debug|x86.Build.0 = Debug|Any CPU
+		{674C2C1C-C2E4-48DC-B39C-3AE556087CA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{674C2C1C-C2E4-48DC-B39C-3AE556087CA4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{674C2C1C-C2E4-48DC-B39C-3AE556087CA4}.Release|x64.ActiveCfg = Release|Any CPU
+		{674C2C1C-C2E4-48DC-B39C-3AE556087CA4}.Release|x64.Build.0 = Release|Any CPU
+		{674C2C1C-C2E4-48DC-B39C-3AE556087CA4}.Release|x86.ActiveCfg = Release|Any CPU
+		{674C2C1C-C2E4-48DC-B39C-3AE556087CA4}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -209,6 +242,9 @@ Global
 		{7FD405C9-F59C-4F56-9DCB-BA0A4445B435} = {BA33FB4D-C54D-45F3-8241-91498ED0B8D3}
 		{4E1D8EB7-E765-4928-BE45-D2D92CC502DF} = {BA33FB4D-C54D-45F3-8241-91498ED0B8D3}
 		{AFF38FF7-9DD6-4507-B332-43CAC67F89F1} = {028E80BC-F4FB-4062-B5B1-EE67DD52EF3B}
+		{574F1197-207F-4630-9F0B-251BFCEC5EA6} = {918F0F9C-49A4-493C-B47A-C94D8BFFEC94}
+		{D8DEB18F-2050-4455-B564-BCDCE3ED5929} = {574F1197-207F-4630-9F0B-251BFCEC5EA6}
+		{674C2C1C-C2E4-48DC-B39C-3AE556087CA4} = {574F1197-207F-4630-9F0B-251BFCEC5EA6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {ADD9066A-282A-42FB-A88C-26F61A3B3F89}
