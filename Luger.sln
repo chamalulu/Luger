@@ -28,6 +28,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{998301E3-CCED-4B1B-BB59-AAC6C98CE90B}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{BA33FB4D-C54D-45F3-8241-91498ED0B8D3}"
@@ -53,6 +54,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Functional", "Functional", "{918F0F9C-49A4-493C-B47A-C94D8BFFEC94}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Maybe", "Maybe", "{574F1197-207F-4630-9F0B-251BFCEC5EA6}"
+	ProjectSection(SolutionItems) = preProject
+		Functional\Maybe\README.md = Functional\Maybe\README.md
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Functional.Maybe", "Functional\Maybe\src\Functional.Maybe.csproj", "{D8DEB18F-2050-4455-B564-BCDCE3ED5929}"
 EndProject
