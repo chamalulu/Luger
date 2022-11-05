@@ -29,6 +29,10 @@ public abstract class Result<TError, T>
 
 public static class Result
 {
+    public static Result<TError, T> OK<TError, T>(T value) => value;
+
+    public static Result<TError, T> Error<TError, T>(TError value) => value;
+
     public static Result<TError, TResult> Select<TError, TSource, TResult>(
         this Result<TError, TSource> source,
         Func<TSource, TResult> selector)
