@@ -74,7 +74,8 @@ are some; otherwise none.
 `maybeX | maybeY | maybeZ` evaluates to the leftmost operand which is some;
 otherwise none.
 
-`maybeX | maybeY | z` evaluates to the leftmost operand which is some; otherwise `z`.
+`maybeX | maybeY | z` evaluates to the value of the leftmost operand which is
+some; otherwise `z`.
 
 `Maybe<T>` implements implicit cast operator from `T`.
 Thus, returning some value from a `Maybe<T>`-returning function is no effort.

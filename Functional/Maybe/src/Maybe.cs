@@ -253,7 +253,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// This operator provides semantically the same functionality as
     /// <see cref="Nullable{T}.GetValueOrDefault(T)"/>. It can be used at the end of a chain of disjunctions to provide
     /// a fallback value.<br/>
-    /// <c>maybeX | maybeY | z</c> evaluates to the leftmost operand which is some; otherwise <c>z</c>.
+    /// <c>maybeX | maybeY | z</c> evaluates to the value of the leftmost operand which is some; otherwise <c>z</c>.
     /// </remarks>
     /// <returns>Value of <paramref name="left"/> if it is some; otherwise <paramref name="right"/></returns>
     public static T operator |(Maybe<T> left, T right) => left._isSome ? left._value : right;
