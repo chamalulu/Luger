@@ -9,7 +9,7 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <Description>A composable C# flavored implementation of an option type for value types and non-nullable reference types.</Description>
 
-    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionPrefix>1.0.1</VersionPrefix>
     <!-- Set empty empty suffix when API is stable -->
     <VersionSuffix></VersionSuffix>
 

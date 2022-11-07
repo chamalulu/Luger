@@ -68,6 +68,9 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
 
     Maybe(T value)
     {
+        // The following guard is necessary when T is a reference type. :(
+        ArgumentNullException.ThrowIfNull(value, nameof(value));
+
         _isSome = true;
         _value = value;
     }

@@ -159,6 +159,12 @@ public class MaybeTests
     [Fact]
     public void OpImplicitReference() => Assert.True(((Maybe<string>)"banan") is ["banan"]);
 
+    [Fact]
+    public void OpImplicitReferenceNullThrows() => Assert.Throws<ArgumentNullException>(() => (Maybe<string>)null!);
+
+    [Fact]
+    public void SomeNullThrows() => Assert.Throws<ArgumentNullException>(() => Some<object>(null!));
+
     public static IEnumerable<object[]> ApplyTheoryArguments
 
         => from f in new Func<int,int,int,int>?[] { null, (k, m, x) => k * x + m }
