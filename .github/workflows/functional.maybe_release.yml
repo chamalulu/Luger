@@ -55,10 +55,8 @@ jobs:
 
     - name: Push to GitHub Packages
       run: |
-        dotnet nuget add source --username chamalulu --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/chamalulu/index.json"
-        dotnet nuget push Luger.Functional.Maybe.${VERSION}.nupkg --source github
+        dotnet nuget add source --username chamalulu --name github "https://nuget.pkg.github.com/chamalulu/index.json"
+        dotnet nuget push Luger.Functional.Maybe.${VERSION}.nupkg --source github --api-key ${{ secrets.GITHUB_TOKEN }} 
 
     - name: Push to NuGet
-      run: |
-        dotnet nuget add source --username chamalulu --password ${{ secrets.PUSH_TO_NUGET }} --store-password-in-clear-text --name nuget "https://api.nuget.org/v3/index.json"
-        dotnet nuget push Luger.Functional.Maybe.${VERSION}.nupkg --source nuget
+      run: dotnet nuget push Luger.Functional.Maybe.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.PUSH_TO_NUGET }}
