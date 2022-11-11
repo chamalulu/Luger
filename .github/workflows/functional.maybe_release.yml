@@ -55,7 +55,7 @@ jobs:
 
     - name: Push to GitHub Packages
       run: |
-        dotnet nuget add source --username chamalulu --name github "https://nuget.pkg.github.com/chamalulu/index.json"
+        dotnet nuget add source --name github "https://nuget.pkg.github.com/chamalulu/index.json"
         dotnet nuget push Luger.Functional.Maybe.${VERSION}.nupkg --source github --api-key ${{ secrets.GITHUB_TOKEN }} 
 
     - name: Push to NuGet
