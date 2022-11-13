@@ -386,6 +386,21 @@ public static class Maybe
             : None<TR>();
 
     /// <summary>
+    /// Filters a <see cref="Maybe{T}"/> value based on a predicate function.
+    /// </summary>
+    /// <typeparam name="T">The type of the value of <paramref name="maybeT"/></typeparam>
+    /// <param name="maybeT">A <see cref="Maybe{T}"/> to filter.</param>
+    /// <param name="predicate">A function to test some value for a condition.</param>
+    /// <returns>
+    /// The <paramref name="maybeT"/> in some case and the value satisfy the condition; otherwise none.
+    /// </returns>
+    public static Maybe<T> Filter<T>(this Maybe<T> maybeT, Func<T, bool> predicate) where T : notnull
+
+        => maybeT is [var t] && predicate(t)
+            ? maybeT
+            : None<T>();
+
+    /// <summary>
     /// Application of <paramref name="func"/> to <paramref name="maybeT"/> in functor of <see cref="Maybe{T}"/>.
     /// </summary>
     /// <typeparam name="T">Type of parameter</typeparam>
@@ -543,9 +558,7 @@ public static class Maybe
     public static Maybe<TSource> Where<TSource>(this Maybe<TSource> source, Func<TSource, bool> predicate)
         where TSource : notnull
 
-        => source is [var s] && predicate(s)
-            ? source
-            : None<TSource>();
+        => source.Filter(predicate);
 
     /// <summary>
     /// Conversion from <see cref="Nullable{T}"/> to <see cref="Maybe{T}"/>
