@@ -21,7 +21,7 @@ namespace Luger.Functional;
 /// </see>.
 /// <code>
 /// Console.WriteLine(maybeT is [var t] ? $"Got some {t}!" : "Got none.");
-/// Console.WriteLine(maybeT is [] ? "Got none." : "Got some!"); 
+/// Console.WriteLine(maybeT is [] ? "Got none." : "Got some!");
 /// </code>
 /// </para>
 /// <para>
@@ -178,13 +178,13 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// <inheritdoc/>
     public string ToString(string? format, IFormatProvider? formatProvider)
     {
-        var valueRepr = _isSome
+        var valueRepresentation = _isSome
             ? _value is IFormattable formattable
                 ? formattable.ToString(format, formatProvider)
                 : _value.ToString() ?? string.Empty
             : string.Empty;
 
-        return $"[{valueRepr}]";
+        return $"[{valueRepresentation}]";
     }
 
     /// <summary>
@@ -309,7 +309,7 @@ public static class Maybe
     /// <param name="maybeFunc">Lifted unary function</param>
     /// <param name="maybeT">Lifted parameter</param>
     /// <remarks>
-    /// This is the equvalent of the infix operator <see langword="&lt;*&gt;"/> of Applicative in Haskell.
+    /// This is the equivalent of the infix operator <see langword="&lt;*&gt;"/> of Applicative in Haskell.
     /// </remarks>
     /// <returns>Lifted return value</returns>
     public static Maybe<TR> Apply<T, TR>(this Maybe<Func<T, TR>> maybeFunc, Maybe<T> maybeT)
@@ -330,7 +330,7 @@ public static class Maybe
     /// <param name="maybeFunc">Lifted binary function</param>
     /// <param name="maybeT1">Lifted parameter</param>
     /// <remarks>
-    /// With a littlie squinting and currying, this is the equvalent of the infix operator <see langword="&lt;*&gt;"/>
+    /// With a little squinting and currying, this is the equivalent of the infix operator <see langword="&lt;*&gt;"/>
     /// of Applicative in Haskell.
     /// </remarks>
     /// <returns>Lifted unary, since partially applied, function</returns>
@@ -352,7 +352,7 @@ public static class Maybe
     /// <param name="maybeFunc">Lifted ternary function</param>
     /// <param name="maybeT1">Lifted parameter</param>
     /// <remarks>
-    /// With a littlie squinting and currying, this is the equvalent of the infix operator <see langword="&lt;*&gt;"/>
+    /// With a little squinting and currying, this is the equivalent of the infix operator <see langword="&lt;*&gt;"/>
     /// of Applicative in Haskell.
     /// </remarks>
     /// <returns>Lifted binary, since partially applied, function</returns>
@@ -460,7 +460,7 @@ public static class Maybe
     /// The type of the intermediate value produced by <paramref name="selector"/>.
     /// In the documentation of
     /// <see cref="System.Linq.Enumerable.SelectMany{TSource, TCollection, TResult}(IEnumerable{TSource}, Func{TSource, IEnumerable{TCollection}}, Func{TSource, TCollection, TResult})"/>
-    /// (which this documentation is based on in case you havent noticed) the corresponding type parameter is
+    /// (which this documentation is based on in case you haven't noticed) the corresponding type parameter is
     /// <c>TCollection</c>. I think <typeparamref name="TNext"/> is a better name since it is the type of the value
     /// passed to the next composed function in the monadic sequential composition and there are lots of monads beside
     /// sequences.

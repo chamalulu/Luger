@@ -30,10 +30,10 @@ public class MaybeTests
     public void ListPatternNoneMatchEmpty() => Assert.True(None<int>() is []);
 
     [Fact]
-    public void ListPatternNoneDontMatchSingleton() => Assert.False(None<int>() is [_]);
+    public void ListPatternNoneDoNotMatchSingleton() => Assert.False(None<int>() is [_]);
 
     [Fact]
-    public void ListPatternSomeDontMatchEmpty() => Assert.False(Some(42) is []);
+    public void ListPatternSomeDoNotMatchEmpty() => Assert.False(Some(42) is []);
 
     [Fact]
     public void ListPatternSomeMatchSingleton() => Assert.True(Some(42) is [_]);
