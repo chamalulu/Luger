@@ -19,7 +19,7 @@ nullable reference types is safety. C# is a relatively type safe language but
 `null` has no type and a function returning `null` instead of a value of it's
 return type is essentially dishonest.
 
-The problems with `null` are explained in, sometimes humourous and sometimes
+The problems with `null` are explained in, sometimes humorous and sometimes
 painful, detail all around the interwebs. I'll not bother you with it here.
 
 Instead, here are a couple of examples of usage together with the traditional C#
@@ -150,7 +150,6 @@ Maybe<Result> Process(Input input) => Step1(Input).Bind(Step2).Bind(Step3);
 
 &lt;TODO&gt;
 
-
 ## Pattern matching
 
 You can pattern match against values of `Maybe<T>` by using C# 11
@@ -158,7 +157,7 @@ You can pattern match against values of `Maybe<T>` by using C# 11
 
 ```cs
 Console.WriteLine(maybeT is [var t] ? $"Got some {t}!" : "Got none.");
-Console.WriteLine(maybeT is [] ? "Got none." : "Got some!"); 
+Console.WriteLine(maybeT is [] ? "Got none." : "Got some!");
 ```
 
 ## Equality
