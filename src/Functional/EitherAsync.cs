@@ -114,7 +114,7 @@ namespace Luger.Functional
         {
             EitherAsync<TLeft, TResult> func(TSource s)
 
-                => selector(s).Select(n => (Either<TLeft, TResult>)projection(s, n));
+                => TaskExtensions.Select(selector(s), n => (Either<TLeft, TResult>)projection(s, n));
 
             return source.Bind(func);
         }

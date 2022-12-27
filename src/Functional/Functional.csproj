@@ -19,4 +19,7 @@
   <ItemGroup>
     <PackageReference Include="Luger.Functional.Maybe" Version="1.0.0" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Functional\Async\src\Functional.Async.csproj" />
+  </ItemGroup>
 </Project>

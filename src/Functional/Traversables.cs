@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Luger.Functional
 {
@@ -74,44 +73,5 @@ namespace Luger.Functional
 
                 return (result, state);
             };
-    }
-
-    /// <summary>
-    /// Traverse extension methods for <see cref="Task{TResult}"/> over <see cref="IEnumerable{T}"/>
-    /// </summary>
-    /// <remarks>
-    /// I see no point in running independent tasks sequentially so only Applicative and Parallell traverse is implemented.
-    /// </remarks>
-    public static class EnumerableTaskTraversal
-    {
-        /// <summary>
-        /// Applicative traversal of task over sequence
-        /// </summary>
-        /// <param name="ts">Sequence to traverse over</param>
-        /// <param name="f">Function mapping element to task</param>
-        /// <typeparam name="T">Type of source element</typeparam>
-        /// <typeparam name="TR">Type of task result</typeparam>
-        /// <returns>Task yeilding sequence results</returns>
-        public static Task<IEnumerable<TR>> TraverseA<T, TR>(this IEnumerable<T> ts, Func<T, Task<TR>> f)
-        {
-            var seed = Task.FromResult(ImmutableList<TR>.Empty);
-            var appendTask = Task.FromResult<Func<ImmutableList<TR>, TR, ImmutableList<TR>>>((list, t) => list.Add(t));
-
-            Task<ImmutableList<TR>> reduce(Task<ImmutableList<TR>> trs, T t)
-                => appendTask.Apply(trs).Apply(f(t));
-
-            return ts.Aggregate(seed, reduce).Map(Enumerable.AsEnumerable);
-        }
-
-        /// <summary>
-        /// Parallell traversal of task over sequence
-        /// </summary>
-        /// <param name="ts">Sequence to traverse over</param>
-        /// <param name="f">Function mapping element to task</param>
-        /// <typeparam name="T">Type of source element</typeparam>
-        /// <typeparam name="TR">Type of task result</typeparam>
-        /// <returns>Task yeilding sequence results</returns>
-        public static Task<IEnumerable<TR>> TraverseP<T, TR>(this IEnumerable<T> ts, Func<T, Task<TR>> f)
-            => Task.WhenAll(ts.Map(f)).Map(Enumerable.AsEnumerable);
     }
 }
