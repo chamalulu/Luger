@@ -10,7 +10,7 @@
     <Description>Extensions for Task&lt;&gt; to provide LINQ query support.</Description>
     <VersionPrefix>1.0.0</VersionPrefix>
     <!-- Set empty suffix when API is stable -->
-    <VersionSuffix>alpha</VersionSuffix>
+    <VersionSuffix>beta</VersionSuffix>
     <Authors>Henrik Lundberg</Authors>
     <Product>Luger</Product>
     <Copyright>© 2022 Henrik Lundberg</Copyright>
