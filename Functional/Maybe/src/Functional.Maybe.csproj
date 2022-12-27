@@ -10,7 +10,7 @@
     <Description>A composable C# flavored implementation of an option type for value types and non-nullable reference types.</Description>
 
     <VersionPrefix>1.0.1</VersionPrefix>
-    <!-- Set empty empty suffix when API is stable -->
+    <!-- Set empty suffix when API is stable -->
     <VersionSuffix></VersionSuffix>
 
     <Authors>Henrik Lundberg</Authors>
@@ -19,8 +19,9 @@
     <Copyright>© 2022 Henrik Lundberg</Copyright>
     <RepositoryUrl>https://github.com/chamalulu/Luger</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>option, maybe, functional</PackageTags>
+    <PackageTags>option, maybe, functional, LINQ</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
