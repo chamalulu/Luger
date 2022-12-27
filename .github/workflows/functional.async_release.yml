@@ -54,4 +54,4 @@ jobs:
       run: dotnet pack ${PROJ_FILE} --configuration Release /p:Version=${VERSION} --no-build --output .
 
     - name: Push to NuGet
-      run: dotnet nuget push Luger.Functional.Maybe.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.PUSH_TO_NUGET }}
+      run: dotnet nuget push Luger.Functional.Async.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.PUSH_TO_NUGET }}
