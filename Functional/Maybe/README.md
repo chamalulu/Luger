@@ -3,7 +3,7 @@
 `Luger.Functional.Maybe<T>` is a composable version of `System.Nullable<T>` for
 value types and non-nullable reference types.
 
-The value of `Maybe<T>` can be in one of two main states; Some or None.
+The value of `Maybe<T>` can be in one of two main states; some or none.
 
 Some is analogous to a `Nullable<T>` or a nullable reference with a value.
 
@@ -14,10 +14,10 @@ i.e. the infamous `null`.
 
 The primary reason for using values of `Maybe<T>` instead of `Nullable<T>` or
 nullable reference types is safety. C# is a relatively type safe language but
-`null` is where it breaks.
+`null` is one piece of the language design where it breaks.
 
-`null` has no type and a function returning `null` instead of a value of it's
-return type is essentially dishonest.
+`null` has no type. A function returning `null` instead of a value of its return
+type is essentially dishonest.
 
 The problems with `null` are explained in, sometimes humorous and sometimes
 painful, detail all around the interwebs. I'll not bother you with it here.
@@ -27,14 +27,14 @@ approach.
 
 ### Handling "null" return value
 
-In a lot of C# code `null` is returned from a function when the happy path did
-not work out. In such cases the author of calling code must remember to
-implement null-check or the code may throw an exception.
+In a lot of C# code `null` is returned from a function to signal when the happy
+path did not work out. In such cases the author of calling code must remember to
+implement null-check or their code may throw an exception.
 
-```cs
+```csharp
 Thing FindThing(ThingId id) {...}
 
-void calling_code()
+void consuming_code()
 {
     ThingId id = ...;
 
@@ -59,10 +59,10 @@ In contrast, using `Maybe<T>` informs the author of consuming code that there is
 a possibility of not finding a thing and to handle the thing found the return
 value must be matched against.
 
-```cs
+```csharp
 Maybe<Thing> FindThing(ThingId id) {...}
 
-void calling_code()
+void consuming_code()
 {
     ThingId id = ...;
 
@@ -77,51 +77,56 @@ void calling_code()
 }
 ```
 
-Here, `thing` is only in scope within the happy path where a thing was found and
-the calling code does not risk dereferencing a `null` value.
+~~Here, `thing` is only in scope within the happy path where a thing was found and
+the calling code does not risk dereferencing a `null` value.~~
 
-### Composing sequential computations of "null"
+Here, even though `thing` is in scope in the `else` block, the compiler should
+give you an error
+([CS0165](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/cs0165))
+about it being unassigned if you try to access it in the `else` block.
 
-It is common to have logic which makes a series of transformations where each
-one may result in an unhappy outcome.
+### Composing computations of "null"
 
-```cs
-Result Process(Input input)
+It is common to have computations composed from a series of steps where each
+step depend on results from previous steps and may result in an unhappy outcome.
+
+```csharp
+Result Computation(Input input)
 {
-    var subResult1 = Step1(input);
+    var result1 = Step1(input);
 
-    if (subResult1 is null)
+    if (result1 is null)
     {
         return null;
     }
 
-    var subResult2 = Step2(subResult1);
+    var result2 = Step2(result1);
 
-    if (subResult2 is null)
+    if (result2 is null)
     {
         return null;
     }
 
-    return Step3(subResult2);
+    return Step3(result2);
 }
 ```
 
 I've seen attempts to clean this up by letting the `Step#` functions handle
 `null` inputs and just pass `null` on as their result.
 
-```cs
-Result Process(Input input) => Step3(Step2(Step1(input)));
+```csharp
+Result Computation(Input input) => Step3(Step2(Step1(input)));
 ```
 
-The main problem with this, besides ugly code, is that now all the `Step#`
+The main problem with this, besides being ugly, is that now all the `Step#`
 functions have dishonest signatures not only with regard to return value but
 also their parameter.
 
-Instead, if the steps use `Maybe<T>` we can use its composability to implement
-the process as a quite simple and elegant expression.
+Instead, if the steps return `Maybe<T>` we can use its composability to
+implement the computation as a quite simple and elegant expression.
 
-```cs
-Maybe<Result> Process(Input input)
+```csharp
+Maybe<Result> Computation(Input input)
 
     => from r1 in Step1(input)
        from r2 in Step2(r1)
@@ -131,8 +136,8 @@ Maybe<Result> Process(Input input)
 
 Which is precompiled to something like the following.
 
-```cs
-Maybe<Result> Process(Input input)
+```csharp
+Maybe<Result> Computation(Input input)
 
     => Step1(input)
         .SelectMany(r1 => Step2(r1), (r1, r2) => new { r1, r2 })
@@ -142,20 +147,36 @@ Maybe<Result> Process(Input input)
 Or, if one dislikes LINQ query syntax, one can bind this, admittedly simple,
 process explicitly.
 
-```cs
-Maybe<Result> Process(Input input) => Step1(Input).Bind(Step2).Bind(Step3);
+```csharp
+Maybe<Result> Computation(Input input) => Step1(Input).Bind(Step2).Bind(Step3);
 ```
 
-### Composing parallell computations of "null"
+This style of composition of sequentially dependent computation is called
+monadic and is possible to implement for monadic types like `Maybe<T>` as they
+implement `Bind` (and `SelectMany` for the LINQ query syntax support).
 
-&lt;TODO&gt;
+When inputs to a computation are sequentially independent their composition can
+also be performed in an applicative style. This is possible for types which
+are applicative functors (which `Maybe<T>` is) as they implement `Apply`.
+
+A trivial example is the following computation of the sum of two `Maybe<int>`
+inputs.
+
+```csharp
+Maybe<int> Sum(Maybe<int> maybeX, Maybe<int> maybeY)
+{
+    var maybeSum = Some((int x, int y) => x + y);
+
+    return maybeSum.Apply(maybeX).Apply(maybeY);
+}
+```
 
 ## Pattern matching
 
 You can pattern match against values of `Maybe<T>` by using C# 11
 [List Patterns](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/operators/patterns#list-patterns)
 
-```cs
+```csharp
 Console.WriteLine(maybeT is [var t] ? $"Got some {t}!" : "Got none.");
 Console.WriteLine(maybeT is [] ? "Got none." : "Got some!");
 ```
@@ -188,8 +209,8 @@ element for none or some respectively.
 This enables `Maybe<T>` to be functionally bound (flattened) together with any
 `IEnumerable<T>`.
 
-```cs
-var flattened = from x in xs from t in funcMaybe(x) select t; // some results from funcMaybe(x) are filtered.
+```csharp
+var flattened = from x in xs from t in funcMaybe(x) select t; // some results from funcMaybe(x) are filtered
 ```
 
 ## Operators
@@ -200,7 +221,7 @@ disjunction (`|`) operators.
 The combination also provides conditional logical operators (`&&`, `||`). This
 enables chaining of `Maybe<T>` values in logical expressions.
 
-Using the conditional operators enables on-demand evaluation as expected.
+Using the conditional operators enables conditional evaluation as expected.
 
 The disjunction (`|`) operator is also implemented between `Maybe<T>` and `T`.
 This is useful to provide a fallback value, much like
@@ -226,15 +247,30 @@ the default state; `return default;`.
 
 The static class `Maybe` implement these factory methods.
 
-`Maybe<T> None<T>()` gives the none value.
+```csharp
+Maybe<T> None<T>()
+```
 
-`Maybe<T> Some<T>(T)` gives a some value for the given value of `T`.
+Produce the none value. Equivalent to `default(Maybe<T>)`.
 
-`Maybe<T> FromNullable<T>(T?) where T : struct` converts a `Nullable<T>` value
-to a `Maybe<T>` value.
+```csharp
+Maybe<T> Some<T>(T)
+```
 
-`Maybe<T> FromReference<T>(T?) where T : class` converts a nullable reference to
-a `Maybe<T>` value.
+Produce a some value for the given value of `T`. Equivalent to implicit cast
+from `T` to `Maybe<T>`.
+
+```csharp
+Maybe<T> FromNullable<T>(T?) where T : struct
+```
+
+Convert a `Nullable<T>` value to a `Maybe<T>` value.
+
+```csharp
+Maybe<T> FromReference<T>(T?) where T : class
+```
+
+Convert a nullable reference to a `Maybe<T>` value.
 
 ## Extensions
 
@@ -242,13 +278,15 @@ The static class `Maybe` also implement the following extension methods.
 
 ### Apply
 
-`Maybe<TR> Apply(Maybe<Func<T, TR>>, Maybe<T>)`
+```csharp
+Maybe<TR> Apply(Maybe<Func<T, TR>>, Maybe<T>)
 
-`Maybe<Func<T2, TR>> Apply(Maybe<Func<T1, T2, TR>>, Maybe<T1>)`
+Maybe<Func<T2, TR>> Apply(Maybe<Func<T1, T2, TR>>, Maybe<T1>)
 
-`Maybe<Func<T2, T3, TR>> Apply(Maybe<Func<T1, T2, T3, TR>>, Maybe<T1>)`
+Maybe<Func<T2, T3, TR>> Apply(Maybe<Func<T1, T2, T3, TR>>, Maybe<T1>)
+```
 
-Applies a lifted function to a lifted parameter. Overloads for lifted unary,
+Apply a lifted function to a lifted parameter. Overloads for lifted unary,
 binary and ternary functions are implemented.
 
 In the unary case a value of type `Maybe<TR>` is returned. In the binary and
@@ -261,20 +299,24 @@ ternary functions since C# does not use partial application.
 
 ### Bind
 
-`Maybe<TR> Bind(Maybe<T>, Func<T, Maybe<TR>>)`
+```csharp
+Maybe<TR> Bind(Maybe<T>, Func<T, Maybe<TR>>)
+```
 
-Sequentially combines the computation of `Maybe<T>` over the application of a
+Monadic composition of the computation of `Maybe<T>` over the application of a
 `Maybe<TR>`-returning function.
 
 `Bind` corresponds to the infix operator `>>=` of Monad in Haskell.
 
-`Maybe<TR> SelectMany(Maybe<TSource>, Func<TSource, Maybe<TNext>>, Func<TSource, TNext, TResult>)`
+```csharp
+Maybe<TResult> SelectMany(Maybe<TSource>, Func<TSource, Maybe<TNext>>, Func<TSource, TNext, TResult>)
+```
 
-Projects the value of `Maybe<TSource>` to a `Maybe<TNext>` and invokes a result
+Project the value of `Maybe<TSource>` to a `Maybe<TNext>` and invoke a result
 selector function on the pair to produce the result.  Provided for support of
 LINQ query syntax. The expression
 
-```cs
+```csharp
 from s in source
 from n in selector(s)
 select resultSelector(s, n)
@@ -282,7 +324,7 @@ select resultSelector(s, n)
 
 is precompiled into
 
-```cs
+```csharp
 source.SelectMany(selector, resultSelector)
 ```
 
@@ -292,16 +334,20 @@ encapsulating calls in nested closures.
 
 ### Filter
 
-`Maybe<T> Filter(Maybe<T>, Func<T, bool>)`
+```csharp
+Maybe<T> Filter(Maybe<T>, Func<T, bool>)
+```
 
-Filters a lifted value based on a predicate function.
+Filter a lifted value based on a predicate function.
 
-`Maybe<TSource> Where(Maybe<TSource>, Func<TSource, bool>)`
+```csharp
+Maybe<TSource> Where(Maybe<TSource>, Func<TSource, bool>)
+```
 
-Does exactly the same as `Filter` but is provided for support of LINQ query
-syntax. The expression
+Do exactly the same as `Filter` but provided for support of LINQ query syntax.
+The expression
 
-```cs
+```csharp
 from s in source
 where predicate(s)
 select s
@@ -309,38 +355,44 @@ select s
 
 is precompiled into
 
-```cs
+```csharp
 source.Where(predicate)
 ```
 
 ### Map
 
-`Maybe<TR> Map(Maybe<T>, Func<T, TR>)`
+```csharp
+Maybe<TR> Map(Maybe<T>, Func<T, TR>)
+```
 
-Maps a lifted value of `T` by given function to a lifted value of `TR`.
+Map a lifted value of `T` by given function to a lifted value of `TR`.
 
 `Map` corresponds to the infix operator `<$>` of Functor in Haskell.
 
-`Maybe<TResult> Select(Maybe<TSource>, Func<TSource, TResult>)`
+```csharp
+Maybe<TResult> Select(Maybe<TSource>, Func<TSource, TResult>)
+```
 
-Projects the value of `Maybe<T>` into a new form. This is exactly the same
+Project the value of `Maybe<T>` into a new form. This is exactly the same
 functionality as `Map` above but is provided for support of LINQ query syntax.
 The expression
 
-```cs
+```csharp
 from s in source
 select selector(s)
 ```
 
 is precompiled into
 
-```cs
+```csharp
 source.Select(selector)
 ```
 
 ### Try
 
-`bool Try(Maybe<T>, out T value)`
+```csharp
+bool Try(Maybe<T>, out T value)
+```
 
 Provides `Try`-style method syntax to extract the value of `Maybe<T>` if
 consuming code is not able to use C# 11 list pattern matching.
@@ -350,10 +402,14 @@ Instead of the expression `maybeT is [var t]` such code can use
 
 ### Nullable interop
 
-`T? ToNullable(Maybe<T>) where T : struct`
+```csharp
+T? ToNullable(Maybe<T>) where T : struct
+```
 
-Converts the `Maybe<T>` value to a `Nullable<T>` value.
+Convert the `Maybe<T>` value to a `Nullable<T>` value.
 
-`T? ToReference() where T : class`
+```csharp
+T? ToReference() where T : class
+```
 
-Converts the `Maybe<T>` value to a nullable reference.
+Convert the `Maybe<T>` value to a nullable reference.
