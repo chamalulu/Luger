@@ -280,9 +280,11 @@ The static class `Maybe` also implement the following extension methods.
 
 ```csharp
 Maybe<TR> Apply(Maybe<Func<T, TR>>, Maybe<T>)
-
+```
+```csharp
 Maybe<Func<T2, TR>> Apply(Maybe<Func<T1, T2, TR>>, Maybe<T1>)
-
+```
+```csharp
 Maybe<Func<T2, T3, TR>> Apply(Maybe<Func<T1, T2, T3, TR>>, Maybe<T1>)
 ```
 
