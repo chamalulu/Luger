@@ -64,6 +64,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Functional.Maybe.Tests", "Functional\Maybe\tests\Functional.Maybe.Tests.csproj", "{674C2C1C-C2E4-48DC-B39C-3AE556087CA4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Async", "Async", "{C8A72486-DBA5-4FD6-9D72-823E5736A7AD}"
+	ProjectSection(SolutionItems) = preProject
+		Functional\Async\README.md = Functional\Async\README.md
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Functional.Async", "Functional\Async\src\Functional.Async.csproj", "{8DF668D5-613C-4E0B-A459-0EA00E18CEAD}"
 EndProject

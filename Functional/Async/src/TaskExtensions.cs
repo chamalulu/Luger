@@ -19,8 +19,8 @@ public static class TaskExtensions
     /// <summary>
     /// Unary function application within applicative functor <see cref="Task{TResult}"/>.
     /// </summary>
-    /// <typeparam name="T">Type of parameter</typeparam>
-    /// <typeparam name="TR">Type of result</typeparam>
+    /// <typeparam name="TArg">Type of parameter</typeparam>
+    /// <typeparam name="TResult">Type of result</typeparam>
     /// <param name="funcTask">Function task</param>
     /// <param name="argTask">Argument task</param>
     /// <param name="applyOnCapturedContext">
@@ -28,9 +28,9 @@ public static class TaskExtensions
     /// <see langword="false"/>.
     /// </param>
     /// <returns>Task of application result</returns>
-    public static async Task<TR> Apply<T, TR>(
-        this Task<Func<T, TR>> funcTask,
-        Task<T> argTask,
+    public static async Task<TResult> Apply<TArg, TResult>(
+        this Task<Func<TArg, TResult>> funcTask,
+        Task<TArg> argTask,
         bool applyOnCapturedContext = false)
     {
         var (func, arg) = await (funcTask, argTask).ConfigureAwait(applyOnCapturedContext);
@@ -41,9 +41,9 @@ public static class TaskExtensions
     /// <summary>
     /// Partial binary function application within applicative functor <see cref="Task{TResult}"/>.
     /// </summary>
-    /// <typeparam name="T1">Type of first parameter</typeparam>
-    /// <typeparam name="T2">Type of second parameter</typeparam>
-    /// <typeparam name="TR">Type of result</typeparam>
+    /// <typeparam name="TArg1">Type of first parameter</typeparam>
+    /// <typeparam name="TArg2">Type of second parameter</typeparam>
+    /// <typeparam name="TResult">Type of result</typeparam>
     /// <param name="funcTask">Function task</param>
     /// <param name="arg1Task">First argument task</param>
     /// <param name="applyOnCapturedContext">
@@ -51,9 +51,9 @@ public static class TaskExtensions
     /// <see langword="false"/>.
     /// </param>
     /// <returns>Task of partially applied binary function</returns>
-    public static async Task<Func<T2, TR>> Apply<T1, T2, TR>(
-        this Task<Func<T1, T2, TR>> funcTask,
-        Task<T1> arg1Task,
+    public static async Task<Func<TArg2, TResult>> Apply<TArg1, TArg2, TResult>(
+        this Task<Func<TArg1, TArg2, TResult>> funcTask,
+        Task<TArg1> arg1Task,
         bool applyOnCapturedContext = false)
     {
         var (func, arg1) = await (funcTask, arg1Task).ConfigureAwait(applyOnCapturedContext);
@@ -64,10 +64,10 @@ public static class TaskExtensions
     /// <summary>
     /// Partial ternary function application within applicative functor <see cref="Task{TResult}"/>.
     /// </summary>
-    /// <typeparam name="T1">Type of first parameter</typeparam>
-    /// <typeparam name="T2">Type of second parameter</typeparam>
-    /// <typeparam name="T3">Type of third parameter</typeparam>
-    /// <typeparam name="TR">Type of result</typeparam>
+    /// <typeparam name="TArg1">Type of first parameter</typeparam>
+    /// <typeparam name="TArg2">Type of second parameter</typeparam>
+    /// <typeparam name="TArg3">Type of third parameter</typeparam>
+    /// <typeparam name="TResult">Type of result</typeparam>
     /// <param name="funcTask">Function task</param>
     /// <param name="arg1Task">First argument task</param>
     /// <param name="applyOnCapturedContext">
@@ -75,9 +75,9 @@ public static class TaskExtensions
     /// <see langword="false"/>.
     /// </param>
     /// <returns>Task of partially applied ternary function</returns>
-    public static async Task<Func<T2, T3, TR>> Apply<T1, T2, T3, TR>(
-        this Task<Func<T1, T2, T3, TR>> funcTask,
-        Task<T1> arg1Task,
+    public static async Task<Func<TArg2, TArg3, TResult>> Apply<TArg1, TArg2, TArg3, TResult>(
+        this Task<Func<TArg1, TArg2, TArg3, TResult>> funcTask,
+        Task<TArg1> arg1Task,
         bool applyOnCapturedContext = false)
     {
         var (func, arg1) = await (funcTask, arg1Task).ConfigureAwait(applyOnCapturedContext);
@@ -101,21 +101,21 @@ public static class TaskExtensions
     /// <summary>
     /// Bind within monad <see cref="Task{TResult}"/>.
     /// </summary>
-    /// <typeparam name="T">Type of source result</typeparam>
-    /// <typeparam name="TR">Type of bound result</typeparam>
-    /// <param name="task">Source task</param>
+    /// <typeparam name="TSource">Type of source result</typeparam>
+    /// <typeparam name="TResult">Type of bound result</typeparam>
+    /// <param name="source">Source task</param>
     /// <param name="func">Bound function</param>
     /// <param name="bindOnCapturedContext">
     /// <see langword="true"/> to attempt to marshal the execution of bound function back to the original context
     /// captured; otherwise, <see langword="false"/>.
     /// </param>
     /// <returns>Task of bound function result</returns>
-    public static async Task<TR> Bind<T, TR>(
-        this Task<T> task,
-        Func<T, Task<TR>> func,
+    public static async Task<TResult> Bind<TSource, TResult>(
+        this Task<TSource> source,
+        Func<TSource, Task<TResult>> func,
         bool bindOnCapturedContext = false)
     {
-        var t = await task.ConfigureAwait(bindOnCapturedContext);
+        var t = await source.ConfigureAwait(bindOnCapturedContext);
 
         return await func(t).ConfigureAwait(false);
     }
@@ -124,7 +124,7 @@ public static class TaskExtensions
     /// <see langword="true"/> to attempt to marshal the execution of LINQ query selectors back to the original context
     /// captured; otherwise, <see langword="false"/>.
     /// </summary>
-    public static bool LINQQueryOnCapturedContext { get; set; } = false;
+    public static bool SelectOnCapturedContext { get; set; } = false;
 
     /// <summary>
     /// Projects the result of a task into a new task and projects both results into a new task.
@@ -164,29 +164,32 @@ public static class TaskExtensions
         Func<TSource, Task<TNext>> selector,
         Func<TSource, TNext, TResult> projection)
     {
-        var s = await source.ConfigureAwait(LINQQueryOnCapturedContext);
-        var n = await selector(s).ConfigureAwait(LINQQueryOnCapturedContext);
+        var s = await source.ConfigureAwait(SelectOnCapturedContext);
+        var n = await selector(s).ConfigureAwait(SelectOnCapturedContext);
 
         return projection(s, n);
     }
 
     /// <summary>
-    /// Map <paramref name="f"/> within functor <see cref="Task{TResult}"/>.
+    /// Map <paramref name="func"/> within functor <see cref="Task{TResult}"/>.
     /// </summary>
-    /// <typeparam name="T">Type of source result</typeparam>
-    /// <typeparam name="TR">Type of map result</typeparam>
-    /// <param name="task">Source task</param>
-    /// <param name="f">Map function</param>
+    /// <typeparam name="TSource">Type of source result</typeparam>
+    /// <typeparam name="TResult">Type of map result</typeparam>
+    /// <param name="source">Source task</param>
+    /// <param name="func">Map function</param>
     /// <param name="mapOnCapturedContext">
     /// <see langword="true"/> to attempt to marshal the mapping back to the original context captured; otherwise,
     /// <see langword="false"/>.
     /// </param>
     /// <returns>Task of mapped result</returns>
-    public static async Task<TR> Map<T, TR>(this Task<T> task, Func<T, TR> f, bool mapOnCapturedContext = false)
+    public static async Task<TResult> Map<TSource, TResult>(
+        this Task<TSource> source,
+        Func<TSource, TResult> func,
+        bool mapOnCapturedContext = false)
     {
-        var t = await task.ConfigureAwait(mapOnCapturedContext);
+        var s = await source.ConfigureAwait(mapOnCapturedContext);
 
-        return f(t);
+        return func(s);
     }
 
     /// <summary>
@@ -210,73 +213,61 @@ public static class TaskExtensions
     /// <code>
     /// source.Select(selector)
     /// </code>
-    /// This is exactly the same functionality as <see cref="Map{T, TR}"/> (without context capture) and so
+    /// This is exactly the same functionality as <see cref="Map{TSource, TResult}"/> (without context capture) and so
     /// <see cref="Select"/> delegates directly to it.
     /// </remarks>
     public static Task<TResult> Select<TSource, TResult>(this Task<TSource> source, Func<TSource, TResult> selector)
 
-        => source.Map(selector, LINQQueryOnCapturedContext);
+        => source.Map(selector, SelectOnCapturedContext);
 
     /// <summary>
-    /// Add exception and, optionally, cancellation handling continuations to <see cref="Task{TResult}"/>
+    /// Add exception and, optionally, cancelation handling continuations to <see cref="Task{TResult}"/>
     /// </summary>
     /// <typeparam name="TResult">Type of result</typeparam>
     /// <typeparam name="TException">Type of exception to handle</typeparam>
-    /// <param name="task">Source task</param>
+    /// <param name="result">Task to handle exceptions and, optionally, cancelation for</param>
     /// <param name="exceptionHandler">Asynchronous exception handler</param>
-    /// <param name="cancellationHandler">Asynchronous cancellation handler</param>
+    /// <param name="cancelationHandler">Asynchronous cancelation handler</param>
     /// <param name="handleOnCapturedContext">
     /// <see langword="true"/> to attempt to marshal the execution of handler to the original context captured;
     /// otherwise, <see langword="false"/>
     /// </param>
-    /// <returns>Task of source result or appropriate handler</returns>
+    /// <returns>Task of result or appropriate handler</returns>
     /// <remarks>
-    /// If <paramref name="task"/> is successful, its result is returned.<br/>
-    /// If <paramref name="task"/> is cancelled and <paramref name="cancellationHandler"/> is not
-    /// <see langword="null"/>, <paramref name="cancellationHandler"/> is invoked as continuation with the
-    /// <see cref="OperationCanceledException"/> thrown by the <see langword="await"/>.<br/>
-    /// If <paramref name="task"/> is cancelled and <paramref name="cancellationHandler"/> is <see langword="null"/>,
+    /// If <paramref name="result"/> is successful, its result is returned.<br/>
+    /// If <paramref name="result"/> is faulted and the exception thrown by the <see langword="await"/> is assignable to
+    /// <typeparamref name="TException"/>, <paramref name="exceptionHandler"/> is invoked as continuation with the
+    /// exception as argument.<br/>
+    /// If <paramref name="result"/> is faulted and the exception thrown by the <see langword="await"/> is not
+    /// assignable to <typeparamref name="TException"/>, the exception is not caught.
+    /// If <paramref name="result"/> is canceled and <paramref name="cancelationHandler"/> is not
+    /// <see langword="null"/>, <paramref name="cancelationHandler"/> is invoked as continuation with the
+    /// <see cref="OperationCanceledException"/> thrown by the <see langword="await"/> as argument.<br/>
+    /// If <paramref name="result"/> is canceled and <paramref name="cancelationHandler"/> is <see langword="null"/>,
     /// the <see cref="OperationCanceledException"/> is not caught.<br/>
-    /// As an edge case, if <paramref name="task"/> is cancelled, <paramref name="cancellationHandler"/> is
+    /// As an edge case, if <paramref name="result"/> is canceled, <paramref name="cancelationHandler"/> is
     /// <see langword="null"/> and <typeparamref name="TException"/> is assignable from
     /// <see cref="OperationCanceledException"/>, <paramref name="exceptionHandler"/> is invoked as continuation with
-    /// the <see cref="OperationCanceledException"/> thrown by the <see langword="await"/>.<br/>
-    /// If <paramref name="task"/> is faulted and the exception thrown by the <see langword="await"/> is assignable to
-    /// <typeparamref name="TException"/>, <paramref name="exceptionHandler"/> is invoked as continuation with the
-    /// exception.<br/>
-    /// If <paramref name="task"/> is faulted and the exception thrown by the <see langword="await"/> is not assignable
-    /// to <typeparamref name="TException"/>, the exception is not caught.
+    /// the <see cref="OperationCanceledException"/> thrown by the <see langword="await"/> as argument.<br/>
     /// </remarks>
     public static async Task<TResult> OrElse<TResult, TException>(
-        this Task<TResult> task,
+        this Task<TResult> result,
         Func<TException, Task<TResult>> exceptionHandler,
-        Func<OperationCanceledException, Task<TResult>>? cancellationHandler = null,
+        Func<OperationCanceledException, Task<TResult>>? cancelationHandler = null,
         bool handleOnCapturedContext = false)
         where TException : Exception
     {
         try
         {
-            return await task.ConfigureAwait(handleOnCapturedContext);
+            return await result.ConfigureAwait(handleOnCapturedContext);
         }
-        catch (OperationCanceledException operationCancelledException) when (cancellationHandler is not null)
+        catch (OperationCanceledException operationCanceledException) when (cancelationHandler is not null)
         {
-            return await cancellationHandler(operationCancelledException).ConfigureAwait(false);
+            return await cancelationHandler(operationCanceledException).ConfigureAwait(false);
         }
         catch (TException exception)
         {
             return await exceptionHandler(exception).ConfigureAwait(false);
         }
     }
-
-    /// <summary>
-    /// Parallell traversal of task over sequence
-    /// </summary>
-    /// <param name="ts">Sequence to traverse over</param>
-    /// <param name="func">Function mapping element to task</param>
-    /// <typeparam name="T">Type of source element</typeparam>
-    /// <typeparam name="TResult">Type of task result</typeparam>
-    /// <returns>Task yeilding sequence results</returns>
-    public static Task<IEnumerable<TResult>> Traverse<T, TResult>(this IEnumerable<T> ts, Func<T, Task<TResult>> func)
-
-        => Task.WhenAll(ts.Select(func)).Map(Enumerable.AsEnumerable);
 }
