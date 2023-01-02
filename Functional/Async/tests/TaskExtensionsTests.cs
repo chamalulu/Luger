@@ -140,7 +140,7 @@ public class TaskExtensionsTests
     }
 
     [Fact]
-    public async Task OrElseCancelledHandleWithExceptionHandlerEdgeCase()
+    public async Task OrElseCanceledHandleWithExceptionHandlerEdgeCase()
     {
         var canceledTask = TaskOfStatus(TaskStatus.Canceled, new object());
         var exceptionHandlerCalled = false;

@@ -151,12 +151,12 @@ Context capture can be affected by the static property
 Task<TResult> OrElse<TResult, TException>(
     this Task<TResult> result,
     Func<TException, Task<TResult>> exceptionHandler,
-    Func<OperationCanceledException, Task<TResult>>? cancelationHandler = null,
+    Func<OperationCanceledException, Task<TResult>>? cancellationHandler = null,
     bool handleOnCapturedContext = false)
     where TException : Exception
 ```
 
-Add exception and, optionally, cancelation handling continuations to
+Add exception and, optionally, cancellation handling continuations to
 asynchronous computation `result`.
 
 If `result` is successful, its result is returned.
@@ -168,14 +168,14 @@ as argument.
 If `result` is faulted and the exception thrown by the `await` is not assignable
 to `TException`, the exception is not caught.
 
-If `result` is canceled and `cancelationHandler` is not `null`,
-`cancelationHandler` is invoked as continuation with the
+If `result` is canceled and `cancellationHandler` is not `null`,
+`cancellationHandler` is invoked as continuation with the
 `OperationCanceledException` thrown by the `await` as argument.
 
-If `result` is canceled and `cancelationHandler` is `null`, the
+If `result` is canceled and `cancellationHandler` is `null`, the
 `OperationCanceledException` is not caught.
 
-As an edge case, if `result` is canceled, `cancelationHandler` is `null` and
+As an edge case, if `result` is canceled, `cancellationHandler` is `null` and
 `TException` is assignable from `OperationCanceledException`, `exceptionHandler`
 is invoked as continuation with the `OperationCanceledException` thrown by the
 `await` as argument.

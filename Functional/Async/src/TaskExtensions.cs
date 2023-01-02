@@ -221,13 +221,13 @@ public static class TaskExtensions
         => source.Map(selector, SelectOnCapturedContext);
 
     /// <summary>
-    /// Add exception and, optionally, cancelation handling continuations to <see cref="Task{TResult}"/>
+    /// Add exception and, optionally, cancellation handling continuations to <see cref="Task{TResult}"/>
     /// </summary>
     /// <typeparam name="TResult">Type of result</typeparam>
     /// <typeparam name="TException">Type of exception to handle</typeparam>
-    /// <param name="result">Task to handle exceptions and, optionally, cancelation for</param>
+    /// <param name="result">Task to handle exceptions and, optionally, cancellation for</param>
     /// <param name="exceptionHandler">Asynchronous exception handler</param>
-    /// <param name="cancelationHandler">Asynchronous cancelation handler</param>
+    /// <param name="cancellationHandler">Asynchronous cancellation handler</param>
     /// <param name="handleOnCapturedContext">
     /// <see langword="true"/> to attempt to marshal the execution of handler to the original context captured;
     /// otherwise, <see langword="false"/>
@@ -240,12 +240,12 @@ public static class TaskExtensions
     /// exception as argument.<br/>
     /// If <paramref name="result"/> is faulted and the exception thrown by the <see langword="await"/> is not
     /// assignable to <typeparamref name="TException"/>, the exception is not caught.
-    /// If <paramref name="result"/> is canceled and <paramref name="cancelationHandler"/> is not
-    /// <see langword="null"/>, <paramref name="cancelationHandler"/> is invoked as continuation with the
+    /// If <paramref name="result"/> is canceled and <paramref name="cancellationHandler"/> is not
+    /// <see langword="null"/>, <paramref name="cancellationHandler"/> is invoked as continuation with the
     /// <see cref="OperationCanceledException"/> thrown by the <see langword="await"/> as argument.<br/>
-    /// If <paramref name="result"/> is canceled and <paramref name="cancelationHandler"/> is <see langword="null"/>,
+    /// If <paramref name="result"/> is canceled and <paramref name="cancellationHandler"/> is <see langword="null"/>,
     /// the <see cref="OperationCanceledException"/> is not caught.<br/>
-    /// As an edge case, if <paramref name="result"/> is canceled, <paramref name="cancelationHandler"/> is
+    /// As an edge case, if <paramref name="result"/> is canceled, <paramref name="cancellationHandler"/> is
     /// <see langword="null"/> and <typeparamref name="TException"/> is assignable from
     /// <see cref="OperationCanceledException"/>, <paramref name="exceptionHandler"/> is invoked as continuation with
     /// the <see cref="OperationCanceledException"/> thrown by the <see langword="await"/> as argument.<br/>
@@ -253,7 +253,7 @@ public static class TaskExtensions
     public static async Task<TResult> OrElse<TResult, TException>(
         this Task<TResult> result,
         Func<TException, Task<TResult>> exceptionHandler,
-        Func<OperationCanceledException, Task<TResult>>? cancelationHandler = null,
+        Func<OperationCanceledException, Task<TResult>>? cancellationHandler = null,
         bool handleOnCapturedContext = false)
         where TException : Exception
     {
@@ -261,9 +261,9 @@ public static class TaskExtensions
         {
             return await result.ConfigureAwait(handleOnCapturedContext);
         }
-        catch (OperationCanceledException operationCanceledException) when (cancelationHandler is not null)
+        catch (OperationCanceledException operationCanceledException) when (cancellationHandler is not null)
         {
-            return await cancelationHandler(operationCanceledException).ConfigureAwait(false);
+            return await cancellationHandler(operationCanceledException).ConfigureAwait(false);
         }
         catch (TException exception)
         {
