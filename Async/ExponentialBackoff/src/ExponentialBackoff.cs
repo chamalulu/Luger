@@ -97,9 +97,14 @@ public class ExponentialBackoffAwaitable<TResult>
     /// Set base delay of exponential backoff.<br/>
     /// If not set, 100ms is used as base delay.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown if <paramref name="baseDelay"/> argument is negative.
+    /// </exception>
     public ExponentialBackoffAwaitable<TResult> WithBaseDelay(TimeSpan baseDelay)
 
-        => new(func, options with { BaseDelay = baseDelay });
+        => baseDelay >= TimeSpan.Zero
+            ? new(func, options with { BaseDelay = baseDelay })
+            : throw new ArgumentOutOfRangeException(nameof(baseDelay));
 
     /// <summary>
     /// Configure exponential backoff attempts to marshal the delays and retries back to the original context captured.<br/>
@@ -147,9 +152,14 @@ public class ExponentialBackoffAwaitable<TResult>
     /// Set scale factor of successive backoff delays.<br/>
     /// If not set, mean backoff delay is doubled each iteration.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown if <paramref name="factor"/> argument is not finite or not positive.
+    /// </exception>
     public ExponentialBackoffAwaitable<TResult> WithFactor(double factor)
 
-        => new(func, options with { Factor = factor });
+        => double.IsFinite(factor) && factor > 0
+            ? new(func, options with { Factor = factor })
+            : throw new ArgumentOutOfRangeException(nameof(factor));
 
     /// <summary>
     /// Set cancellation token for cancellation of delay.<br/>
