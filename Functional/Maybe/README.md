@@ -230,7 +230,7 @@ This is useful to provide a fallback value, much like
 Since C# cannot handle conditional logical operators of operands of different
 types, another overload of the disjunction operator is introduced in v1.1.0 to
 help with lazy evaluation of fallback value. It provides functionality much like
-`maybeX || getZ` would, where `getZ` is a function providing the fallback value.
+`maybeX || getZ()` would, where `getZ` is a function providing the fallback value.
 
 Some examples;
 
