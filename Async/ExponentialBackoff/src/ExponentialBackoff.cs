@@ -23,18 +23,54 @@ public record struct ExponentialBackoffProgress(uint Retries, TimeSpan BackoffDe
 /// <returns>Task to await for delay</returns>
 public delegate Task DelayDelegate(TimeSpan delay, CancellationToken cancellationToken);
 
+/// <summary>
+/// A finite non-negative <see cref="double"/>
+/// </summary>
+public readonly struct TimeScaleFactor
+{
+    readonly double value;
+
+    TimeScaleFactor(double value) => this.value = value;
+
+    public static implicit operator double(TimeScaleFactor timeScaleFactor) => timeScaleFactor.value;
+
+    public static explicit operator TimeScaleFactor(double value)
+
+        => double.IsFinite(value) && value >= 0d ? new(value) : throw new ArgumentOutOfRangeException(nameof(value));
+}
+
+/// <summary>
+/// A non-negative <see cref="TimeSpan"/>
+/// </summary>
+public readonly struct DelayTimeSpan
+{
+    readonly TimeSpan value;
+
+    DelayTimeSpan(TimeSpan value) => this.value = value;
+
+    public static DelayTimeSpan operator *(DelayTimeSpan delayTimeSpan, TimeScaleFactor factor)
+
+        => new(delayTimeSpan.value * factor);
+
+    public static implicit operator TimeSpan(DelayTimeSpan delayTimeSpan) => delayTimeSpan.value;
+
+    public static explicit operator DelayTimeSpan(TimeSpan value)
+
+        => value >= TimeSpan.Zero ? new(value) : throw new ArgumentOutOfRangeException(nameof(value));
+}
+
 public class ExponentialBackoffAwaitable<TResult>
 {
     readonly Func<Task<TResult>> func;
 
     record Options(
         uint Retries = 8,
-        TimeSpan? BaseDelay = null,
+        DelayTimeSpan? BaseDelay = null,
         bool RetryOnCapturedContext = false,
         RNGDelegate? RNG = null,
         IProgress<ExponentialBackoffProgress>? Progress = null,
         DelayDelegate? Delay = null,
-        double Factor = 2d,
+        TimeScaleFactor? Factor = null,
         CancellationToken CancellationToken = default);
 
     readonly Options options;
@@ -51,11 +87,13 @@ public class ExponentialBackoffAwaitable<TResult>
     {
         var (retries, baseDelay, retryOnCapturedContext, rng, progress, delay, factor, cancellationToken) = options;
 
-        var meanDelay = baseDelay ?? TimeSpan.FromMilliseconds(100);
+        var meanDelay = baseDelay ?? (DelayTimeSpan)TimeSpan.FromMilliseconds(100);
 
         rng ??= new Random().NextDouble;
 
         delay ??= Task.Delay;
+
+        factor ??= (TimeScaleFactor)2d;
 
         while (retries > 0)
         {
@@ -66,14 +104,15 @@ public class ExponentialBackoffAwaitable<TResult>
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
                 // Backoff delay is distributed exponentially with mean meanDelay
-                var backoffDelay = -Math.Log(1 - rng()) * meanDelay;
+                var jitter = (TimeScaleFactor)(-Math.Log(1d - rng()));
+                var backoffDelay = meanDelay * jitter;
 
                 progress?.Report(new ExponentialBackoffProgress(retries, backoffDelay, exception));
 
                 await delay(backoffDelay, cancellationToken).ConfigureAwait(retryOnCapturedContext);
 
                 retries -= 1;   // Decrease retries
-                meanDelay *= factor; // Scale mean delay
+                meanDelay *= factor.Value; // Scale mean delay
             }
         }
 
@@ -97,14 +136,9 @@ public class ExponentialBackoffAwaitable<TResult>
     /// Set base delay of exponential backoff.<br/>
     /// If not set, 100ms is used as base delay.
     /// </summary>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown if <paramref name="baseDelay"/> argument is negative.
-    /// </exception>
-    public ExponentialBackoffAwaitable<TResult> WithBaseDelay(TimeSpan baseDelay)
+    public ExponentialBackoffAwaitable<TResult> WithBaseDelay(DelayTimeSpan baseDelay)
 
-        => baseDelay >= TimeSpan.Zero
-            ? new(func, options with { BaseDelay = baseDelay })
-            : throw new ArgumentOutOfRangeException(nameof(baseDelay));
+        => new(func, options with { BaseDelay = baseDelay });
 
     /// <summary>
     /// Configure exponential backoff attempts to marshal the delays and retries back to the original context captured.<br/>
@@ -152,14 +186,9 @@ public class ExponentialBackoffAwaitable<TResult>
     /// Set scale factor of successive backoff delays.<br/>
     /// If not set, mean backoff delay is doubled each iteration.
     /// </summary>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown if <paramref name="factor"/> argument is not finite or not positive.
-    /// </exception>
-    public ExponentialBackoffAwaitable<TResult> WithFactor(double factor)
+    public ExponentialBackoffAwaitable<TResult> WithFactor(TimeScaleFactor factor)
 
-        => double.IsFinite(factor) && factor > 0
-            ? new(func, options with { Factor = factor })
-            : throw new ArgumentOutOfRangeException(nameof(factor));
+        => new(func, options with { Factor = factor });
 
     /// <summary>
     /// Set cancellation token for cancellation of delay.<br/>
