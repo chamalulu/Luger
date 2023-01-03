@@ -227,6 +227,11 @@ The disjunction (`|`) operator is also implemented between `Maybe<T>` and `T`.
 This is useful to provide a fallback value, much like
 `Nullable<T>.GetValueOrDefault(T)`
 
+Since C# cannot handle conditional logical operators of operands of different
+types, another overload of the disjunction operator is introduced in v1.1.0 to
+help with lazy evaluation of fallback value. It provides functionality much like
+`maybeX || getZ` would, where `getZ` is a function providing the fallback value.
+
 Some examples;
 
 `maybeX & maybeY & maybeZ` evaluates to the rightmost operand (`maybeZ`) if all

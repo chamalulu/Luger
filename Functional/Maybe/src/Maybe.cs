@@ -262,6 +262,20 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     public static T operator |(Maybe<T> left, T right) => left._isSome ? left._value : right;
 
     /// <summary>
+    /// Logical disjunction of operands <paramref name="left"/> and <paramref name="right"/>
+    /// </summary>
+    /// <remarks>
+    /// This operator provides lazy fallback value much like <c>maybeX || z</c> would if C# could handle conditional
+    /// logical disjunction of different types.<br/>
+    /// <c>maybeX | getZ</c> evaluates to the value of <c>maybeX</c> if it is some; otherwise the return value of
+    /// <c>getZ</c>.
+    /// </remarks>
+    /// <returns>
+    /// Value of <paramref name="left"/> if it is some; otherwise the return value of <paramref name="right"/>
+    /// </returns>
+    public static T operator |(Maybe<T> left, Func<T> right) => left._isSome ? left._value : right();
+
+    /// <summary>
     /// Equality operator of operands <paramref name="left"/> and <paramref name="right"/>
     /// </summary>
     /// <returns>

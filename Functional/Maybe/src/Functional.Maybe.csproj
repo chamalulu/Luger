@@ -9,7 +9,7 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <Description>A composable C# flavored implementation of an option type for value types and non-nullable reference types.</Description>
 
-    <VersionPrefix>1.0.1</VersionPrefix>
+    <VersionPrefix>1.1.0</VersionPrefix>
     <!-- Set empty suffix when API is stable -->
     <VersionSuffix></VersionSuffix>
 
@@ -23,10 +23,12 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>Introduce lazy fallback value operator</PackageReleaseNotes>
+    <AnalysisLevel>preview</AnalysisLevel>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\README.md" Pack="true" PackagePath="\"/>
+    <Content Include="..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

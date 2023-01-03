@@ -124,6 +124,24 @@ public class MaybeTests
         => Assert.Equal(FromNullable(expected), FromNullable(maybeX) | y);
 
     [Theory]
+    [InlineData(null, true)]
+    [InlineData(42, false)]
+    public void OpOrTConditionalInvokeTheory(int? maybeX, bool expected)
+    {
+        var invoked = false;
+
+        int factory()
+        {
+            invoked = true;
+            return default;
+        }
+
+        _ = FromNullable(maybeX) | factory;
+
+        Assert.Equal(expected, invoked);
+    }
+
+    [Theory]
     [InlineData(null, null)]
     [InlineData(42, 42)]
     public void OpEqualTrueTheory(int? maybeX, int? maybeY)
