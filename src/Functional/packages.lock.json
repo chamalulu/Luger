@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net6.0": {
+      "Luger.Functional.Maybe": {
+        "type": "Direct",
+        "requested": "[1.0.0, )",
+        "resolved": "1.0.0",
+        "contentHash": "Yl8m+axwYdtY49sdqYvIRxGfjvoMLXpr89SsQsD3JfZrCXY5Q8R1OwziCApydI8jeAs09uqDZ0b42TlAalQhwA=="
+      },
+      "Luger.Functional.Async": {
+        "type": "Project"
+      }
+    }
+  }
+}

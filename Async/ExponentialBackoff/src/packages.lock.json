@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net6.0": {
+      "Luger.Functional.Maybe": {
+        "type": "Direct",
+        "requested": "[1.1.0, )",
+        "resolved": "1.1.0",
+        "contentHash": "fZxNoSTb+TtsTh/B9mYvqnbOuLcdU4X2z6shwbshnBBTaukhwxKYSn/I4T6pTYdf04LP7sO55/s+yjzKmNXE1A=="
+      }
+    }
+  }
+}
