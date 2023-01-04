@@ -1,5 +1,7 @@
 using System.Runtime.CompilerServices;
 
+using Luger.Functional;
+
 namespace Luger.Async.ExponentialBackoff;
 
 /// <summary>
@@ -65,12 +67,12 @@ public class ExponentialBackoffAwaitable<TResult>
 
     record Options(
         uint Retries = 8,
-        DelayTimeSpan? BaseDelay = null,
+        Maybe<DelayTimeSpan> BaseDelay = default,
         bool RetryOnCapturedContext = false,
-        RNGDelegate? RNG = null,
-        IProgress<ExponentialBackoffProgress>? Progress = null,
-        DelayDelegate? Delay = null,
-        TimeScaleFactor? Factor = null,
+        Maybe<RNGDelegate> RNG = default,
+        Maybe<IProgress<ExponentialBackoffProgress>> Progress = default,
+        Maybe<DelayDelegate> Delay = default,
+        Maybe<TimeScaleFactor> Factor = default,
         CancellationToken CancellationToken = default);
 
     readonly Options options;
@@ -85,21 +87,17 @@ public class ExponentialBackoffAwaitable<TResult>
 
     protected async Task<TResult> Run()
     {
-        var (retries, baseDelay, retryOnCapturedContext, rng, progress, delay, factor, cancellationToken) = options;
-
-        var meanDelay = baseDelay ?? (DelayTimeSpan)TimeSpan.FromMilliseconds(100);
-
-        rng ??= new Random().NextDouble;
-
-        delay ??= Task.Delay;
-
-        factor ??= (TimeScaleFactor)2d;
+        var retries = options.Retries;
+        var meanDelay = options.BaseDelay | (DelayTimeSpan)TimeSpan.FromMilliseconds(100);
+        var rng = options.RNG | (() => new Random().NextDouble);
+        var delay = options.Delay | Task.Delay;
+        var factor = options.Factor | (TimeScaleFactor)2d;
 
         while (retries > 0)
         {
             try
             {
-                return await func().ConfigureAwait(retryOnCapturedContext);
+                return await func().ConfigureAwait(options.RetryOnCapturedContext);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
@@ -107,12 +105,15 @@ public class ExponentialBackoffAwaitable<TResult>
                 var jitter = (TimeScaleFactor)(-Math.Log(1d - rng()));
                 var backoffDelay = meanDelay * jitter;
 
-                progress?.Report(new ExponentialBackoffProgress(retries, backoffDelay, exception));
+                if (options.Progress is [var progress])
+                {
+                    progress.Report(new(retries, backoffDelay, exception));
+                }
 
-                await delay(backoffDelay, cancellationToken).ConfigureAwait(retryOnCapturedContext);
+                await delay(backoffDelay, options.CancellationToken).ConfigureAwait(options.RetryOnCapturedContext);
 
                 retries -= 1;   // Decrease retries
-                meanDelay *= factor.Value; // Scale mean delay
+                meanDelay *= factor; // Scale mean delay
             }
         }
 
@@ -172,7 +173,7 @@ public class ExponentialBackoffAwaitable<TResult>
     /// </summary>
     public ExponentialBackoffAwaitable<TResult> WithProgress(IProgress<ExponentialBackoffProgress> progress)
 
-        => new(func, options with { Progress = progress });
+        => new(func, options with { Progress = Maybe.Some(progress) });
 
     /// <summary>
     /// Set a custom delay function.<br/>

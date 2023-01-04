@@ -8,6 +8,7 @@
     <RootNamespace>Luger.Async.ExponentialBackoff</RootNamespace>
     <Authors>Henrik Lundberg</Authors>
     <Product>Luger</Product>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -17,5 +18,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Luger.Functional.Maybe" Version="1.1.0" />
+  </ItemGroup>
 
 </Project>
