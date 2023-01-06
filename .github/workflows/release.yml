@@ -98,7 +98,7 @@ jobs:
 
     - name: Push to NuGet
       #run: dotnet nuget push ${NUPKG_FILE} --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-      run: echo "Would execute 'dotnet nuget push ${NUPKG_FILE} --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}'"
+      run: echo "Would execute $ dotnet nuget push ${NUPKG_FILE} --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}"
 
     - name: Create GitHub Release
-      run: gh release create --generate-notes --verify-tag ${GITHUB_REF} ${NUPKG_FILE}
+      run: gh release create --generate-notes ${GITHUB_REF} #${NUPKG_FILE}
