@@ -39,6 +39,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\config.commandline_release.yml = .github\workflows\config.commandline_release.yml
 		.github\workflows\functional.async_release.yml = .github\workflows\functional.async_release.yml
 		.github\workflows\functional.maybe_release.yml = .github\workflows\functional.maybe_release.yml
+		.github\workflows\release.yml = .github\workflows\release.yml
 		.github\workflows\solutionwide_ci.yml = .github\workflows\solutionwide_ci.yml
 	EndProjectSection
 EndProject
