@@ -11,7 +11,7 @@
 
     <VersionPrefix>1.1.0</VersionPrefix>
     <!-- Set empty suffix when API is stable -->
-    <VersionSuffix></VersionSuffix>
+    <VersionSuffix>dry-run</VersionSuffix>
 
     <Authors>Henrik Lundberg</Authors>
     <Company></Company>
