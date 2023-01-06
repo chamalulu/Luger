@@ -11,7 +11,7 @@ jobs:
     uses: ./.github/workflows/release.yml
     with:
       project-name: Functional.Maybe
-      project-file: ${{ github.workspace }}/Functional/Maybe/src/Functional.Maybe.csproj
-      test-project-file: ${{ github.workspace }}/Functional/Maybe/tests/Functional.Maybe.Tests.csproj
+      project-file: Functional/Maybe/src/Functional.Maybe.csproj
+      test-project-file: Functional/Maybe/tests/Functional.Maybe.Tests.csproj
     secrets:
       NUGET_API_KEY: ${{ secrets.PUSH_TO_NUGET }}
