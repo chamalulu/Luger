@@ -102,3 +102,5 @@ jobs:
 
     - name: Create GitHub Release
       run: gh release create --generate-notes ${GITHUB_REF} #${NUPKG_FILE}
+      env:
+        GH_TOKEN: ${{ github.token }}
