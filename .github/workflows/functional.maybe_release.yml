@@ -1,5 +1,5 @@
 name: Release Luger.Functional.Maybe
-run-name: Release of Luger.Functional.Maybe (tag ${{ github.refname }}) by @${{ github.actor }}
+run-name: Release of Luger.Functional.Maybe (tag ${{ github.ref_name }}) by @${{ github.actor }}
 
 on:
   push:

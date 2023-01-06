@@ -57,7 +57,7 @@ jobs:
     - name: Set CACHE_PATH for next silly step
       run: |
         ACP=/var/cache/apt/archives/
-        eval $(apt-cache shell ACP Dir::Cache::archives/d)
+        eval $(apt-config shell ACP Dir::Cache::archives/d)
         echo "CACHE_PATH=${ACP}libxml2-utils*" >> $GITHUB_ENV
 
     - name: Set CACHE_KEY for next silly step
