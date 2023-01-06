@@ -315,123 +315,126 @@ public static class Maybe
     public static Maybe<T> Some<T>(T value) where T : notnull => value;
 
     /// <summary>
-    /// Sequential application of <paramref name="maybeFunc"/> to <paramref name="maybeT"/> in applicative functor of
+    /// Sequential application of <paramref name="maybeFunc"/> to <paramref name="maybeArg"/> in applicative functor of
     /// <see cref="Maybe{T}"/>.
     /// </summary>
-    /// <typeparam name="T">Type of parameter</typeparam>
-    /// <typeparam name="TR">Type of return value</typeparam>
+    /// <typeparam name="TArg">Type of parameter</typeparam>
+    /// <typeparam name="TResult">Type of return value</typeparam>
     /// <param name="maybeFunc">Lifted unary function</param>
-    /// <param name="maybeT">Lifted parameter</param>
+    /// <param name="maybeArg">Lifted parameter</param>
     /// <remarks>
     /// This is the equivalent of the infix operator <see langword="&lt;*&gt;"/> of Applicative in Haskell.
     /// </remarks>
     /// <returns>Lifted return value</returns>
-    public static Maybe<TR> Apply<T, TR>(this Maybe<Func<T, TR>> maybeFunc, Maybe<T> maybeT)
-        where T : notnull
-        where TR : notnull
+    public static Maybe<TResult> Apply<TArg, TResult>(this Maybe<Func<TArg, TResult>> maybeFunc, Maybe<TArg> maybeArg)
+        where TArg : notnull
+        where TResult : notnull
 
-        => maybeFunc is [var func] && maybeT is [var t]
-            ? Some(func(t))
-            : None<TR>();
+        => maybeFunc is [var func] && maybeArg is [var arg]
+            ? Some(func(arg))
+            : None<TResult>();
 
     /// <summary>
-    /// Sequential application of <paramref name="maybeFunc"/> to <paramref name="maybeT1"/> in applicative functor of
+    /// Sequential application of <paramref name="maybeFunc"/> to <paramref name="maybeArg1"/> in applicative functor of
     /// <see cref="Maybe{T}"/>.
     /// </summary>
-    /// <typeparam name="T1">Type of first parameter</typeparam>
-    /// <typeparam name="T2">Type of second parameter</typeparam>
-    /// <typeparam name="TR">Type of return value</typeparam>
+    /// <typeparam name="TArg1">Type of first parameter</typeparam>
+    /// <typeparam name="TArg2">Type of second parameter</typeparam>
+    /// <typeparam name="TResult">Type of return value</typeparam>
     /// <param name="maybeFunc">Lifted binary function</param>
-    /// <param name="maybeT1">Lifted parameter</param>
+    /// <param name="maybeArg1">Lifted parameter</param>
     /// <remarks>
     /// With a little squinting and currying, this is the equivalent of the infix operator <see langword="&lt;*&gt;"/>
     /// of Applicative in Haskell.
     /// </remarks>
     /// <returns>Lifted unary, since partially applied, function</returns>
-    public static Maybe<Func<T2, TR>> Apply<T1, T2, TR>(this Maybe<Func<T1, T2, TR>> maybeFunc, Maybe<T1> maybeT1)
-        where T1 : notnull
+    public static Maybe<Func<TArg2, TResult>> Apply<TArg1, TArg2, TResult>(
+        this Maybe<Func<TArg1, TArg2, TResult>> maybeFunc,
+        Maybe<TArg1> maybeArg1)
+        where TArg1 : notnull
 
-        => maybeFunc is [var func] && maybeT1 is [var t1]
-            ? Some<Func<T2, TR>>(t2 => func(t1, t2))
-            : None<Func<T2, TR>>();
+        => maybeFunc is [var func] && maybeArg1 is [var arg1]
+            ? Some<Func<TArg2, TResult>>(arg2 => func(arg1, arg2))
+            : None<Func<TArg2, TResult>>();
 
     /// <summary>
-    /// Sequential application of <paramref name="maybeFunc"/> to <paramref name="maybeT1"/> in applicative functor of
+    /// Sequential application of <paramref name="maybeFunc"/> to <paramref name="maybeArg1"/> in applicative functor of
     /// <see cref="Maybe{T}"/>.
     /// </summary>
-    /// <typeparam name="T1">Type of first parameter</typeparam>
-    /// <typeparam name="T2">Type of second parameter</typeparam>
-    /// <typeparam name="T3">Type of third parameter</typeparam>
-    /// <typeparam name="TR">Type of return value</typeparam>
+    /// <typeparam name="TArg1">Type of first parameter</typeparam>
+    /// <typeparam name="TArg2">Type of second parameter</typeparam>
+    /// <typeparam name="TArg3">Type of third parameter</typeparam>
+    /// <typeparam name="TResult">Type of return value</typeparam>
     /// <param name="maybeFunc">Lifted ternary function</param>
-    /// <param name="maybeT1">Lifted parameter</param>
+    /// <param name="maybeArg1">Lifted parameter</param>
     /// <remarks>
     /// With a little squinting and currying, this is the equivalent of the infix operator <see langword="&lt;*&gt;"/>
     /// of Applicative in Haskell.
     /// </remarks>
     /// <returns>Lifted binary, since partially applied, function</returns>
-    public static Maybe<Func<T2, T3, TR>> Apply<T1, T2, T3, TR>(
-        this Maybe<Func<T1, T2, T3, TR>> maybeFunc,
-        Maybe<T1> maybeT1)
-        where T1 : notnull
+    public static Maybe<Func<TArg2, TArg3, TResult>> Apply<TArg1, TArg2, TArg3, TResult>(
+        this Maybe<Func<TArg1, TArg2, TArg3, TResult>> maybeFunc,
+        Maybe<TArg1> maybeArg1)
+        where TArg1 : notnull
 
-        => maybeFunc is [var func] && maybeT1 is [var t1]
-            ? Some<Func<T2, T3, TR>>((t2, t3) => func(t1, t2, t3))
-            : None<Func<T2, T3, TR>>();
+        => maybeFunc is [var func] && maybeArg1 is [var arg1]
+            ? Some<Func<TArg2, TArg3, TResult>>((arg2, arg3) => func(arg1, arg2, arg3))
+            : None<Func<TArg2, TArg3, TResult>>();
 
     /// <summary>
-    /// Sequential composition of <paramref name="func"/> to <paramref name="maybeT"/> in monad of
+    /// Sequential composition of <paramref name="func"/> to <paramref name="source"/> in monad of
     /// <see cref="Maybe{T}"/>.
     /// </summary>
-    /// <typeparam name="T">Type of parameter</typeparam>
-    /// <typeparam name="TR">Type of return value</typeparam>
-    /// <param name="maybeT">Lifted parameter</param>
+    /// <typeparam name="TSource">Type of parameter</typeparam>
+    /// <typeparam name="TResult">Type of return value</typeparam>
+    /// <param name="source">Lifted parameter</param>
     /// <param name="func">Function to bind</param>
     /// <remarks>
     /// This is the equivalent of the infix operator <see langword="&gt;&gt;="/> of Monad in Haskell.
     /// </remarks>
     /// <returns>Lifted return value</returns>
-    public static Maybe<TR> Bind<T, TR>(this Maybe<T> maybeT, Func<T, Maybe<TR>> func)
-        where T : notnull
-        where TR : notnull
+    public static Maybe<TResult> Bind<TSource, TResult>(this Maybe<TSource> source, Func<TSource, Maybe<TResult>> func)
+        where TSource : notnull
+        where TResult : notnull
 
-        => maybeT is [var t]
-            ? func(t)
-            : None<TR>();
+        => source is [var s]
+            ? func(s)
+            : None<TResult>();
 
     /// <summary>
     /// Filters a <see cref="Maybe{T}"/> value based on a predicate function.
     /// </summary>
-    /// <typeparam name="T">The type of the value of <paramref name="maybeT"/></typeparam>
-    /// <param name="maybeT">A <see cref="Maybe{T}"/> to filter.</param>
+    /// <typeparam name="TSource">The type of the value of <paramref name="source"/></typeparam>
+    /// <param name="source">A <see cref="Maybe{T}"/> to filter.</param>
     /// <param name="predicate">A function to test some value for a condition.</param>
     /// <returns>
-    /// The <paramref name="maybeT"/> in some case and the value satisfy the condition; otherwise none.
+    /// The <paramref name="source"/> in some case and the value satisfy the condition; otherwise none.
     /// </returns>
-    public static Maybe<T> Filter<T>(this Maybe<T> maybeT, Func<T, bool> predicate) where T : notnull
+    public static Maybe<TSource> Filter<TSource>(this Maybe<TSource> source, Func<TSource, bool> predicate)
+        where TSource : notnull
 
-        => maybeT is [var t] && predicate(t)
-            ? maybeT
-            : None<T>();
+        => source is [var s] && predicate(s)
+            ? source
+            : None<TSource>();
 
     /// <summary>
-    /// Application of <paramref name="func"/> to <paramref name="maybeT"/> in functor of <see cref="Maybe{T}"/>.
+    /// Application of <paramref name="func"/> to <paramref name="source"/> in functor of <see cref="Maybe{T}"/>.
     /// </summary>
-    /// <typeparam name="T">Type of parameter</typeparam>
-    /// <typeparam name="TR">Type of return value</typeparam>
-    /// <param name="maybeT">Lifted parameter</param>
+    /// <typeparam name="TSource">Type of parameter</typeparam>
+    /// <typeparam name="TResult">Type of return value</typeparam>
+    /// <param name="source">Lifted parameter</param>
     /// <param name="func">Mapping function</param>
     /// <remarks>
     /// This is the equivalent of the infix operator <see langword="&lt;$&gt;"/> of Functor in Haskell.
     /// </remarks>
     /// <returns>Lifted return value</returns>
-    public static Maybe<TR> Map<T, TR>(this Maybe<T> maybeT, Func<T, TR> func)
-        where T : notnull
-        where TR : notnull
+    public static Maybe<TResult> Map<TSource, TResult>(this Maybe<TSource> source, Func<TSource, TResult> func)
+        where TSource : notnull
+        where TResult : notnull
 
-        => maybeT is [var t]
-            ? Some(func(t))
-            : None<TR>();
+        => source is [var s]
+            ? Some(func(s))
+            : None<TResult>();
 
     /// <summary>
     /// Projects the value of <see cref="Maybe{T}"/> into a new form.
@@ -522,8 +525,8 @@ public static class Maybe
     /// <summary>
     /// Code style extension to use Try-style method syntax with a value of <see cref="Maybe{T}"/>
     /// </summary>
-    /// <typeparam name="T">Type of value</typeparam>
-    /// <param name="maybeT">Maybe value</param>
+    /// <typeparam name="TSource">Type of value</typeparam>
+    /// <param name="source">Maybe value</param>
     /// <param name="value">
     /// Inner value in some case; otherwise undefined (<see langword="default"/>! really).
     /// </param>
@@ -541,11 +544,11 @@ public static class Maybe
     /// maybeT.Try(out var value) ? $"Some {value}" : "None"
     /// </code>
     /// </remarks>
-    public static bool Try<T>(this Maybe<T> maybeT, out T value) where T : notnull
+    public static bool Try<TSource>(this Maybe<TSource> source, out TSource value) where TSource : notnull
     {
-        value = maybeT | default(T)!;
+        value = source | default(TSource)!;
 
-        return maybeT is [_];
+        return source is [_];
     }
 
     /// <summary>

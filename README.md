@@ -22,7 +22,7 @@ non-nullable reference types.
 
 [![Nuget](https://img.shields.io/nuget/v/Luger.Functional.Async?label=Luger.Functional.Async&logo=NuGet)](https://www.nuget.org/packages/Luger.Functional.Async)
 
-Extensions for Task&lt;&gt; to provide LINQ query support.
+Extensions for `Task<T>` to provide LINQ query support.
 
 Cheers!  
 /Henrik

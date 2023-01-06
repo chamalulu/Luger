@@ -34,7 +34,10 @@ of course).
 
 The unary case of `Apply` corresponds to the infix operator `<*>` of Applicative
 in Haskell. The overloads are provided to simplify application of binary and
-ternary functions since C# does not use partial application.
+ternary functions since C# does not use partial application. If you need to
+apply higher arity functions you'll have to curry them yourself.
+
+The unary overload is really the only one needed if you apply curried functions.
 
 If the optional flag `applyOnCapturedContext` is `true`, `Apply` will try to
 marshall the application of the function from `funcTask` back to the original

@@ -221,7 +221,7 @@ disjunction (`|`) operators.
 The combination also provides conditional logical operators (`&&`, `||`). This
 enables chaining of `Maybe<T>` values in logical expressions.
 
-Using the conditional operators enables conditional evaluation as expected.
+Using the conditional operators enables lazy evaluation as expected.
 
 The disjunction (`|`) operator is also implemented between `Maybe<T>` and `T`.
 This is useful to provide a fallback value, much like
@@ -230,18 +230,26 @@ This is useful to provide a fallback value, much like
 Since C# cannot handle conditional logical operators of operands of different
 types, another overload of the disjunction operator is introduced in v1.1.0 to
 help with lazy evaluation of fallback value. It provides functionality much like
-`maybeX || getZ()` would, where `getZ` is a function providing the fallback value.
+`maybeX || getZ()` would, where `getZ` is a function providing the fallback
+value.
 
-Some examples;
+Some illustrations;
 
-`maybeX & maybeY & maybeZ` evaluates to the rightmost operand (`maybeZ`) if all
-are some; otherwise none.
+`maybeX & maybeY` evaluates to `maybeY` if `maybeX` is some; otherwise none.
 
-`maybeX | maybeY | maybeZ` evaluates to the leftmost operand which is some;
-otherwise none.
+`maybeX | maybeY` evaluates to `maybeX` if it is some; otherwise none.
 
-`maybeX | maybeY | z` evaluates to the value of the leftmost operand which is
-some; otherwise `z`.
+`maybeX && getMaybeY()` evaluates to the result of `getMaybeY()` if `maybeX` is
+some; otherwise `getMaybeY` is not invoked and the result is none.
+
+`maybeX || getMaybeY()` evaluates to `maybeX` if it is some; otherwise
+the result is the result of `getMaybeY()`.
+
+`maybeX | y` evaluates to the value of `maybeX` if it is some; otherwise `y`.
+
+`maybeX | getY` where `getY` is a function returning a `Maybe<T>` evaluates to
+the value of `maybeX` if it is some; otherwise the result is the result of
+`getY()`.
 
 `Maybe<T>` implements implicit cast operator from `T`.
 Thus, returning some value from a `Maybe<T>`-returning function is no effort.
@@ -253,26 +261,26 @@ the default state; `return default;`.
 The static class `Maybe` implement these factory methods.
 
 ```csharp
-Maybe<T> None<T>()
+Maybe<T> None<T>() where T : notnull
 ```
 
 Produce the none value. Equivalent to `default(Maybe<T>)`.
 
 ```csharp
-Maybe<T> Some<T>(T)
+Maybe<T> Some<T>(T value) where T : notnull
 ```
 
-Produce a some value for the given value of `T`. Equivalent to implicit cast
+Produce a some value for the given `value`. Equivalent to implicit cast
 from `T` to `Maybe<T>`.
 
 ```csharp
-Maybe<T> FromNullable<T>(T?) where T : struct
+Maybe<T> FromNullable<T>(T? value) where T : struct
 ```
 
 Convert a `Nullable<T>` value to a `Maybe<T>` value.
 
 ```csharp
-Maybe<T> FromReference<T>(T?) where T : class
+Maybe<T> FromReference<T>(T? value) where T : class
 ```
 
 Convert a nullable reference to a `Maybe<T>` value.
@@ -284,39 +292,53 @@ The static class `Maybe` also implement the following extension methods.
 ### Apply
 
 ```csharp
-Maybe<TR> Apply(Maybe<Func<T, TR>>, Maybe<T>)
+Maybe<TResult> Apply<TArg, TResult>(
+    this Maybe<Func<TArg, TResult>> maybeFunc,
+    Maybe<TArg> maybeArg)
 ```
 ```csharp
-Maybe<Func<T2, TR>> Apply(Maybe<Func<T1, T2, TR>>, Maybe<T1>)
+Maybe<Func<TArg2, TResult>> Apply<TArg1, TArg2, TResult>(
+    this Maybe<Func<TArg1, TArg2, TResult>> maybeFunc,
+    Maybe<TArg1> maybeArg1)
 ```
 ```csharp
-Maybe<Func<T2, T3, TR>> Apply(Maybe<Func<T1, T2, T3, TR>>, Maybe<T1>)
+Maybe<Func<TArg2, TArg3, TResult>> Apply<TArg1, TArg2, TArg3, TResult>(
+    this Maybe<Func<TArg1, TArg2, TArg3, TResult>> maybeFunc,
+    Maybe<TArg1> maybeArg1)
 ```
 
 Apply a lifted function to a lifted parameter. Overloads for lifted unary,
 binary and ternary functions are implemented.
 
-In the unary case a value of type `Maybe<TR>` is returned. In the binary and
-ternary cases a partially applied lifted function will be returned (with a
+In the unary case a value of type `Maybe<TResult>` is returned. In the binary
+and ternary cases a partially applied lifted function will be returned (with a
 smaller arity of course).
 
 The unary case of `Apply` corresponds to the infix operator `<*>` of Applicative
 in Haskell. The overloads are provided to simplify application of binary and
-ternary functions since C# does not use partial application.
+ternary functions since C# does not use partial application. If you need to
+apply higher arity functions you'll have to curry them yourself.
+
+The unary overload is really the only one needed if you apply curried functions.
 
 ### Bind
 
 ```csharp
-Maybe<TR> Bind(Maybe<T>, Func<T, Maybe<TR>>)
+Maybe<TResult> Bind<TSource, TResult>(
+    this Maybe<TSource> source,
+    Func<TSource, Maybe<TResult>> func)
 ```
 
-Monadic composition of the computation of `Maybe<T>` over the application of a
-`Maybe<TR>`-returning function.
+Monadic composition of the computation of `Maybe<TSource>` over the application
+of a `Maybe<TResult>`-returning function.
 
 `Bind` corresponds to the infix operator `>>=` of Monad in Haskell.
 
 ```csharp
-Maybe<TResult> SelectMany(Maybe<TSource>, Func<TSource, Maybe<TNext>>, Func<TSource, TNext, TResult>)
+Maybe<TResult> SelectMany<TSource, TNext, TResult>(
+    this Maybe<TSource> source,
+    Func<TSource, Maybe<TNext>> selector,
+    Func<TSource, TNext, TResult> resultSelector)
 ```
 
 Project the value of `Maybe<TSource>` to a `Maybe<TNext>` and invoke a result
@@ -342,13 +364,17 @@ encapsulating calls in nested closures.
 ### Filter
 
 ```csharp
-Maybe<T> Filter(Maybe<T>, Func<T, bool>)
+Maybe<TSource> Filter<TSource>(
+    this Maybe<TSource> source,
+    Func<TSource, bool> predicate)
 ```
 
 Filter a lifted value based on a predicate function.
 
 ```csharp
-Maybe<TSource> Where(Maybe<TSource>, Func<TSource, bool>)
+Maybe<TSource> Where<TSource>(
+    this Maybe<TSource> source,
+    Func<TSource, bool> predicate)
 ```
 
 Do exactly the same as `Filter` but provided for support of LINQ query syntax.
@@ -369,18 +395,23 @@ source.Where(predicate)
 ### Map
 
 ```csharp
-Maybe<TR> Map(Maybe<T>, Func<T, TR>)
+Maybe<TResult> Map<TSource, TResult>(
+    this Maybe<TSource> source,
+    Func<TSource, TResult> func)
 ```
 
-Map a lifted value of `T` by given function to a lifted value of `TR`.
+Map a lifted value of `TSource` by given function to a lifted value of
+`TResult`.
 
 `Map` corresponds to the infix operator `<$>` of Functor in Haskell.
 
 ```csharp
-Maybe<TResult> Select(Maybe<TSource>, Func<TSource, TResult>)
+Maybe<TResult> Select<TSource, TResult>(
+    this Maybe<TSource> source,
+    Func<TSource, TResult> selector)
 ```
 
-Project the value of `Maybe<T>` into a new form. This is exactly the same
+Project the value of `Maybe<TSource>` into a new form. This is exactly the same
 functionality as `Map` above but is provided for support of LINQ query syntax.
 The expression
 
@@ -398,25 +429,25 @@ source.Select(selector)
 ### Try
 
 ```csharp
-bool Try(Maybe<T>, out T value)
+bool Try<TSource>(this Maybe<TSource> source, out TSource value)
 ```
 
-Provides `Try`-style method syntax to extract the value of `Maybe<T>` if
-consuming code is not able to use C# 11 list pattern matching.
+Provides `Try`-style method syntax to extract the value of `Maybe<TSource>` for
+consuming code which is not able to use C# 11 list pattern matching.
 
-Instead of the expression `maybeT is [var t]` such code can use
-`maybeT.Try(out var t)`.
+Instead of the expression `source is [var s]` such code can use
+`source.Try(out var s)`.
 
 ### Nullable interop
 
 ```csharp
-T? ToNullable(Maybe<T>) where T : struct
+T? ToNullable<T>(Maybe<T> value) where T : struct
 ```
 
 Convert the `Maybe<T>` value to a `Nullable<T>` value.
 
 ```csharp
-T? ToReference() where T : class
+T? ToReference<T>(Maybe<T> value) where T : class
 ```
 
 Convert the `Maybe<T>` value to a nullable reference.
