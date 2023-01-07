@@ -11,7 +11,7 @@ jobs:
     uses: ./.github/workflows/release.yml
     with:
       project-name: Async.ExponentialBackoff
-      project-file: Async.ExponentialBackoff/src/Async.ExponentialBackoff.csproj
-      test-project-file: Async.ExponentialBackoff/tests/Async.ExponentialBackoff.Tests.csproj
+      project-file: Async/ExponentialBackoff/src/Async.ExponentialBackoff.csproj
+      test-project-file: Async/ExponentialBackoff/tests/Async.ExponentialBackoff.Tests.csproj
     secrets:
       NUGET_API_KEY: ${{ secrets.PUSH_TO_NUGET }}
