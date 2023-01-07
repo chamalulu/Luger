@@ -1,46 +1,47 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
+  <PropertyGroup Label="Build">
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+    <AnalysisLevel>preview-all</AnalysisLevel>
+    <WarningLevel>9999</WarningLevel>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <LangVersion>preview</LangVersion>
+  </PropertyGroup>
+  
+  <PropertyGroup Label="Information">
     <AssemblyName>Luger.Functional.Maybe</AssemblyName>
     <RootNamespace>Luger.Functional</RootNamespace>
-    <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <Description>A composable C# flavored implementation of an option type for value types and non-nullable reference types.</Description>
-
-    <VersionPrefix>1.1.0</VersionPrefix>
-    <!-- Set empty suffix when API is stable -->
-    <VersionSuffix></VersionSuffix>
-
     <Authors>Henrik Lundberg</Authors>
     <Company></Company>
     <Product>Luger</Product>
-    <Copyright>© 2022 Henrik Lundberg</Copyright>
+    <Copyright>© 2023 Henrik Lundberg</Copyright>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Versioning">
+    <VersionPrefix>1.1.0</VersionPrefix>
+    <!-- Set empty suffix when API is stable -->
+    <VersionSuffix></VersionSuffix>
+    <PackageReleaseNotes>Introduce lazy fallback value operator</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Code repository">
     <RepositoryUrl>https://github.com/chamalulu/Luger</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Packaging">
     <PackageTags>option, maybe, functional, LINQ</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>Introduce lazy fallback value operator</PackageReleaseNotes>
-    <AnalysisLevel>preview</AnalysisLevel>
   </PropertyGroup>
 
   <ItemGroup>
     <Content Include="..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <WarningLevel>7</WarningLevel>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <LangVersion>preview</LangVersion>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <WarningLevel>7</WarningLevel>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <LangVersion>preview</LangVersion>
-  </PropertyGroup>
 
 </Project>
