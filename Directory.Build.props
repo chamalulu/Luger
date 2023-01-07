@@ -1,5 +1,10 @@
 <Project>
- <PropertyGroup>
-    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
- </PropertyGroup>
+    <PropertyGroup Label="Dependencies">
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    </PropertyGroup>
+    
+    <PropertyGroup Label="Code repository">
+        <RepositoryUrl>https://github.com/chamalulu/Luger</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
 </Project>

@@ -17,7 +17,6 @@
     <RootNamespace>Luger.Functional</RootNamespace>
     <Description>A composable C# flavored implementation of an option type for value types and non-nullable reference types.</Description>
     <Authors>Henrik Lundberg</Authors>
-    <Company></Company>
     <Product>Luger</Product>
     <Copyright>© 2023 Henrik Lundberg</Copyright>
   </PropertyGroup>
@@ -27,11 +26,6 @@
     <!-- Set empty suffix when API is stable -->
     <VersionSuffix></VersionSuffix>
     <PackageReleaseNotes>Introduce lazy fallback value operator</PackageReleaseNotes>
-  </PropertyGroup>
-
-  <PropertyGroup Label="Code repository">
-    <RepositoryUrl>https://github.com/chamalulu/Luger</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <PropertyGroup Label="Packaging">
