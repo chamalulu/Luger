@@ -127,7 +127,9 @@ If the optional flag `mapOnCapturedContext` is `true`, `Map` will try to
 marshall the execution of `func` back to the original context captured.
 
 ```csharp
-Task<TResult> Select(Task<TSource>, Func<TSource, TResult>)
+Task<TResult> Select<TSource, TResult>(
+    this Task<TSource> source,
+    Func<TSource, TResult> selector)
 ```
 
 Project the value of `Task<T>` into a new form. This is exactly the same
