@@ -34,8 +34,15 @@ public readonly struct TimeScaleFactor
 
     TimeScaleFactor(double value) => this.value = value;
 
+    /// <summary>
+    /// Implicit cast from <see cref="TimeScaleFactor"/> to <see cref="double"/>
+    /// </summary>
     public static implicit operator double(TimeScaleFactor timeScaleFactor) => timeScaleFactor.value;
 
+    /// <summary>
+    /// Explicit cast from <see cref="double"/> to <see cref="TimeScaleFactor"/>
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if value is not finite or negative.</exception>
     public static explicit operator TimeScaleFactor(double value)
 
         => double.IsFinite(value) && value >= 0d ? new(value) : throw new ArgumentOutOfRangeException(nameof(value));
@@ -50,18 +57,32 @@ public readonly struct DelayTimeSpan
 
     DelayTimeSpan(TimeSpan value) => this.value = value;
 
+    /// <summary>
+    /// Scaling of <see cref="DelayTimeSpan"/> by <see cref="TimeScaleFactor"/>
+    /// </summary>
     public static DelayTimeSpan operator *(DelayTimeSpan delayTimeSpan, TimeScaleFactor factor)
 
         => new(delayTimeSpan.value * factor);
 
+    /// <summary>
+    /// Implicit cast from <see cref="DelayTimeSpan"/> to <see cref="TimeSpan"/>
+    /// </summary>
     public static implicit operator TimeSpan(DelayTimeSpan delayTimeSpan) => delayTimeSpan.value;
 
+    /// <summary>
+    /// Explicit cast from <see cref="TimeSpan"/> to <see cref="DelayTimeSpan"/>
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if value is negative</exception>
     public static explicit operator DelayTimeSpan(TimeSpan value)
 
         => value >= TimeSpan.Zero ? new(value) : throw new ArgumentOutOfRangeException(nameof(value));
 }
 
-public class ExponentialBackoffAwaitable<TResult>
+/// <summary>
+/// Wrapper of asynchronous function and exponential backoff options providing awaitable exponential backoff
+/// </summary>
+/// <typeparam name="TResult">Type of result of asynchronous function</typeparam>
+public sealed class ExponentialBackoffAwaitable<TResult>
 {
     readonly Func<Task<TResult>> func;
 
@@ -85,7 +106,7 @@ public class ExponentialBackoffAwaitable<TResult>
 
     internal ExponentialBackoffAwaitable(Func<Task<TResult>> func) : this(func, new Options()) { }
 
-    protected async Task<TResult> Run()
+    async Task<TResult> Run()
     {
         var retries = options.Retries;
         var meanDelay = options.BaseDelay | (DelayTimeSpan)TimeSpan.FromMilliseconds(100);
@@ -205,6 +226,9 @@ public class ExponentialBackoffAwaitable<TResult>
         => new(func, options with { CancellationToken = cancellationToken });
 }
 
+/// <summary>
+/// Static class providing factory functions for <see cref="ExponentialBackoffAwaitable{TResult}"/>
+/// </summary>
 public static class ExponentialBackoff
 {
     /// <summary>
