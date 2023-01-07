@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net6.0": {
+      "Luger.Functional.Maybe": {
+        "type": "Transitive",
+        "resolved": "1.0.0",
+        "contentHash": "Yl8m+axwYdtY49sdqYvIRxGfjvoMLXpr89SsQsD3JfZrCXY5Q8R1OwziCApydI8jeAs09uqDZ0b42TlAalQhwA=="
+      },
+      "Luger.Functional": {
+        "type": "Project",
+        "dependencies": {
+          "Luger.Functional.Async": "[1.0.0-beta, )",
+          "Luger.Functional.Maybe": "[1.0.0, )"
+        }
+      },
+      "Luger.Functional.Async": {
+        "type": "Project"
+      }
+    }
+  }
+}

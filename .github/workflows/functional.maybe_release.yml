@@ -1,0 +1,17 @@
+name: Release Luger.Functional.Maybe
+run-name: Release of Luger.Functional.Maybe (tag ${{ github.ref_name }}) by @${{ github.actor }}
+
+on:
+  push:
+    tags:
+    - "Functional.Maybe/v[0-9]+.[0-9]+.[0-9]+*"
+
+jobs:
+  release_functional_maybe_job:
+    uses: ./.github/workflows/release.yml
+    with:
+      project-name: Functional.Maybe
+      project-file: Functional/Maybe/src/Functional.Maybe.csproj
+      test-project-file: Functional/Maybe/tests/Functional.Maybe.Tests.csproj
+    secrets:
+      NUGET_API_KEY: ${{ secrets.PUSH_TO_NUGET }}

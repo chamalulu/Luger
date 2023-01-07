@@ -1,0 +1,17 @@
+name: Release Luger.Functional.Async
+run-name: Release of Luger.Functional.Async (tag ${{ github.ref_name }}) by @${{ github.actor }}
+
+on:
+  push:
+    tags:
+    - "Functional.Async/v[0-9]+.[0-9]+.[0-9]+*"
+
+jobs:
+  release_functional_async_job:
+    uses: ./.github/workflows/release.yml
+    with:
+      project-name: Functional.Async
+      project-file: Functional/Async/src/Functional.Async.csproj
+      test-project-file: Functional/Async/tests/Functional.Async.Tests.csproj
+    secrets:
+      NUGET_API_KEY: ${{ secrets.PUSH_TO_NUGET }}
