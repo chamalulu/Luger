@@ -24,5 +24,11 @@ non-nullable reference types.
 
 Extensions for `Task<T>` to provide LINQ query support.
 
+## [Luger.Async.ExponentialBackoff](Async/ExponentialBackoff/README.md)
+
+[![Nuget](https://img.shields.io/nuget/v/Luger.Async.ExponentialBackoff?label=Luger.Async.ExponentialBackoff&logo=NuGet)](https://www.nuget.org/packages/Luger.Async.ExponentialBackoff)
+
+Utility for configuring and awaiting exponential backoff over asynchronous functions.
+
 Cheers!  
 /Henrik
