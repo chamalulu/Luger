@@ -26,13 +26,13 @@ The return type will be `T` for `func` of type `Func<Task<T>>`.
 The return type will be `System.ValueTuple` for `func` of type `Func<Task>`.
 
 Exponential backoff can be configured before await by calling methods making up
-its fluent API.
+its fluent configuration API.
 
 ```csharp
 await ExponentialBackoff.Over(func).WithRetries(2);
 ```
 
-## Options
+## Configuration
 
 ### Limit number of retries
 
@@ -78,6 +78,9 @@ WithCustomRNG(RNGDelegate rng)
 Default random number generator is `System.Random.NextDouble` with a fresh
 instance of `System.Random` shared by all iterations of one single exponential
 backoff.
+
+The random number generator is expected to produce values in the range $[0..1)$.
+Values outside this range will cause an exception to be thrown.
 
 `RNGDelegate` has the following declaration;
 
