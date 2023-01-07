@@ -36,6 +36,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{BA33
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{7FD405C9-F59C-4F56-9DCB-BA0A4445B435}"
 	ProjectSection(SolutionItems) = preProject
+		.github\workflows\async.exponentialbackoff_release.yml = .github\workflows\async.exponentialbackoff_release.yml
 		.github\workflows\config.commandline_release.yml = .github\workflows\config.commandline_release.yml
 		.github\workflows\functional.async_release.yml = .github\workflows\functional.async_release.yml
 		.github\workflows\functional.maybe_release.yml = .github\workflows\functional.maybe_release.yml
@@ -75,6 +76,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Functional.Async.Tests", "Functional\Async\tests\Functional.Async.Tests.csproj", "{2A8A1287-BCC8-46FA-B342-6D033247BDA9}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Async", "Async", "{1D2F9610-65F5-48CA-8D27-A104525216E6}"
+	ProjectSection(SolutionItems) = preProject
+		Async\ExponentialBackoff\README.md = Async\ExponentialBackoff\README.md
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Async.ExponentialBackoff", "Async\ExponentialBackoff\src\Async.ExponentialBackoff.csproj", "{3ACBCAB5-B022-4106-9207-D0E60D6CFD00}"
 EndProject

@@ -1,0 +1,17 @@
+name: Release Luger.Async.ExponentialBackoff
+run-name: Release of Luger.Async.ExponentialBackoff (tag ${{ github.ref_name }}) by @${{ github.actor }}
+
+on:
+  push:
+    tags:
+    - "Async.ExponentialBackoff/v[0-9]+.[0-9]+.[0-9]+*"
+
+jobs:
+  release_async_exponentialbackoff_job:
+    uses: ./.github/workflows/release.yml
+    with:
+      project-name: Async.ExponentialBackoff
+      project-file: Async.ExponentialBackoff/src/Async.ExponentialBackoff.csproj
+      test-project-file: Async.ExponentialBackoff/tests/Async.ExponentialBackoff.Tests.csproj
+    secrets:
+      NUGET_API_KEY: ${{ secrets.PUSH_TO_NUGET }}

@@ -142,7 +142,8 @@ public class ExponentialBackoffAwaitable<TResult>
         => new(func, options with { BaseDelay = baseDelay });
 
     /// <summary>
-    /// Configure exponential backoff attempts to marshal the delays and retries back to the original context captured.<br/>
+    /// Configure exponential backoff attempts to marshal the delays and retries back to the original context
+    /// captured.<br/>
     /// If not set, or set to <see langword="false"/>, marshalling is not attempted.
     /// </summary>
     /// <param name="retryOnCapturedContext">
@@ -211,14 +212,18 @@ public static class ExponentialBackoff
     /// </summary>
     /// <typeparam name="TResult">Type of result</typeparam>
     /// <param name="func">Function to retry if faulting</param>
-    /// <returns>Further configurable and ultimately awaitable exponential backoff over <paramref name="func"/></returns>
+    /// <returns>
+    /// Further configurable and ultimately awaitable exponential backoff over <paramref name="func"/>
+    /// </returns>
     public static ExponentialBackoffAwaitable<TResult> Over<TResult>(Func<Task<TResult>> func) => new(func);
 
     /// <summary>
     /// Create exponential backoff over an asynchronous function
     /// </summary>
     /// <param name="func">Function to retry if faulting</param>
-    /// <returns>Further configurable and ultimately awaitable exponential backoff over <paramref name="func"/></returns>
+    /// <returns>
+    /// Further configurable and ultimately awaitable exponential backoff over <paramref name="func"/>
+    /// </returns>
     public static ExponentialBackoffAwaitable<ValueTuple> Over(Func<Task> func)
 
         => new(async () =>
