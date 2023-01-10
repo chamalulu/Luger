@@ -49,24 +49,6 @@ jobs:
     - name: Set VERSION variable from tag
       run: echo "VERSION=${GITHUB_REF_NAME##*/v}" >> $GITHUB_ENV
 
-    - name: Set CACHE_PATH for next silly step
-      run: |
-        ACP=/var/cache/apt/archives/
-        eval $(apt-config shell ACP Dir::Cache::archives/d)
-        echo "CACHE_PATH=${ACP}libxml2-utils*" >> $GITHUB_ENV
-
-    - name: Set CACHE_KEY for next silly step
-      run: |
-        LIBXML2_VERSION=$(apt show libxml2-utils | grep ^Version:\ | head -n 1 | cut -sd " " -f 2)
-        echo "CACHE_KEY=${RUNNER_OS}-libxml2-utils-${LIBXML2_VERSION}" >> $GITHUB_ENV
-
-      # Yes, it's silly to cache this small package, but i'm playing around here.
-    - name: Setup libxml2-utils debian package caching
-      uses: actions/cache@v3
-      with:
-        path: ${{ env.CACHE_PATH }}
-        key: ${{ env.CACHE_KEY }}
-
     - name: Install xmllint
       run: |
         sudo apt-get -y install libxml2-utils
