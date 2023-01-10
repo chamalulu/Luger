@@ -237,19 +237,18 @@ Some illustrations;
 
 `maybeX & maybeY` evaluates to `maybeY` if `maybeX` is some; otherwise none.
 
-`maybeX | maybeY` evaluates to `maybeX` if it is some; otherwise none.
+`maybeX | maybeY` evaluates to `maybeX` if it is some; otherwise `maybeY`.
 
 `maybeX && getMaybeY()` evaluates to the result of `getMaybeY()` if `maybeX` is
 some; otherwise `getMaybeY` is not invoked and the result is none.
 
 `maybeX || getMaybeY()` evaluates to `maybeX` if it is some; otherwise
-the result is the result of `getMaybeY()`.
+the result of `getMaybeY()`.
 
 `maybeX | y` evaluates to the value of `maybeX` if it is some; otherwise `y`.
 
-`maybeX | getY` where `getY` is a function returning a `Maybe<T>` evaluates to
-the value of `maybeX` if it is some; otherwise the result is the result of
-`getY()`.
+`maybeX | getY` where `getY` is a function returning a value of `T` evaluates to
+the value of `maybeX` if it is some; otherwise the result of `getY()`.
 
 `Maybe<T>` implements implicit cast operator from `T`.
 Thus, returning some value from a `Maybe<T>`-returning function is no effort.
