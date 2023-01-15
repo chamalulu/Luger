@@ -76,13 +76,15 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Functional.Async.Tests", "Functional\Async\tests\Functional.Async.Tests.csproj", "{2A8A1287-BCC8-46FA-B342-6D033247BDA9}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Async", "Async", "{1D2F9610-65F5-48CA-8D27-A104525216E6}"
-	ProjectSection(SolutionItems) = preProject
-		Async\ExponentialBackoff\README.md = Async\ExponentialBackoff\README.md
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Async.ExponentialBackoff", "Async\ExponentialBackoff\src\Async.ExponentialBackoff.csproj", "{3ACBCAB5-B022-4106-9207-D0E60D6CFD00}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Async.ExponentialBackoff.Tests", "Async\ExponentialBackoff\tests\Async.ExponentialBackoff.Tests.csproj", "{B7B77C7B-9ABB-43F6-A7D0-713C0391132F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ExponentialBackoff", "ExponentialBackoff", "{5E2E030F-D915-4DEA-B385-CF576C74F991}"
+	ProjectSection(SolutionItems) = preProject
+		Async\ExponentialBackoff\README.md = Async\ExponentialBackoff\README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -322,8 +324,9 @@ Global
 		{C8A72486-DBA5-4FD6-9D72-823E5736A7AD} = {918F0F9C-49A4-493C-B47A-C94D8BFFEC94}
 		{8DF668D5-613C-4E0B-A459-0EA00E18CEAD} = {C8A72486-DBA5-4FD6-9D72-823E5736A7AD}
 		{2A8A1287-BCC8-46FA-B342-6D033247BDA9} = {C8A72486-DBA5-4FD6-9D72-823E5736A7AD}
-		{3ACBCAB5-B022-4106-9207-D0E60D6CFD00} = {1D2F9610-65F5-48CA-8D27-A104525216E6}
-		{B7B77C7B-9ABB-43F6-A7D0-713C0391132F} = {1D2F9610-65F5-48CA-8D27-A104525216E6}
+		{3ACBCAB5-B022-4106-9207-D0E60D6CFD00} = {5E2E030F-D915-4DEA-B385-CF576C74F991}
+		{B7B77C7B-9ABB-43F6-A7D0-713C0391132F} = {5E2E030F-D915-4DEA-B385-CF576C74F991}
+		{5E2E030F-D915-4DEA-B385-CF576C74F991} = {1D2F9610-65F5-48CA-8D27-A104525216E6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {ADD9066A-282A-42FB-A88C-26F61A3B3F89}
