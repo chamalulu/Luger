@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 using Xunit;
 
@@ -257,6 +258,15 @@ public class MaybeTests
             actual: from s in FromReference(maybeS)
                     from i in ParseInt(s)
                     select $"{s} + 1 = {i + 1}");
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData(42, "42")]
+    public async Task TraverseTheory(int? maybeI, string? expected)
+
+        => Assert.Equal(
+            expected: FromReference(expected),
+            actual: await FromNullable(maybeI).Traverse(i => Task.FromResult(i.ToString())));
 
     [Theory]
     [InlineData(null, 0)]

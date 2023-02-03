@@ -523,6 +523,27 @@ public static class Maybe
             : None<TResult>();
 
     /// <summary>
+    /// Traverse some value of <see cref="Maybe{T}"/> with an asynchronous function.
+    /// </summary>
+    /// <typeparam name="TSource">Type of source</typeparam>
+    /// <typeparam name="TResult">Type of result</typeparam>
+    /// <param name="source">Maybe value to traverse</param>
+    /// <param name="func"></param>
+    /// <returns>
+    /// A task yielding a <see cref="Maybe{T}"/> with some result if <paramref name="source"/> is some; otherwise, a
+    /// task yielding none.
+    /// </returns>
+    public static async Task<Maybe<TResult>> Traverse<TSource, TResult>(
+        this Maybe<TSource> source,
+        Func<TSource, Task<TResult>> func)
+        where TSource : notnull
+        where TResult : notnull
+
+        => source is [var s]
+            ? Some(await func(s))
+            : None<TResult>();
+
+    /// <summary>
     /// Code style extension to use Try-style method syntax with a value of <see cref="Maybe{T}"/>
     /// </summary>
     /// <typeparam name="TSource">Type of value</typeparam>
