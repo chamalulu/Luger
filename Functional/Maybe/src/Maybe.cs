@@ -457,7 +457,8 @@ public static class Maybe
     /// <code>
     /// source.Select(selector)
     /// </code>
-    /// This is exactly the same functionality as <see cref="Maybe.Map{T, TR}(Maybe{T}, Func{T, TR})"/> and so
+    /// This is exactly the same functionality as
+    /// <see cref="Maybe.Map{TSource, TResult}(Maybe{TSource}, Func{TSource, TResult})"/> and so
     /// <see cref="Maybe.Select{TSource, TResult}(Maybe{TSource}, Func{TSource, TResult})"/> delegates directly to it.
     /// </remarks>
     public static Maybe<TResult> Select<TSource, TResult>(
