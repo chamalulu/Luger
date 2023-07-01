@@ -7,7 +7,7 @@ on:
     - "Functional.State/v[0-9]+.[0-9]+.[0-9]+*"
 
 jobs:
-  release_functional_maybe_job:
+  release_functional_state_job:
     uses: ./.github/workflows/release.yml
     with:
       project-name: Functional.State
