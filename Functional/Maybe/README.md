@@ -320,6 +320,11 @@ apply higher arity functions you'll have to curry them yourself.
 
 The unary overload is really the only one needed if you apply curried functions.
 
+The higher arity overloads are marked obsolete and will be retired in v2.0.0
+whenever that is. After that multiparameter functions must be curried before
+application. There may be helper extension functions within Maybe or another
+library to help with currying coming. Maybe.
+
 ### Bind
 
 ```csharp
@@ -450,3 +455,31 @@ T? ToReference<T>(Maybe<T> value) where T : class
 ```
 
 Convert the `Maybe<T>` value to a nullable reference.
+
+### `IEnumerable<T>` extensions
+
+```csharp
+Maybe<T> MaybeSingle<T>(this IEnumerable<T> source) where T : notnull
+```
+
+```csharp
+Maybe<T> MaybeSingle<T>(this IEnumerable<T> source, Func<T, bool> predicate) where T : notnull
+```
+`Maybe<T>`-returning versions of `System.Linq.Enumerable.SingleOrDefault`
+overloads.
+
+Instead of returning `default<T>` on empty input sequence they return `None<T>`.
+They throw an `InvalidOperationException` on multiple elements just like their
+BCL counterparts.
+
+```csharp
+Maybe<T> MaybeFirst<T>(this IEnumerable<T> source) where T : notnull
+```
+
+```csharp
+Maybe<T> MaybeFirst<T>(this IEnumerable<T> source, Func<T, bool> predicate) where T : notnull
+```
+`Maybe<T>`-returning versions of `System.Linq.Enumerable.FirstOrDefault`
+overloads.
+
+Instead of returning `default<T>` on empty input sequence they return `None<T>`.
