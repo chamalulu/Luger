@@ -147,11 +147,11 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
 
         public Enumerator(Maybe<T> maybe) => _maybe = maybe;
 
-        public T Current => _maybe._value;
+        public readonly T Current => _maybe._value;
 
-        object IEnumerator.Current => Current;
+        readonly object IEnumerator.Current => Current;
 
-        public void Dispose() { }
+        public readonly void Dispose() { }
 
         public bool MoveNext() => !_moved && _maybe._isSome && (_moved = true);
 
@@ -302,6 +302,9 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
 /// <summary>
 /// Factory and extension methods for <see cref="Maybe{T}"/>
 /// </summary>
+/// <remarks>
+/// A couple of useful extensions for <see cref="IEnumerable{T}"/> are also provided.
+/// </remarks>
 public static class Maybe
 {
     /// <summary>
@@ -348,6 +351,7 @@ public static class Maybe
     /// of Applicative in Haskell.
     /// </remarks>
     /// <returns>Lifted unary, since partially applied, function</returns>
+    [Obsolete("This overload will be retired in favour of currying the function first. A helper library may be coming soon. :)")]
     public static Maybe<Func<TArg2, TResult>> Apply<TArg1, TArg2, TResult>(
         this Maybe<Func<TArg1, TArg2, TResult>> maybeFunc,
         Maybe<TArg1> maybeArg1)
@@ -372,6 +376,7 @@ public static class Maybe
     /// of Applicative in Haskell.
     /// </remarks>
     /// <returns>Lifted binary, since partially applied, function</returns>
+    [Obsolete("This overload will be retired in favour of currying the function first. A helper library may be coming soon. :)")]
     public static Maybe<Func<TArg2, TArg3, TResult>> Apply<TArg1, TArg2, TArg3, TResult>(
         this Maybe<Func<TArg1, TArg2, TArg3, TResult>> maybeFunc,
         Maybe<TArg1> maybeArg1)
@@ -599,6 +604,19 @@ public static class Maybe
 
         => source.Filter(predicate);
 
+    /* FromNullable, FromReference, ToNullable and ToReference may seem a bit redundant. Their implementations w.r.t.
+     * ...Nullable vs. ...Reference are syntactically equivalent (except for the type parameter constraints).
+     * The reason for separate implementations for value types and reference types is that the handling of nullability
+     * is very different at runtime and trying to be generic about it (using notnull type constraint) makes the C#
+     * compiler very confused indeed.
+     * Nullable value types are implemented with the strongly typed Nullable<T> struct and a lot of special handling in
+     * the compiler. At runtime T and T? are very distinct w.r.t. value types.
+     * Nullable reference types are implemented by an attribute and some compile time rules. At runtime T and T? are
+     * in practice the same w.r.t. reference types.
+     * To avoid a lot of squiggly lines in the IDE, confused warnings and type parameter inference bugs I choose to
+     * handle value types and reference types separately here.
+     */
+
     /// <summary>
     /// Conversion from <see cref="Nullable{T}"/> to <see cref="Maybe{T}"/>
     /// </summary>
@@ -646,4 +664,96 @@ public static class Maybe
     public static T? ToReference<T>(this Maybe<T> value) where T : class
 
         => value is [var t] ? t : null;
+
+    /// <summary>
+    /// Returns some only element of the input sequence, or none if the sequence is empty. This method throws an
+    /// exception if there is more than one element in the sequence.
+    /// </summary>
+    /// <typeparam name="T">The type of elements of <paramref name="source"/></typeparam>
+    /// <param name="source">An<see cref="IEnumerable{T}"/> to return the single element of.</param>
+    /// <returns>Some only element of the input sequence, or none if the sequence contains no elements.</returns>
+    /// <exception cref="InvalidOperationException">The input sequence contains more than one element.</exception>
+    public static Maybe<T> MaybeSingle<T>(this IEnumerable<T> source) where T : notnull
+    {
+        if (source is IList<T> list)
+        {
+            return list switch
+            {
+                // Allocation free in happy path
+                [] => None<T>(),
+                [var element] => Some(element),
+                _ => throw new InvalidOperationException(),
+            };
+        }
+        else
+        {
+            using var etor = source.GetEnumerator();
+
+            if (!etor.MoveNext())
+            {
+                return None<T>();
+            }
+
+            var element = etor.Current;
+
+            if (etor.MoveNext())
+            {
+                throw new InvalidOperationException();
+            }
+
+            return Some(element);
+        }
+    }
+
+    /// <summary>
+    /// Returns some only element of a sequence that satisfies a specified condition or none if no such element exists.
+    /// This method throws an exception if more than one element satisfies the condition.
+    /// </summary>
+    /// <typeparam name="T">The type of the elements of <paramref name="source"/>.</typeparam>
+    /// <param name="source">An <see cref="IEnumerable{T}"/> to return a single element from.</param>
+    /// <param name="predicate">A function to test an element for a condition.</param>
+    /// <returns>
+    /// Some single element of the input sequence that satisfies the condition in <paramref name="predicate"/>.
+    /// </returns>
+    /// <exception cref="InvalidOperationException">
+    /// More than one element satisfies the condition in <paramref name="predicate"/>.
+    /// </exception>
+    public static Maybe<T> MaybeSingle<T>(this IEnumerable<T> source, Func<T, bool> predicate) where T : notnull
+
+        => source.Where(predicate).MaybeSingle();
+
+    /// <summary>
+    /// Returns some first element of a sequence, or none if the sequence contains no elements.
+    /// </summary>
+    /// <typeparam name="T">The type of the elements of <paramref name="source"/>.</typeparam>
+    /// <param name="source">The <see cref="IEnumerable{T}"/> to return some first element of.</param>
+    /// <returns>Some first element in <paramref name="source"/> if not empty; otherwise none.</returns>
+    public static Maybe<T> MaybeFirst<T>(this IEnumerable<T> source) where T : notnull
+    {
+        if (source is IList<T> list)
+        {
+            // Allocation free
+            return list is [var element, ..] ? Some(element) : None<T>();
+        }
+        else
+        {
+            using var etor = source.GetEnumerator();
+
+            return etor.MoveNext() ? Some(etor.Current) : None<T>();
+        }
+    }
+
+    /// <summary>
+    /// Returns some first element of the sequence that satisfies a condition or none if no such element is found.
+    /// </summary>
+    /// <typeparam name="T">The type of the elements of <paramref name="source"/>.</typeparam>
+    /// <param name="source">An <see cref="IEnumerable{T}"/> to return an element from.</param>
+    /// <param name="predicate">A function to test an element for a condition.</param>
+    /// <returns>
+    /// Some first element in <paramref name="source"/> that passes the test specified by <paramref name="predicate"/>
+    /// if such an element is found; otherwise none.
+    /// </returns>
+    public static Maybe<T> MaybeFirst<T>(this IEnumerable<T> source, Func<T, bool> predicate) where T : notnull
+
+        => source.Where(predicate).MaybeFirst();
 }

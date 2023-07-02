@@ -22,7 +22,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Versioning">
-    <VersionPrefix>1.1.0</VersionPrefix>
+    <VersionPrefix>1.2.0</VersionPrefix>
     <!-- Set empty suffix when API is stable -->
     <VersionSuffix></VersionSuffix>
     <PackageReleaseNotes>Introduce lazy fallback value operator</PackageReleaseNotes>

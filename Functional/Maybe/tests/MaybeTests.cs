@@ -186,7 +186,7 @@ public class MaybeTests
 
     public static IEnumerable<object[]> ApplyTheoryArguments
 
-        => from f in new Func<int,int,int,int>?[] { null, (k, m, x) => k * x + m }
+        => from f in new Func<int, int, int, int>?[] { null, (k, m, x) => k * x + m }
            from k in new int?[] { null, 2 }
            from m in new int?[] { null, 1 }
            from x in new int?[] { null, 42 }
@@ -306,4 +306,24 @@ public class MaybeTests
 
     [Fact]
     public void ToReferenceSomeNotNull() => Assert.NotNull(Some("banan").ToReference());
+
+    [Fact]
+    public void MaybeSingleEmptyNone() => Assert.Equal(None<int>(), Array.Empty<int>().MaybeSingle());
+
+    [Fact]
+    public void MaybeSingleSingletonSome() => Assert.Equal(Some(42), new[] { 42 }.MaybeSingle());
+
+    [Fact]
+    public void MaybeSingleManyThrows()
+
+        => Assert.Throws<InvalidOperationException>(() => new[] { 41, 42 }.MaybeSingle());
+
+    [Fact]
+    public void MaybeFirstEmptyNone() => Assert.Equal(None<int>(), Array.Empty<int>().MaybeFirst());
+
+    [Fact]
+    public void MaybeFirstSingletonSome() => Assert.Equal(Some(42), new[] { 42 }.MaybeFirst());
+
+    [Fact]
+    public void MaybeFirstManySome() => Assert.Equal(Some(41), new[] { 41, 42 }.MaybeFirst());
 }
