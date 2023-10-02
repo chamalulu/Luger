@@ -178,13 +178,18 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// <inheritdoc/>
     public string ToString(string? format, IFormatProvider? formatProvider)
     {
-        var valueRepresentation = _isSome
-            ? _value is IFormattable formattable
+        if (_isSome)
+        {
+            var valueRepresentation = _value is IFormattable formattable
                 ? formattable.ToString(format, formatProvider)
-                : _value.ToString() ?? string.Empty
-            : string.Empty;
+                : _value.ToString() ?? string.Empty;
 
-        return $"[{valueRepresentation}]";
+            return $"[{valueRepresentation}]";
+        }
+        else
+        {
+            return "[]";
+        }
     }
 
     /// <summary>
