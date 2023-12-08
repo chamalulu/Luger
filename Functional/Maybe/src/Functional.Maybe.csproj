@@ -6,10 +6,9 @@
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
-    <AnalysisLevel>preview-all</AnalysisLevel>
-    <WarningLevel>9999</WarningLevel>
+    <AnalysisLevel>7</AnalysisLevel>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <LangVersion>preview</LangVersion>
+    <LangVersion>11.0</LangVersion>
   </PropertyGroup>
   
   <PropertyGroup Label="Information">
