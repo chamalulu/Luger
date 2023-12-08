@@ -3,6 +3,9 @@
 Utility for configuring and awaiting exponential backoff over asynchronous
 functions.
 
+That is all it does. If you're looking for a robust tool with this functionality
+and much more you should have a look at [Polly](https://www.thepollyproject.org/).
+
 > _Exponential backoff is an algorithm that uses feedback to multiplicatively
 decrease the rate of some process, in order to gradually find an acceptable
 rate._ <sup>Wikipedia page **Exponential Backoff**

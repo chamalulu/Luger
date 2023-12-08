@@ -4,9 +4,9 @@
     "net6.0": {
       "Luger.Functional.Maybe": {
         "type": "Direct",
-        "requested": "[1.1.0, )",
-        "resolved": "1.1.0",
-        "contentHash": "fZxNoSTb+TtsTh/B9mYvqnbOuLcdU4X2z6shwbshnBBTaukhwxKYSn/I4T6pTYdf04LP7sO55/s+yjzKmNXE1A=="
+        "requested": "[1.2.0, )",
+        "resolved": "1.2.0",
+        "contentHash": "fOmEDzNp0wwOkBxLJFqwSac0HzMn4oMJCqJ5ll1W9LJIedZzRFb+lEsgBjpBNshrC6GLkP4ZxI/vlWDZkqlVxQ=="
       }
     }
   }
