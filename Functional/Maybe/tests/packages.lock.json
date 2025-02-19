@@ -31,8 +31,8 @@
       },
       "JetBrains.Annotations": {
         "type": "Transitive",
-        "resolved": "2025.1.0-eap1",
-        "contentHash": "5ApJk9xbFOdbz7L8W9LAA63DIMbqC1p81KOYLeLu+d3Pj9yC83aZBQgHce/LCCu9j/mzVZxEUl70rDoUEGs7Gg=="
+        "resolved": "2024.3.0",
+        "contentHash": "ox5pkeLQXjvJdyAB4b2sBYAlqZGLh3PjSnP1bQNVx72ONuTJ9+34/+Rq91Fc0dG29XG9RgZur9+NcP4riihTug=="
       },
       "Microsoft.CodeCoverage": {
         "type": "Transitive",
@@ -1096,7 +1096,7 @@
       "Luger.Functional.Maybe": {
         "type": "Project",
         "dependencies": {
-          "JetBrains.Annotations": "[2025.1.0-eap1, )"
+          "JetBrains.Annotations": "[2024.3.0, )"
         }
       }
     }
