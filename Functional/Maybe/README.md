@@ -295,35 +295,12 @@ Maybe<TResult> Apply<TArg, TResult>(
     this Maybe<Func<TArg, TResult>> maybeFunc,
     Maybe<TArg> maybeArg)
 ```
-```csharp
-Maybe<Func<TArg2, TResult>> Apply<TArg1, TArg2, TResult>(
-    this Maybe<Func<TArg1, TArg2, TResult>> maybeFunc,
-    Maybe<TArg1> maybeArg1)
-```
-```csharp
-Maybe<Func<TArg2, TArg3, TResult>> Apply<TArg1, TArg2, TArg3, TResult>(
-    this Maybe<Func<TArg1, TArg2, TArg3, TResult>> maybeFunc,
-    Maybe<TArg1> maybeArg1)
-```
 
-Apply a lifted function to a lifted parameter. Overloads for lifted unary,
-binary and ternary functions are implemented.
+Apply a lifted function to a lifted parameter.
 
-In the unary case a value of type `Maybe<TResult>` is returned. In the binary
-and ternary cases a partially applied lifted function will be returned (with a
-smaller arity of course).
-
-The unary case of `Apply` corresponds to the infix operator `<*>` of Applicative
-in Haskell. The overloads are provided to simplify application of binary and
-ternary functions since C# does not use partial application. If you need to
-apply higher arity functions you'll have to curry them yourself.
-
-The unary overload is really the only one needed if you apply curried functions.
-
-The higher arity overloads are marked obsolete and will be retired in v2.0.0
-whenever that is. After that multiparameter functions must be curried before
-application. There may be helper extension functions within Maybe or another
-library to help with currying coming. Maybe.
+The unary `Apply` corresponds to the infix operator `<*>` of Applicative in
+Haskell. If you need to apply higher arity functions you'll have to curry them
+yourself.
 
 ### Bind
 

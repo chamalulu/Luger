@@ -25,7 +25,7 @@ public class MaybeTests
     [InlineData(42, 1)]
     public void IndexThrowsTheory(int? maybe, int index)
 
-        => Assert.Throws<IndexOutOfRangeException>(() => FromNullable(maybe)[index]);
+        => Assert.Throws<InvalidOperationException>(() => FromNullable(maybe)[index]);
 
     [Fact]
     public void ListPatternNoneMatchEmpty() => Assert.True(None<int>() is []);
@@ -83,7 +83,7 @@ public class MaybeTests
     [InlineData(null, null, null, "[]")]
     [InlineData(1000, "D", null, "[1000]")]
     [InlineData(1000, "N2", "en-US", "[1,000.00]")]
-    [InlineData(1000, "N2", "sv-SE", "[1\x00A0000,00]")]    // So, the Swedish thousand separator is a non-breaking space. Obviously.
+    [InlineData(1000, "N2", "sv-SE", "[1\u00A0000,00]")]    // So, the Swedish thousand separator is a non-breaking space. Obviously.
     public void FormattableToStringTheory(int? maybe, string? format, string? cultureName, string expected)
     {
         var formatProvider = cultureName is not null
@@ -131,15 +131,16 @@ public class MaybeTests
     {
         var invoked = false;
 
-        int factory()
-        {
-            invoked = true;
-            return default;
-        }
-
-        _ = FromNullable(maybeX) | factory;
+        _ = FromNullable(maybeX) | Factory;
 
         Assert.Equal(expected, invoked);
+        return;
+
+        int Factory()
+        {
+            invoked = true;
+            return 0;
+        }
     }
 
     [Theory]
@@ -186,7 +187,7 @@ public class MaybeTests
 
     public static IEnumerable<object[]> ApplyTheoryArguments
 
-        => from f in new Func<int, int, int, int>?[] { null, (k, m, x) => k * x + m }
+        => from f in new Func<int, Func<int, Func<int, int>>>?[] { null, k => m => x => k * x + m }
            from k in new int?[] { null, 2 }
            from m in new int?[] { null, 1 }
            from x in new int?[] { null, 42 }
@@ -206,13 +207,13 @@ public class MaybeTests
     [Theory]
     [MemberData(nameof(ApplyTheoryArguments))]
     public void ApplyTheory(
-        Maybe<Func<int, int, int, int>> maybeFunc,
+        Maybe<Func<int, Func<int, Func<int, int>>>> maybeCurriedFunc,
         Maybe<int> maybeK,
         Maybe<int> maybeM,
         Maybe<int> maybeX,
         Maybe<int> expected)
 
-        => Assert.Equal(expected, maybeFunc.Apply(maybeK).Apply(maybeM).Apply(maybeX));
+        => Assert.Equal(expected, maybeCurriedFunc.Apply(maybeK).Apply(maybeM).Apply(maybeX));
 
     static Maybe<int> ParseInt(string s)
 
@@ -273,7 +274,7 @@ public class MaybeTests
     [InlineData(42, 42)]
     public void TryTheory(int? maybe, int expected)
 
-        => Assert.Equal(expected, FromNullable(maybe).Try(out var value) ? value : default);
+        => Assert.Equal(expected, FromNullable(maybe).Try(out var value) ? value : 0);
 
     [Theory]
     [InlineData(null, null)]
@@ -284,7 +285,7 @@ public class MaybeTests
         => Assert.Equal(FromNullable(expected), FromNullable(maybe).Where(i => i % 2 == 0));
 
     [Fact]
-    public void FromNullableNullNone() => Assert.Equal(None<int>(), FromNullable<int>(default));
+    public void FromNullableNullNone() => Assert.Equal(None<int>(), FromNullable<int>(null));
 
     [Fact]
     public void FromNullableNotNullSome() => Assert.Equal(Some(42), FromNullable<int>(42));

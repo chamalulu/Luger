@@ -1,6 +1,13 @@
 {
   "version": 1,
   "dependencies": {
-    "net6.0": {}
+    "net8.0": {
+      "JetBrains.Annotations": {
+        "type": "Direct",
+        "requested": "[2025.1.0-eap1, )",
+        "resolved": "2025.1.0-eap1",
+        "contentHash": "5ApJk9xbFOdbz7L8W9LAA63DIMbqC1p81KOYLeLu+d3Pj9yC83aZBQgHce/LCCu9j/mzVZxEUl70rDoUEGs7Gg=="
+      }
+    }
   }
 }

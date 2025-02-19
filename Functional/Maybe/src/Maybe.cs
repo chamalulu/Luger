@@ -1,7 +1,7 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Diagnostics;
-
+using JetBrains.Annotations;
 namespace Luger.Functional;
 
 /// <summary>
@@ -58,8 +58,8 @@ namespace Luger.Functional;
 [DebuggerStepThrough]
 public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerable<T> where T : notnull
 {
-    /* I've tried using T? as inner state but it gets nasty as it is either a T or a Nullable<T> at runtime depending on
-     * wether T is a reference type or value type.
+    /* I've tried using T? as inner state, but it gets nasty as it is either a T or a Nullable<T> at runtime depending
+     * on whether T is a reference type or value type.
      * The nullability stuff in C# could need some reworking but since that would certainly become backwards
      * incompatible maybe C# just has to bite the bullet and leave strong typing to modern languages.
      */
@@ -69,7 +69,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     Maybe(T value)
     {
         // The following guard is necessary when T is a reference type. :(
-        ArgumentNullException.ThrowIfNull(value, nameof(value));
+        ArgumentNullException.ThrowIfNull(value);
 
         _isSome = true;
         _value = value;
@@ -84,6 +84,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// </remarks>
     /// <value>1 if this is some; otherwise 0.</value>
     [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [PublicAPI]
     public int Count => _isSome ? 1 : 0;
 
     /// <summary>
@@ -91,25 +92,46 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// </summary>
     /// <param name="index">Index of value. Must be 0.</param>
     /// <remarks>
-    /// Provided for support of List Pattern of C# 11.<br/>
-    /// Don't use this property directly. It's as misbehaving as <see cref="Nullable{T}.Value"/>.
+    /// <para>Provided for support of List Pattern of C# 11.</para>
+    /// <para>
+    /// Don't use this property directly. It's as misbehaving as
+    /// <see cref="Nullable{T}.Value">Nullable&lt;T&gt;.Value</see>.
+    /// </para>
+    /// <para>
+    /// Before version 2.0 we threw <see cref="IndexOutOfRangeException"/> here because I thought it's the most
+    /// appropriate.
+    /// <see href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2201">CA2201</see>
+    /// rules this out as that exception is reserved for the CLR.
+    /// </para>
+    /// <para>
+    /// One could argue for throwing <see cref="ArgumentOutOfRangeException"/> which
+    /// <see href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.ilist.item?view=net-8.0">IList&lt;T&gt;.Item[]</see>
+    /// throw.<br/>
+    /// <see cref="Maybe{T}"/> is not a list. Not even a very short one.
+    /// </para>
+    /// <para>
+    /// One could argue for throwing <see cref="InvalidOperationException"/> which
+    /// <see cref="Nullable{T}.Value">Nullable&lt;T&gt;.Value</see> throw.<br/>
+    /// <see cref="Maybe{T}"/> is a better <see cref="Nullable{T}"/>. That will do.
+    /// </para>
     /// </remarks>
     /// <returns>Value if this is some and <paramref name="index"/> is 0.</returns>
-    /// <exception cref="IndexOutOfRangeException">
+    /// <exception cref="InvalidOperationException">
     /// Thrown if this is none or <paramref name="index"/> is not 0.<br/>
     /// I trust the C# compiler never to trigger this.
     /// </exception>
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [PublicAPI]
     public T this[int index]
 
         => _isSome && index == 0
             ? _value
-            : throw new IndexOutOfRangeException();
+            : throw new InvalidOperationException();
 
-    static readonly IEqualityComparer<T> ValueEqualityComparer = EqualityComparer<T>.Default;
+    static readonly EqualityComparer<T> ValueEqualityComparer = EqualityComparer<T>.Default;
 
     /// <summary>
-    /// Non-boxing equality comparison. Delegates to <see cref="IEqualityComparer{T}.Equals(T, T)"/> of
+    /// Non-boxing equality comparison. Delegates to <see cref="EqualityComparer{T}.Equals(T, T)"/> of
     /// <see cref="EqualityComparer{T}.Default"/>.
     /// </summary>
     /// <param name="other"><see cref="Maybe{T}"/> comparand</param>
@@ -117,6 +139,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// <see langword="true"/> if values have the same state and if some, the same value;
     /// otherwise <see langword="false"/>.
     /// </returns>
+    [PublicAPI]
     public bool Equals(Maybe<T> other)
 
         => _isSome
@@ -131,29 +154,28 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// <see langword="true"/> if some and value equals <paramref name="obj"/> or none and <see langword="null"/>;
     /// otherwise <see langword="false"/>.
     /// </returns>
+    [PublicAPI]
     public override bool Equals(object? obj) => _isSome ? _value.Equals(obj) : obj is null;
 
     /// <summary>
     /// Produces hash code of value for simple collision check purposes. Delegates to
-    /// <see cref="IEqualityComparer{T}.GetHashCode(T)"/> of <see cref="EqualityComparer{T}.Default"/> in some case.
+    /// <see cref="EqualityComparer{T}.GetHashCode(T)"/> of <see cref="EqualityComparer{T}.Default"/> in some case.
     /// </summary>
     /// <returns>Hash code of value in some case; otherwise 0.</returns>
+    [PublicAPI]
     public override int GetHashCode() => _isSome ? ValueEqualityComparer.GetHashCode(_value) : 0;
 
-    struct Enumerator : IEnumerator<T>
+    struct Enumerator(Maybe<T> maybe) : IEnumerator<T>
     {
-        readonly Maybe<T> _maybe;
         bool _moved;
 
-        public Enumerator(Maybe<T> maybe) => _maybe = maybe;
-
-        public readonly T Current => _maybe._value;
+        public readonly T Current => maybe._value;
 
         readonly object IEnumerator.Current => Current;
 
         public readonly void Dispose() { }
 
-        public bool MoveNext() => !_moved && _maybe._isSome && (_moved = true);
+        public bool MoveNext() => !_moved && maybe._isSome && (_moved = true);
 
         public void Reset() => _moved = false;
     }
@@ -164,6 +186,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// <returns>
     /// An enumerator yielding the value in some case; otherwise not yielding any value.
     /// </returns>
+    [PublicAPI]
     public IEnumerator<T> GetEnumerator() => new Enumerator(this);
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -176,20 +199,19 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// None is represented as "[]".
     /// </remarks>
     /// <inheritdoc/>
+    [PublicAPI]
     public string ToString(string? format, IFormatProvider? formatProvider)
     {
-        if (_isSome)
-        {
-            var valueRepresentation = _value is IFormattable formattable
-                ? formattable.ToString(format, formatProvider)
-                : _value.ToString() ?? string.Empty;
-
-            return $"[{valueRepresentation}]";
-        }
-        else
+        if (!_isSome)
         {
             return "[]";
         }
+
+        var valueRepresentation = _value is IFormattable formattable
+            ? formattable.ToString(format, formatProvider)
+            : _value.ToString() ?? string.Empty;
+
+        return $"[{valueRepresentation}]";
     }
 
     /// <summary>
@@ -200,6 +222,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// <see cref="object.ToString()"/> is used to produce the value representation.<br/>
     /// None is represented as "[]".
     /// </remarks>
+    [PublicAPI]
     public override string ToString() => ToString(null, null);
 
     /// <remarks>
@@ -210,6 +233,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// None is represented as "[]".
     /// </remarks>
     /// <inheritdoc cref="IFormattable.ToString(string?, IFormatProvider?)"/>
+    [PublicAPI]
     public string ToString(string? format) => ToString(format, null);
 
     /// <summary>
@@ -223,6 +247,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// with the logical disjunction operator (<see langword="|"/>).
     /// </remarks>
     /// <returns><see langword="true"/> in some case; otherwise <see langword="false"/></returns>
+    [PublicAPI]
     public static bool operator true(Maybe<T> value) => value._isSome;
 
     /// <summary>
@@ -233,6 +258,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// (<see langword="&amp;&amp;"/>) together with the logical conjunction operator (<see langword="&amp;"/>).
     /// </remarks>
     /// <returns><see langword="true"/> in none case; otherwise <see langword="false"/></returns>
+    [PublicAPI]
     public static bool operator false(Maybe<T> value) => !value._isSome;
 
     /// <summary>
@@ -243,6 +269,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// otherwise none.<br/>
     /// </remarks>
     /// <returns><paramref name="left"/> if it is none; otherwise <paramref name="right"/></returns>
+    [PublicAPI]
     public static Maybe<T> operator &(Maybe<T> left, Maybe<T> right) => left._isSome ? right : left;
 
     /// <summary>
@@ -252,6 +279,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// <c>maybeX | maybeY | maybeZ</c> evaluates to the leftmost operand which is some; otherwise none.<br/>
     /// </remarks>
     /// <returns><paramref name="left"/> if it is some; otherwise <paramref name="right"/></returns>
+    [PublicAPI]
     public static Maybe<T> operator |(Maybe<T> left, Maybe<T> right) => left._isSome ? left : right;
 
     /// <summary>
@@ -264,6 +292,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// <c>maybeX | maybeY | z</c> evaluates to the value of the leftmost operand which is some; otherwise <c>z</c>.
     /// </remarks>
     /// <returns>Value of <paramref name="left"/> if it is some; otherwise <paramref name="right"/></returns>
+    [PublicAPI]
     public static T operator |(Maybe<T> left, T right) => left._isSome ? left._value : right;
 
     /// <summary>
@@ -278,6 +307,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// <returns>
     /// Value of <paramref name="left"/> if it is some; otherwise the return value of <paramref name="right"/>
     /// </returns>
+    [PublicAPI]
     public static T operator |(Maybe<T> left, Func<T> right) => left._isSome ? left._value : right();
 
     /// <summary>
@@ -287,6 +317,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// <see langword="true"/> if operands have same state and in some case, the same value;
     /// otherwise <see langword="false"/>
     /// </returns>
+    [PublicAPI]
     public static bool operator ==(Maybe<T> left, Maybe<T> right) => left.Equals(right);
 
     /// <summary>
@@ -296,11 +327,13 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// <see langword="true"/> if operands have different state or in some case, different value;
     /// otherwise <see langword="false"/>
     /// </returns>
+    [PublicAPI]
     public static bool operator !=(Maybe<T> left, Maybe<T> right) => !left.Equals(right);
 
     /// <summary>
     /// Implicit cast from <typeparamref name="T"/> to <see cref="Maybe{T}"/>
     /// </summary>
+    [PublicAPI]
     public static implicit operator Maybe<T>(T value) => new(value);
 }
 
@@ -315,11 +348,13 @@ public static class Maybe
     /// <summary>
     /// Factory method for <see cref="Maybe{T}"/> with state none
     /// </summary>
+    [PublicAPI]
     public static Maybe<T> None<T>() where T : notnull => default;
 
     /// <summary>
     /// Factory method for <see cref="Maybe{T}"/> with state some <paramref name="value"/>
     /// </summary>
+    [PublicAPI]
     public static Maybe<T> Some<T>(T value) where T : notnull => value;
 
     /// <summary>
@@ -334,6 +369,7 @@ public static class Maybe
     /// This is the equivalent of the infix operator <see langword="&lt;*&gt;"/> of Applicative in Haskell.
     /// </remarks>
     /// <returns>Lifted return value</returns>
+    [PublicAPI]
     public static Maybe<TResult> Apply<TArg, TResult>(this Maybe<Func<TArg, TResult>> maybeFunc, Maybe<TArg> maybeArg)
         where TArg : notnull
         where TResult : notnull
@@ -341,55 +377,6 @@ public static class Maybe
         => maybeFunc is [var func] && maybeArg is [var arg]
             ? Some(func(arg))
             : None<TResult>();
-
-    /// <summary>
-    /// Sequential application of <paramref name="maybeFunc"/> to <paramref name="maybeArg1"/> in applicative functor of
-    /// <see cref="Maybe{T}"/>.
-    /// </summary>
-    /// <typeparam name="TArg1">Type of first parameter</typeparam>
-    /// <typeparam name="TArg2">Type of second parameter</typeparam>
-    /// <typeparam name="TResult">Type of return value</typeparam>
-    /// <param name="maybeFunc">Lifted binary function</param>
-    /// <param name="maybeArg1">Lifted parameter</param>
-    /// <remarks>
-    /// With a little squinting and currying, this is the equivalent of the infix operator <see langword="&lt;*&gt;"/>
-    /// of Applicative in Haskell.
-    /// </remarks>
-    /// <returns>Lifted unary, since partially applied, function</returns>
-    [Obsolete("This overload will be retired in favour of currying the function first. A helper library may be coming soon. :)")]
-    public static Maybe<Func<TArg2, TResult>> Apply<TArg1, TArg2, TResult>(
-        this Maybe<Func<TArg1, TArg2, TResult>> maybeFunc,
-        Maybe<TArg1> maybeArg1)
-        where TArg1 : notnull
-
-        => maybeFunc is [var func] && maybeArg1 is [var arg1]
-            ? Some<Func<TArg2, TResult>>(arg2 => func(arg1, arg2))
-            : None<Func<TArg2, TResult>>();
-
-    /// <summary>
-    /// Sequential application of <paramref name="maybeFunc"/> to <paramref name="maybeArg1"/> in applicative functor of
-    /// <see cref="Maybe{T}"/>.
-    /// </summary>
-    /// <typeparam name="TArg1">Type of first parameter</typeparam>
-    /// <typeparam name="TArg2">Type of second parameter</typeparam>
-    /// <typeparam name="TArg3">Type of third parameter</typeparam>
-    /// <typeparam name="TResult">Type of return value</typeparam>
-    /// <param name="maybeFunc">Lifted ternary function</param>
-    /// <param name="maybeArg1">Lifted parameter</param>
-    /// <remarks>
-    /// With a little squinting and currying, this is the equivalent of the infix operator <see langword="&lt;*&gt;"/>
-    /// of Applicative in Haskell.
-    /// </remarks>
-    /// <returns>Lifted binary, since partially applied, function</returns>
-    [Obsolete("This overload will be retired in favour of currying the function first. A helper library may be coming soon. :)")]
-    public static Maybe<Func<TArg2, TArg3, TResult>> Apply<TArg1, TArg2, TArg3, TResult>(
-        this Maybe<Func<TArg1, TArg2, TArg3, TResult>> maybeFunc,
-        Maybe<TArg1> maybeArg1)
-        where TArg1 : notnull
-
-        => maybeFunc is [var func] && maybeArg1 is [var arg1]
-            ? Some<Func<TArg2, TArg3, TResult>>((arg2, arg3) => func(arg1, arg2, arg3))
-            : None<Func<TArg2, TArg3, TResult>>();
 
     /// <summary>
     /// Sequential composition of <paramref name="func"/> to <paramref name="source"/> in monad of
@@ -403,6 +390,7 @@ public static class Maybe
     /// This is the equivalent of the infix operator <see langword="&gt;&gt;="/> of Monad in Haskell.
     /// </remarks>
     /// <returns>Lifted return value</returns>
+    [PublicAPI]
     public static Maybe<TResult> Bind<TSource, TResult>(this Maybe<TSource> source, Func<TSource, Maybe<TResult>> func)
         where TSource : notnull
         where TResult : notnull
@@ -420,6 +408,7 @@ public static class Maybe
     /// <returns>
     /// The <paramref name="source"/> in some case and the value satisfy the condition; otherwise none.
     /// </returns>
+    [PublicAPI]
     public static Maybe<TSource> Filter<TSource>(this Maybe<TSource> source, Func<TSource, bool> predicate)
         where TSource : notnull
 
@@ -438,6 +427,7 @@ public static class Maybe
     /// This is the equivalent of the infix operator <see langword="&lt;$&gt;"/> of Functor in Haskell.
     /// </remarks>
     /// <returns>Lifted return value</returns>
+    [PublicAPI]
     public static Maybe<TResult> Map<TSource, TResult>(this Maybe<TSource> source, Func<TSource, TResult> func)
         where TSource : notnull
         where TResult : notnull
@@ -471,6 +461,7 @@ public static class Maybe
     /// <see cref="Maybe.Map{TSource, TResult}(Maybe{TSource}, Func{TSource, TResult})"/> and so
     /// <see cref="Maybe.Select{TSource, TResult}(Maybe{TSource}, Func{TSource, TResult})"/> delegates directly to it.
     /// </remarks>
+    [PublicAPI]
     public static Maybe<TResult> Select<TSource, TResult>(
         this Maybe<TSource> source,
         Func<TSource, TResult> selector)
@@ -521,6 +512,7 @@ public static class Maybe
     /// <c>SelectMany</c> can be implemented in terms of <c>Bind</c> and <c>Map</c> but type-specific implementations
     /// are probably more efficient.
     /// </remarks>
+    [PublicAPI]
     public static Maybe<TResult> SelectMany<TSource, TNext, TResult>(
         this Maybe<TSource> source,
         Func<TSource, Maybe<TNext>> selector,
@@ -544,6 +536,7 @@ public static class Maybe
     /// A task yielding a <see cref="Maybe{T}"/> with some result if <paramref name="source"/> is some; otherwise, a
     /// task yielding none.
     /// </returns>
+    [PublicAPI]
     public static async Task<Maybe<TResult>> Traverse<TSource, TResult>(
         this Maybe<TSource> source,
         Func<TSource, Task<TResult>> func)
@@ -576,6 +569,7 @@ public static class Maybe
     /// maybeT.Try(out var value) ? $"Some {value}" : "None"
     /// </code>
     /// </remarks>
+    [PublicAPI]
     public static bool Try<TSource>(this Maybe<TSource> source, out TSource value) where TSource : notnull
     {
         value = source | default(TSource)!;
@@ -604,6 +598,7 @@ public static class Maybe
     /// source.Where(predicate)
     /// </code>
     /// </remarks>
+    [PublicAPI]
     public static Maybe<TSource> Where<TSource>(this Maybe<TSource> source, Func<TSource, bool> predicate)
         where TSource : notnull
 
@@ -628,9 +623,10 @@ public static class Maybe
     /// <typeparam name="T">Type of some value</typeparam>
     /// <param name="value">Nullable value to convert</param>
     /// <returns>A <see cref="Maybe{T}"/> with <paramref name="value"/> if it has one; otherwise none.</returns>
+    [PublicAPI]
     public static Maybe<T> FromNullable<T>(T? value) where T : struct
 
-        => value is T v
+        => value is { } v
             ? Some(v)
             : None<T>();
 
@@ -640,9 +636,10 @@ public static class Maybe
     /// <typeparam name="T">Type of some value</typeparam>
     /// <param name="value">Nullable reference to convert</param>
     /// <returns>A <see cref="Maybe{T}"/> with <paramref name="value"/> if it has one; otherwise none.</returns>
+    [PublicAPI]
     public static Maybe<T> FromReference<T>(T? value) where T : class
 
-        => value is T v
+        => value is { } v
             ? Some(v)
             : None<T>();
 
@@ -653,6 +650,7 @@ public static class Maybe
     /// <typeparam name="T">Type of some value</typeparam>
     /// <param name="value"><see cref="Maybe{T}"/> to convert</param>
     /// <returns>A <see cref="Nullable{T}"/> with <paramref name="value"/> in some case.</returns>
+    [PublicAPI]
     public static T? ToNullable<T>(this Maybe<T> value) where T : struct
 
         => value is [var t] ? t : null;
@@ -666,6 +664,7 @@ public static class Maybe
     /// <returns>
     /// A nullable reference to value of <paramref name="value"/> in some case; otherwise <see langword="null"/>.
     /// </returns>
+    [PublicAPI]
     public static T? ToReference<T>(this Maybe<T> value) where T : class
 
         => value is [var t] ? t : null;
@@ -678,6 +677,7 @@ public static class Maybe
     /// <param name="source">An<see cref="IEnumerable{T}"/> to return the single element of.</param>
     /// <returns>Some only element of the input sequence, or none if the sequence contains no elements.</returns>
     /// <exception cref="InvalidOperationException">The input sequence contains more than one element.</exception>
+    [PublicAPI]
     public static Maybe<T> MaybeSingle<T>(this IEnumerable<T> source) where T : notnull
     {
         if (source is IList<T> list)
@@ -687,27 +687,26 @@ public static class Maybe
                 // Allocation free in happy path
                 [] => None<T>(),
                 [var element] => Some(element),
-                _ => throw new InvalidOperationException(),
+                _ => throw new InvalidOperationException()
             };
         }
-        else
+
+        using var enumerator = source.GetEnumerator();
+
+        // ReSharper disable once InvertIf . I want the scope for element.
+        if (enumerator.MoveNext())
         {
-            using var etor = source.GetEnumerator();
+            var element = enumerator.Current;
 
-            if (!etor.MoveNext())
-            {
-                return None<T>();
-            }
-
-            var element = etor.Current;
-
-            if (etor.MoveNext())
+            if (enumerator.MoveNext())
             {
                 throw new InvalidOperationException();
             }
 
             return Some(element);
         }
+
+        return None<T>();
     }
 
     /// <summary>
@@ -723,6 +722,7 @@ public static class Maybe
     /// <exception cref="InvalidOperationException">
     /// More than one element satisfies the condition in <paramref name="predicate"/>.
     /// </exception>
+    [PublicAPI]
     public static Maybe<T> MaybeSingle<T>(this IEnumerable<T> source, Func<T, bool> predicate) where T : notnull
 
         => source.Where(predicate).MaybeSingle();
@@ -733,6 +733,7 @@ public static class Maybe
     /// <typeparam name="T">The type of the elements of <paramref name="source"/>.</typeparam>
     /// <param name="source">The <see cref="IEnumerable{T}"/> to return some first element of.</param>
     /// <returns>Some first element in <paramref name="source"/> if not empty; otherwise none.</returns>
+    [PublicAPI]
     public static Maybe<T> MaybeFirst<T>(this IEnumerable<T> source) where T : notnull
     {
         if (source is IList<T> list)
@@ -740,12 +741,10 @@ public static class Maybe
             // Allocation free
             return list is [var element, ..] ? Some(element) : None<T>();
         }
-        else
-        {
-            using var etor = source.GetEnumerator();
 
-            return etor.MoveNext() ? Some(etor.Current) : None<T>();
-        }
+        using var enumerator = source.GetEnumerator();
+
+        return enumerator.MoveNext() ? Some(enumerator.Current) : None<T>();
     }
 
     /// <summary>
@@ -758,6 +757,7 @@ public static class Maybe
     /// Some first element in <paramref name="source"/> that passes the test specified by <paramref name="predicate"/>
     /// if such an element is found; otherwise none.
     /// </returns>
+    [PublicAPI]
     public static Maybe<T> MaybeFirst<T>(this IEnumerable<T> source, Func<T, bool> predicate) where T : notnull
 
         => source.Where(predicate).MaybeFirst();
