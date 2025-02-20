@@ -1,15 +1,27 @@
 using System.Runtime.CompilerServices;
 
+using JetBrains.Annotations;
+
 namespace Luger.Functional;
 
 /// <summary>
 /// Extensions to <see cref="ValueTuple{T1, T2}"/> of <see cref="Task{TResult}"/>
 /// </summary>
+[PublicAPI]
 public static class TupleOfTasksExtensions
 {
-    static async Task<(T1, T2)> CombineTasks<T1, T2>(Task<T1> t1, Task<T2> t2)
-
-        => (await t1.ConfigureAwait(false), await t2.ConfigureAwait(false));
+    /// <summary>
+    /// Combine a tuple of tasks into a task of tuple.
+    /// </summary>
+    /// <param name="tasks">Tuple of tasks</param>
+    /// <typeparam name="T1">Return type of first task</typeparam>
+    /// <typeparam name="T2">Return type of second task</typeparam>
+    /// <returns>A task yielding a tuple of the returned values when they are completed.</returns>
+    public static async Task<(T1, T2)> Combine<T1, T2>(this (Task<T1>, Task<T2>) tasks)
+    {
+        await Task.WhenAll(tasks.Item1, tasks.Item2).ConfigureAwait(false);
+        return (tasks.Item1.Result, tasks.Item2.Result);
+    }
 
     /// <summary>
     /// Configures an awaiter used to await this tuple of tasks
@@ -26,7 +38,7 @@ public static class TupleOfTasksExtensions
         this (Task<T1>, Task<T2>) tasks,
         bool continueOnCapturedContext)
 
-        => CombineTasks(tasks.Item1, tasks.Item2).ConfigureAwait(continueOnCapturedContext);
+        => tasks.Combine().ConfigureAwait(continueOnCapturedContext);
 
     /// <summary>
     /// Gets an awaiter used to await this tuple of tasks.
@@ -37,5 +49,5 @@ public static class TupleOfTasksExtensions
     /// <returns>An awaiter instance.</returns>
     public static TaskAwaiter<(T1, T2)> GetAwaiter<T1, T2>(this (Task<T1>, Task<T2>) tasks)
 
-        => CombineTasks(tasks.Item1, tasks.Item2).GetAwaiter();
+        => tasks.Combine().GetAwaiter();
 }

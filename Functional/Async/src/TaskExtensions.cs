@@ -1,3 +1,5 @@
+using JetBrains.Annotations;
+
 using Void = System.ValueTuple;
 
 namespace Luger.Functional;
@@ -6,7 +8,7 @@ namespace Luger.Functional;
  * against it as I believe these extensions will mostly be used in quiet balmy high level code and therefore not safely
  * provide much of performance improvement. I have too little experience with advanced details of Task vs. ValueTask so
  * I'll leave it to some braver soul out there to make the call.
- * 
+ *
  * Stephen Toub wrote a good article about "Understanding the Whys, Whats, and Whens of ValueTask" in 2018.
  * https://devblogs.microsoft.com/dotnet/understanding-the-whys-whats-and-whens-of-valuetask/
  */
@@ -14,6 +16,7 @@ namespace Luger.Functional;
 /// <summary>
 /// Functional extensions to <see cref="Task{TResult}"/>
 /// </summary>
+[PublicAPI]
 public static class TaskExtensions
 {
     /// <summary>
@@ -124,37 +127,37 @@ public static class TaskExtensions
     /// <see langword="true"/> to attempt to marshal the execution of LINQ query selectors back to the original context
     /// captured; otherwise, <see langword="false"/>.
     /// </summary>
-    public static bool SelectOnCapturedContext { get; set; } = false;
+    public static bool SelectOnCapturedContext { get; set; }
 
     /// <summary>
     /// Projects the result of a task into a new task and projects both results into a new task.
     /// </summary>
     /// <typeparam name="TSource">The type of the result of <paramref name="source"/></typeparam>
     /// <typeparam name="TNext">The type of the intermediate result produced by <paramref name="selector"/></typeparam>
-    /// <typeparam name="TResult">The type of the result returned by <paramref name="projection"/></typeparam>
+    /// <typeparam name="TResult">The type of the result returned by <paramref name="resultSelector"/></typeparam>
     /// <param name="source">A task to invoke a projection on.</param>
     /// <param name="selector">A transform function to apply to the result of <paramref name="source"/></param>
-    /// <param name="projection">
+    /// <param name="resultSelector">
     /// A transform function to apply to <paramref name="source"/> result and <paramref name="selector"/> result
     /// </param>
     /// <returns>
     /// A <see cref="Task{TResult}"/> with the result of invoking the transform function on the result of
     /// <paramref name="source"/> and then mapping both the result of <paramref name="source"/> and
-    /// <paramref name="selector"/> through <paramref name="projection"/>.
+    /// <paramref name="selector"/> through <paramref name="resultSelector"/>.
     /// </returns>
     /// <remarks>
     /// Provided for support of LINQ query syntax binding in the monad of <see cref="Task{TResult}"/>. The expression
     /// <code>
     /// from s in source
     /// from n in selector(s)
-    /// select projection(s, n)
+    /// select resultSelector(s, n)
     /// </code>
     /// is precompiled into
     /// <code>
-    /// source.SelectMany(selector, projection)
+    /// source.SelectMany(selector, resultSelector)
     /// </code>
     /// The difference between <c>Bind</c> and <c>SelectMany</c> is that <c>SelectMany</c> takes a binary projection
-    /// function, <paramref name="projection"/>, as a parameter and as such can chain calls to <c>SelectMany</c>
+    /// function, <paramref name="resultSelector"/>, as a parameter and as such can chain calls to <c>SelectMany</c>
     /// instead of encapsulating calls to <c>Bind</c> in nested closures.<br/>
     /// <c>SelectMany</c> can be implemented in terms of <c>Bind</c> and <c>Map</c> but type-specific implementations
     /// are probably more efficient.
@@ -162,12 +165,12 @@ public static class TaskExtensions
     public static async Task<TResult> SelectMany<TSource, TNext, TResult>(
         this Task<TSource> source,
         Func<TSource, Task<TNext>> selector,
-        Func<TSource, TNext, TResult> projection)
+        Func<TSource, TNext, TResult> resultSelector)
     {
         var s = await source.ConfigureAwait(SelectOnCapturedContext);
         var n = await selector(s).ConfigureAwait(SelectOnCapturedContext);
 
-        return projection(s, n);
+        return resultSelector(s, n);
     }
 
     /// <summary>
@@ -214,7 +217,7 @@ public static class TaskExtensions
     /// source.Select(selector)
     /// </code>
     /// This is exactly the same functionality as <see cref="Map{TSource, TResult}"/> (without context capture) and so
-    /// <see cref="Select"/> delegates directly to it.
+    /// <see cref="Select{TSource,TResult}"/> delegates directly to it.
     /// </remarks>
     public static Task<TResult> Select<TSource, TResult>(this Task<TSource> source, Func<TSource, TResult> selector)
 
@@ -234,21 +237,31 @@ public static class TaskExtensions
     /// </param>
     /// <returns>Task of result or appropriate handler</returns>
     /// <remarks>
-    /// If <paramref name="result"/> is successful, its result is returned.<br/>
+    /// <para>If <paramref name="result"/> is successful, its result is returned.</para>
+    /// <para>
     /// If <paramref name="result"/> is faulted and the exception thrown by the <see langword="await"/> is assignable to
     /// <typeparamref name="TException"/>, <paramref name="exceptionHandler"/> is invoked as continuation with the
-    /// exception as argument.<br/>
+    /// exception as argument.
+    /// </para>
+    /// <para>
     /// If <paramref name="result"/> is faulted and the exception thrown by the <see langword="await"/> is not
     /// assignable to <typeparamref name="TException"/>, the exception is not caught.
+    /// </para>
+    /// <para>
     /// If <paramref name="result"/> is canceled and <paramref name="cancellationHandler"/> is not
     /// <see langword="null"/>, <paramref name="cancellationHandler"/> is invoked as continuation with the
-    /// <see cref="OperationCanceledException"/> thrown by the <see langword="await"/> as argument.<br/>
+    /// <see cref="OperationCanceledException"/> thrown by the <see langword="await"/> as argument.
+    /// </para>
+    /// <para>
     /// If <paramref name="result"/> is canceled and <paramref name="cancellationHandler"/> is <see langword="null"/>,
-    /// the <see cref="OperationCanceledException"/> is not caught.<br/>
+    /// the <see cref="OperationCanceledException"/> is not caught.
+    /// </para>
+    /// <para>
     /// As an edge case, if <paramref name="result"/> is canceled, <paramref name="cancellationHandler"/> is
     /// <see langword="null"/> and <typeparamref name="TException"/> is assignable from
     /// <see cref="OperationCanceledException"/>, <paramref name="exceptionHandler"/> is invoked as continuation with
-    /// the <see cref="OperationCanceledException"/> thrown by the <see langword="await"/> as argument.<br/>
+    /// the <see cref="OperationCanceledException"/> thrown by the <see langword="await"/> as argument.
+    /// </para>
     /// </remarks>
     public static async Task<TResult> OrElse<TResult, TException>(
         this Task<TResult> result,
