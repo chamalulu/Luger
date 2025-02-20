@@ -1,12 +1,20 @@
 {
   "version": 1,
   "dependencies": {
-    "net6.0": {
+    "net8.0": {
       "Luger.Functional.Maybe": {
         "type": "Direct",
-        "requested": "[1.2.0, )",
-        "resolved": "1.2.0",
-        "contentHash": "fOmEDzNp0wwOkBxLJFqwSac0HzMn4oMJCqJ5ll1W9LJIedZzRFb+lEsgBjpBNshrC6GLkP4ZxI/vlWDZkqlVxQ=="
+        "requested": "[2.0.1, )",
+        "resolved": "2.0.1",
+        "contentHash": "5CxZAzicHGbRhJayanBE4K+MUzKkNferVZcraeHios0taY51yIzOdmGuLIGpvi+47kGT8m4Avkv6peS57i7NNQ==",
+        "dependencies": {
+          "JetBrains.Annotations": "2024.3.0"
+        }
+      },
+      "JetBrains.Annotations": {
+        "type": "Transitive",
+        "resolved": "2024.3.0",
+        "contentHash": "ox5pkeLQXjvJdyAB4b2sBYAlqZGLh3PjSnP1bQNVx72ONuTJ9+34/+Rq91Fc0dG29XG9RgZur9+NcP4riihTug=="
       }
     }
   }

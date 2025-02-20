@@ -1,7 +1,7 @@
 {
   "version": 1,
   "dependencies": {
-    "net6.0": {
+    "net8.0": {
       "coverlet.collector": {
         "type": "Direct",
         "requested": "[6.0.0, )",
@@ -35,10 +35,18 @@
         "resolved": "2.5.4",
         "contentHash": "YUtEOBdArAISyb1cTWcHc6/bilSDB9q5lc8ughPQP1MqlAKSkxKMBqLQ+tiWMFRBd2o22E59nLD/4V5R3jfZxQ=="
       },
+      "JetBrains.Annotations": {
+        "type": "Transitive",
+        "resolved": "2024.3.0",
+        "contentHash": "ox5pkeLQXjvJdyAB4b2sBYAlqZGLh3PjSnP1bQNVx72ONuTJ9+34/+Rq91Fc0dG29XG9RgZur9+NcP4riihTug=="
+      },
       "Luger.Functional.Maybe": {
         "type": "Transitive",
-        "resolved": "1.2.0",
-        "contentHash": "fOmEDzNp0wwOkBxLJFqwSac0HzMn4oMJCqJ5ll1W9LJIedZzRFb+lEsgBjpBNshrC6GLkP4ZxI/vlWDZkqlVxQ=="
+        "resolved": "2.0.1",
+        "contentHash": "5CxZAzicHGbRhJayanBE4K+MUzKkNferVZcraeHios0taY51yIzOdmGuLIGpvi+47kGT8m4Avkv6peS57i7NNQ==",
+        "dependencies": {
+          "JetBrains.Annotations": "2024.3.0"
+        }
       },
       "Microsoft.CodeCoverage": {
         "type": "Transitive",
@@ -1021,7 +1029,7 @@
       "Luger.Async.ExponentialBackoff": {
         "type": "Project",
         "dependencies": {
-          "Luger.Functional.Maybe": "[1.2.0, )"
+          "Luger.Functional.Maybe": "[2.0.1, )"
         }
       }
     }

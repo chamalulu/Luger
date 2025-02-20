@@ -75,7 +75,7 @@ Default is to _not_ attempt to marshal back to the original context captured.
 Inject a custom random number generator.
 
 ```csharp
-WithCustomRNG(RNGDelegate rng)
+WithCustomRNG(RNG rng)
 ```
 
 Default random number generator is `System.Random.NextDouble` with a fresh
@@ -85,10 +85,10 @@ backoff.
 The random number generator is expected to produce values in the range $[0..1)$.
 Values outside this range will cause an exception to be thrown.
 
-`RNGDelegate` has the following declaration;
+`RNG` has the following declaration;
 
 ```csharp
-delegate double RNGDelegate();
+delegate double RNG();
 ```
 
 ### Progress reporting
@@ -126,7 +126,7 @@ function.
 Inject a custom delay implementation.
 
 ```csharp
-WithCustomDelay(DelayDelegate delay)
+WithCustomDelay(Delay delay)
 ```
 
 Default delay implementation is `System.Threading.Task.Delay`.
@@ -141,10 +141,10 @@ suitable exponential backoff to avoid the overhead of wrapping the function and
 delay in `Task`. This implementation is better suited for mitigating I/O with
 transient failures.
 
-`DelayDelegate` has the following declaration;
+`Delay` has the following declaration;
 
 ```csharp
-delegate Task DelayDelegate(TimeSpan delay, CancellationToken cancellationToken);
+delegate Task Delay(TimeSpan delay, CancellationToken cancellationToken);
 ```
 
 ### Delay scale factor
@@ -155,7 +155,7 @@ Set scale factor to multiply mean delay duration with each iteration.
 WithFactor(TimeScaleFactor factor)
 ```
 
-Default is 2.0 .
+Default is $2.0$.
 
 `TimeScaleFactor` is a finite, non-negative `double`.
 

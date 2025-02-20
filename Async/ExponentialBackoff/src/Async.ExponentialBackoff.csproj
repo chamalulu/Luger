@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="Build">
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <AnalysisLevel>7</AnalysisLevel>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <LangVersion>11.0</LangVersion>
+    <LangVersion>12.0</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="Information">
@@ -17,13 +17,13 @@
     <Description>Utility for configuring and awaiting exponential backoff over asynchronous functions.</Description>
     <Authors>Henrik Lundberg</Authors>
     <Product>Luger</Product>
-    <Copyright>© 2023 Henrik Lundberg</Copyright>
+    <Copyright>© 2023, 2025 Henrik Lundberg</Copyright>
   </PropertyGroup>
 
   <PropertyGroup Label="Versioning">
     <VersionPrefix>1.0.0</VersionPrefix>
     <!-- Set empty suffix when API is stable -->
-    <VersionSuffix>beta</VersionSuffix>
+    <VersionSuffix></VersionSuffix>
   </PropertyGroup>
 
   <PropertyGroup Label="Packaging">
@@ -37,7 +37,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Dependencies">
-    <PackageReference Include="Luger.Functional.Maybe" Version="1.2.0" />
+    <PackageReference Include="Luger.Functional.Maybe" Version="2.0.1" />
   </ItemGroup>
 
 </Project>

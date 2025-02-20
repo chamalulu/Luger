@@ -1,5 +1,7 @@
 using System.Runtime.CompilerServices;
 
+using JetBrains.Annotations;
+
 using Luger.Functional;
 
 namespace Luger.Async.ExponentialBackoff;
@@ -7,7 +9,8 @@ namespace Luger.Async.ExponentialBackoff;
 /// <summary>
 /// Delegate for function returning a uniformly distributed random number in the interval [0..1)
 /// </summary>
-public delegate double RNGDelegate();
+[PublicAPI]
+public delegate double RNG();
 
 /// <summary>
 /// Progress message reported before awaiting backoff delay
@@ -15,6 +18,7 @@ public delegate double RNGDelegate();
 /// <param name="Retries">Number of retries left</param>
 /// <param name="BackoffDelay">Length of backoff delay</param>
 /// <param name="Exception">Exception thrown by last try</param>
+[PublicAPI]
 public record struct ExponentialBackoffProgress(uint Retries, TimeSpan BackoffDelay, Exception Exception);
 
 /// <summary>
@@ -23,21 +27,23 @@ public record struct ExponentialBackoffProgress(uint Retries, TimeSpan BackoffDe
 /// <param name="delay">Duration of delay</param>
 /// <param name="cancellationToken">Token for cancellation of delay</param>
 /// <returns>Task to await for delay</returns>
-public delegate Task DelayDelegate(TimeSpan delay, CancellationToken cancellationToken);
+[PublicAPI]
+public delegate Task Delay(TimeSpan delay, CancellationToken cancellationToken);
 
 /// <summary>
 /// A finite non-negative <see cref="double"/>
 /// </summary>
+[PublicAPI]
 public readonly struct TimeScaleFactor
 {
-    readonly double value;
+    readonly double _value;
 
-    TimeScaleFactor(double value) => this.value = value;
+    TimeScaleFactor(double value) => this._value = value;
 
     /// <summary>
     /// Implicit cast from <see cref="TimeScaleFactor"/> to <see cref="double"/>
     /// </summary>
-    public static implicit operator double(TimeScaleFactor timeScaleFactor) => timeScaleFactor.value;
+    public static implicit operator double(TimeScaleFactor timeScaleFactor) => timeScaleFactor._value;
 
     /// <summary>
     /// Explicit cast from <see cref="double"/> to <see cref="TimeScaleFactor"/>
@@ -51,23 +57,24 @@ public readonly struct TimeScaleFactor
 /// <summary>
 /// A non-negative <see cref="TimeSpan"/>
 /// </summary>
+[PublicAPI]
 public readonly struct DelayTimeSpan
 {
-    readonly TimeSpan value;
+    readonly TimeSpan _value;
 
-    DelayTimeSpan(TimeSpan value) => this.value = value;
+    DelayTimeSpan(TimeSpan value) => this._value = value;
 
     /// <summary>
     /// Scaling of <see cref="DelayTimeSpan"/> by <see cref="TimeScaleFactor"/>
     /// </summary>
     public static DelayTimeSpan operator *(DelayTimeSpan delayTimeSpan, TimeScaleFactor factor)
 
-        => new(delayTimeSpan.value * factor);
+        => new(delayTimeSpan._value * factor);
 
     /// <summary>
     /// Implicit cast from <see cref="DelayTimeSpan"/> to <see cref="TimeSpan"/>
     /// </summary>
-    public static implicit operator TimeSpan(DelayTimeSpan delayTimeSpan) => delayTimeSpan.value;
+    public static implicit operator TimeSpan(DelayTimeSpan delayTimeSpan) => delayTimeSpan._value;
 
     /// <summary>
     /// Explicit cast from <see cref="TimeSpan"/> to <see cref="DelayTimeSpan"/>
@@ -82,43 +89,44 @@ public readonly struct DelayTimeSpan
 /// Wrapper of asynchronous function and exponential backoff options providing awaitable exponential backoff
 /// </summary>
 /// <typeparam name="TResult">Type of result of asynchronous function</typeparam>
+[PublicAPI]
 public sealed class ExponentialBackoffAwaitable<TResult>
 {
-    readonly Func<Task<TResult>> func;
+    readonly Func<Task<TResult>> _func;
 
-    record Options(
+    sealed record Options(
         uint Retries = 8,
         Maybe<DelayTimeSpan> BaseDelay = default,
         bool RetryOnCapturedContext = false,
-        Maybe<RNGDelegate> RNG = default,
+        Maybe<RNG> RNG = default,
         Maybe<IProgress<ExponentialBackoffProgress>> Progress = default,
-        Maybe<DelayDelegate> Delay = default,
+        Maybe<Delay> Delay = default,
         Maybe<TimeScaleFactor> Factor = default,
         CancellationToken CancellationToken = default);
 
-    readonly Options options;
+    readonly Options _options;
 
     ExponentialBackoffAwaitable(Func<Task<TResult>> func, Options options)
     {
-        this.func = func;
-        this.options = options;
+        this._func = func;
+        this._options = options;
     }
 
     internal ExponentialBackoffAwaitable(Func<Task<TResult>> func) : this(func, new Options()) { }
 
     async Task<TResult> Run()
     {
-        var retries = options.Retries;
-        var meanDelay = options.BaseDelay | (DelayTimeSpan)TimeSpan.FromMilliseconds(100);
-        var rng = options.RNG | (() => new Random().NextDouble);
-        var delay = options.Delay | Task.Delay;
-        var factor = options.Factor | (TimeScaleFactor)2d;
+        var retries = _options.Retries;
+        var meanDelay = _options.BaseDelay | (DelayTimeSpan)TimeSpan.FromMilliseconds(100);
+        var rng = _options.RNG | (() => new Random().NextDouble);
+        var delay = _options.Delay | Task.Delay;
+        var factor = _options.Factor | (TimeScaleFactor)2d;
 
         while (retries > 0)
         {
             try
             {
-                return await func().ConfigureAwait(options.RetryOnCapturedContext);
+                return await _func().ConfigureAwait(_options.RetryOnCapturedContext);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
@@ -126,19 +134,19 @@ public sealed class ExponentialBackoffAwaitable<TResult>
                 var jitter = (TimeScaleFactor)(-Math.Log(1d - rng()));
                 var backoffDelay = meanDelay * jitter;
 
-                if (options.Progress is [var progress])
+                if (_options.Progress is [var progress])
                 {
-                    progress.Report(new(retries, backoffDelay, exception));
+                    progress.Report(new ExponentialBackoffProgress(retries, backoffDelay, exception));
                 }
 
-                await delay(backoffDelay, options.CancellationToken).ConfigureAwait(options.RetryOnCapturedContext);
+                await delay(backoffDelay, _options.CancellationToken).ConfigureAwait(_options.RetryOnCapturedContext);
 
                 retries -= 1;   // Decrease retries
                 meanDelay *= factor; // Scale mean delay
             }
         }
 
-        return await func().ConfigureAwait(false);
+        return await _func().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -152,7 +160,7 @@ public sealed class ExponentialBackoffAwaitable<TResult>
     /// </summary>
     public ExponentialBackoffAwaitable<TResult> WithRetries(uint retries)
 
-        => new(func, options with { Retries = retries });
+        => new(_func, _options with { Retries = retries });
 
     /// <summary>
     /// Set base delay of exponential backoff.<br/>
@@ -160,7 +168,7 @@ public sealed class ExponentialBackoffAwaitable<TResult>
     /// </summary>
     public ExponentialBackoffAwaitable<TResult> WithBaseDelay(DelayTimeSpan baseDelay)
 
-        => new(func, options with { BaseDelay = baseDelay });
+        => new(_func, _options with { BaseDelay = baseDelay });
 
     /// <summary>
     /// Configure exponential backoff attempts to marshal the delays and retries back to the original context
@@ -173,7 +181,7 @@ public sealed class ExponentialBackoffAwaitable<TResult>
     /// </param>
     public ExponentialBackoffAwaitable<TResult> ConfigureRetryAwait(bool retryOnCapturedContext)
 
-        => new(func, options with { RetryOnCapturedContext = retryOnCapturedContext });
+        => new(_func, _options with { RetryOnCapturedContext = retryOnCapturedContext });
 
     /// <summary>
     /// Set a custom random number generator.<br/>
@@ -185,9 +193,9 @@ public sealed class ExponentialBackoffAwaitable<TResult>
     /// <remarks>
     /// The random number generator is used to calculate an exponentially distributed random backoff delay.
     /// </remarks>
-    public ExponentialBackoffAwaitable<TResult> WithCustomRNG(RNGDelegate rng)
+    public ExponentialBackoffAwaitable<TResult> WithCustomRNG(RNG rng)
 
-        => new(func, options with { RNG = rng });
+        => new(_func, _options with { RNG = rng });
 
     /// <summary>
     /// Set a progress reporting sink called before each backoff delay.<br/>
@@ -195,15 +203,15 @@ public sealed class ExponentialBackoffAwaitable<TResult>
     /// </summary>
     public ExponentialBackoffAwaitable<TResult> WithProgress(IProgress<ExponentialBackoffProgress> progress)
 
-        => new(func, options with { Progress = Maybe.Some(progress) });
+        => new(_func, _options with { Progress = Maybe.Some(progress) });
 
     /// <summary>
     /// Set a custom delay function.<br/>
     /// If not set, <see cref="Task.Delay(TimeSpan, CancellationToken)"/> is used.
     /// </summary>
-    public ExponentialBackoffAwaitable<TResult> WithCustomDelay(DelayDelegate delay)
+    public ExponentialBackoffAwaitable<TResult> WithCustomDelay(Delay delay)
 
-        => new(func, options with { Delay = delay });
+        => new(_func, _options with { Delay = delay });
 
     /// <summary>
     /// Set scale factor of successive backoff delays.<br/>
@@ -211,7 +219,7 @@ public sealed class ExponentialBackoffAwaitable<TResult>
     /// </summary>
     public ExponentialBackoffAwaitable<TResult> WithFactor(TimeScaleFactor factor)
 
-        => new(func, options with { Factor = factor });
+        => new(_func, _options with { Factor = factor });
 
     /// <summary>
     /// Set cancellation token for cancellation of delay.<br/>
@@ -223,12 +231,13 @@ public sealed class ExponentialBackoffAwaitable<TResult>
     /// </remarks>
     public ExponentialBackoffAwaitable<TResult> WithCancellation(CancellationToken cancellationToken)
 
-        => new(func, options with { CancellationToken = cancellationToken });
+        => new(_func, _options with { CancellationToken = cancellationToken });
 }
 
 /// <summary>
 /// Static class providing factory functions for <see cref="ExponentialBackoffAwaitable{TResult}"/>
 /// </summary>
+[PublicAPI]
 public static class ExponentialBackoff
 {
     /// <summary>
