@@ -1,7 +1,7 @@
 {
   "version": 1,
   "dependencies": {
-    "net6.0": {
+    "net8.0": {
       "Microsoft.NET.Test.Sdk": {
         "type": "Direct",
         "requested": "[17.2.0, )",
@@ -28,6 +28,11 @@
         "requested": "[2.4.5, )",
         "resolved": "2.4.5",
         "contentHash": "OwHamvBdUKgqsXfBzWiCW/O98BTx81UKzx2bieIOQI7CZFE5NEQZGi8PBQGIKawDW96xeRffiNf20SjfC0x9hw=="
+      },
+      "JetBrains.Annotations": {
+        "type": "Transitive",
+        "resolved": "2024.3.0",
+        "contentHash": "ox5pkeLQXjvJdyAB4b2sBYAlqZGLh3PjSnP1bQNVx72ONuTJ9+34/+Rq91Fc0dG29XG9RgZur9+NcP4riihTug=="
       },
       "Luger.Functional.Maybe": {
         "type": "Transitive",
@@ -1096,12 +1101,15 @@
       "Luger.Functional": {
         "type": "Project",
         "dependencies": {
-          "Luger.Functional.Async": "[1.0.0-beta, )",
+          "Luger.Functional.Async": "[1.1.0, )",
           "Luger.Functional.Maybe": "[1.0.0, )"
         }
       },
       "Luger.Functional.Async": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "JetBrains.Annotations": "[2024.3.0, )"
+        }
       },
       "Luger.Utilities": {
         "type": "Project",
