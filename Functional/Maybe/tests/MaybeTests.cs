@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 using Xunit;
@@ -327,4 +329,66 @@ public class MaybeTests
 
     [Fact]
     public void MaybeFirstManySome() => Assert.Equal(Some(41), new[] { 41, 42 }.MaybeFirst());
+
+    [Fact]
+    public void JsonSerializeNoneNull() => Assert.Equal("null", JsonSerializer.Serialize(None<int>()));
+
+    [Fact]
+    public void JsonSerializeSomeNumber() => Assert.Equal("42", JsonSerializer.Serialize(Some(42)));
+
+    [Fact]
+    public void JsonSerializeNonePropertyNull() =>
+        Assert.Equal("{\"Id\":null}", JsonSerializer.Serialize(new { Id = None<int>() }));
+
+    [Fact]
+    public void JsonSerializeSomePropertyNumber() =>
+        Assert.Equal("{\"Id\":42}", JsonSerializer.Serialize(new { Id = Some(42) }));
+
+    static readonly JsonSerializerOptions OptionsWithDefaultIgnoreCondition =
+        new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
+
+    [Fact]
+    public void JsonSerializeNoneIgnoreWhenWritingDefault() =>
+        Assert.Equal("{}", JsonSerializer.Serialize(new { Id = None<int>() }, OptionsWithDefaultIgnoreCondition));
+
+    [Fact]
+    public void JsonSerializeArrayOfMaybe() =>
+        Assert.Equal("[42,null]", JsonSerializer.Serialize(new[] { Some(42), None<int>() }));
+
+    [Fact]
+    public void JsonSerializeMaybeArray() =>
+        Assert.Equal("[41,42]", JsonSerializer.Serialize(Some<int[]>([41, 42])));
+
+    [Fact]
+    public void JsonDeserializeNullNone() =>
+        Assert.Equal(None<int>(), JsonSerializer.Deserialize<Maybe<int>>("null"));
+
+    [Fact]
+    public void JsonDeserializeNumberSome() =>
+        Assert.Equal(Some(42), JsonSerializer.Deserialize<Maybe<int>>("42"));
+
+    class DsTarget
+    {
+        public Maybe<int> Id { get; init; } = None<int>();
+    }
+
+    [Fact]
+    public void JsonDeserializeNullPropertyNone() =>
+        Assert.True(JsonSerializer.Deserialize<DsTarget>("{\"Id\":null}") is { Id: [] });
+
+    [Fact]
+    public void JsonDeserializeNumberPropertySome() =>
+        Assert.True(JsonSerializer.Deserialize<DsTarget>("{\"Id\":42}") is { Id: [42] });
+
+    [Fact]
+    public void JsonDeserializeMissingPropertyNone() =>
+        Assert.True(JsonSerializer.Deserialize<DsTarget>("{}") is { Id: [] });
+
+    [Fact]
+    public void JsonDeserializeArrayOfMaybe() =>
+        Assert.Equal(new[] { Some(42), None<int>() }, JsonSerializer.Deserialize<Maybe<int>[]>("[42,null]"));
+
+    [Fact]
+    public void JsonDeserializeMaybeArray() =>
+        Assert.True(JsonSerializer.Deserialize<Maybe<int[]>>("[41,42]") is [[41, 42]]);
 }

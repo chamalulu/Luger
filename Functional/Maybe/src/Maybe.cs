@@ -1,6 +1,7 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text.Json.Serialization;
 using JetBrains.Annotations;
 namespace Luger.Functional;
 
@@ -55,7 +56,7 @@ namespace Luger.Functional;
 /// <c>return default;</c>.
 /// </para>
 /// </remarks>
-[DebuggerStepThrough]
+[DebuggerStepThrough, JsonConverter(typeof(MaybeConverterFactory))]
 public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerable<T> where T : notnull
 {
     /* I've tried using T? as inner state, but it gets nasty as it is either a T or a Nullable<T> at runtime depending
@@ -139,6 +140,10 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// <see langword="true"/> if values have the same state and if some, the same value;
     /// otherwise <see langword="false"/>.
     /// </returns>
+    /// <remarks>
+    /// If <typeparamref name="T"/> implements <see cref="IEquatable{T}"/>, that implementation is used to compare some
+    /// values; otherwise, reference equality or default value type equality is used to compare some values.
+    /// </remarks>
     [PublicAPI]
     public bool Equals(Maybe<T> other)
 
