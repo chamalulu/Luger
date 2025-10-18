@@ -88,8 +88,11 @@ namespace Luger.Configuration.CommandLine.Tests
 
             // Assert
             var result = actual.Parse(ParseState.Empty);
-            Assert.Equal(expected.Successes, result.Successes);
-            Assert.Equal(expected.Failures, result.Failures);
+            Assert.Equal(
+                expected,
+                result,
+                new ParseResult<ImmutableList<int>>.EqualityComparer(
+                    EqualityComparer<ImmutableList<int>>.Create((xValue, yValue) => xValue.SequenceEqual(yValue))));
         }
 
         [Fact]
@@ -105,8 +108,12 @@ namespace Luger.Configuration.CommandLine.Tests
 
             // Assert
             var result = actual.Parse(ParseState.Empty);
-            Assert.Equal(expected.Successes, result.Successes);
-            Assert.Equal(expected.Failures, result.Failures);
+
+            Assert.Equal(
+                expected,
+                result,
+                new ParseResult<ImmutableList<int>>.EqualityComparer(
+                    EqualityComparer<ImmutableList<int>>.Create((xValue, yValue) => xValue.SequenceEqual(yValue))));
         }
 
         [Fact]
@@ -205,8 +212,12 @@ namespace Luger.Configuration.CommandLine.Tests
 
             // Assert
             var result = actual.Parse(ParseState.Empty);
-            Assert.Equal(expected.Successes, result.Successes);
-            Assert.Equal(expected.Failures, result.Failures);
+
+            Assert.Equal(
+                expected,
+                result,
+                new ParseResult<ImmutableList<int>>.EqualityComparer(
+                    EqualityComparer<ImmutableList<int>>.Create((xValue, yValue) => xValue.SequenceEqual(yValue))));
         }
 
         [Fact]
@@ -279,8 +290,12 @@ namespace Luger.Configuration.CommandLine.Tests
 
             // Assert
             var result = actual.Parse(state);
-            Assert.Equal(expected.Successes, result.Successes);
-            Assert.Equal(expected.Failures, result.Failures);
+            Assert.Equal(
+                expected,
+                result,
+                new ParseResult<ImmutableList<string>>.EqualityComparer(
+                    EqualityComparer<ImmutableList<string>>.Create(
+                        (xValue, yValue) => xValue.SequenceEqual(yValue, StringComparer.Ordinal))));
         }
 
         [Fact]

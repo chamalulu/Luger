@@ -4,25 +4,28 @@
     "net8.0": {
       "JetBrains.Annotations": {
         "type": "Transitive",
-        "resolved": "2024.3.0",
-        "contentHash": "ox5pkeLQXjvJdyAB4b2sBYAlqZGLh3PjSnP1bQNVx72ONuTJ9+34/+Rq91Fc0dG29XG9RgZur9+NcP4riihTug=="
+        "resolved": "2025.2.2",
+        "contentHash": "0X56ZRizuHdrnPpgXjWV7f2tQO1FlQg5O1967OGKnI/4ZRNOK642J8L7brM1nYvrxTTU5TP1yRyXLRLaXLPQ8A=="
       },
       "Luger.Functional.Maybe": {
         "type": "Transitive",
-        "resolved": "1.0.0",
-        "contentHash": "Yl8m+axwYdtY49sdqYvIRxGfjvoMLXpr89SsQsD3JfZrCXY5Q8R1OwziCApydI8jeAs09uqDZ0b42TlAalQhwA=="
+        "resolved": "2.1.0",
+        "contentHash": "ahUmXWh9mygfp3XYSTdbtyeIpnQERIFvADmNEW/GSUTO7J44tR8vW8m7BwTNfwxbW5fshSabSyQFDAIVgX7e1Q==",
+        "dependencies": {
+          "JetBrains.Annotations": "2024.3.0"
+        }
       },
       "Luger.Functional": {
         "type": "Project",
         "dependencies": {
           "Luger.Functional.Async": "[1.1.0, )",
-          "Luger.Functional.Maybe": "[1.0.0, )"
+          "Luger.Functional.Maybe": "[2.1.0, )"
         }
       },
       "Luger.Functional.Async": {
         "type": "Project",
         "dependencies": {
-          "JetBrains.Annotations": "[2024.3.0, )"
+          "JetBrains.Annotations": "[2025.2.2, )"
         }
       }
     }

@@ -1,12 +1,61 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
 namespace Luger.Configuration.CommandLine
 {
+    // TODO: This should be a DU
     public record ParseResult<TValue>(
         ImmutableList<(TValue value, ParseState state)> Successes,
-        ImmutableList<(string message, ParseState state)> Failures);
+        ImmutableList<(string message, ParseState state)> Failures)
+    {
+        public sealed class EqualityComparer : IEqualityComparer<ParseResult<TValue>>
+        {
+            public EqualityComparer(
+                IEqualityComparer<TValue>? valueEqualityComparer = null,
+                StringComparer? messageComparer = null)
+            {
+                valueEqualityComparer ??= EqualityComparer<TValue>.Default;
+                messageComparer ??= StringComparer.InvariantCulture;
+
+                SuccessComparer = EqualityComparer<(TValue value, ParseState state)>.Create(
+                    (xItem, yItem) =>
+                        valueEqualityComparer.Equals(xItem.value, yItem.value) && xItem.state.Equals(yItem.state));
+                FailureComparer = EqualityComparer<(string message, ParseState state)>.Create(
+                    (xItem, yItem) =>
+                        messageComparer.Equals(xItem.message, yItem.message) && xItem.state.Equals(yItem.state));
+            }
+
+            EqualityComparer<(TValue value, ParseState state)> SuccessComparer { get; }
+
+            EqualityComparer<(string message, ParseState state)> FailureComparer { get; }
+
+            public bool Equals(ParseResult<TValue>? x, ParseResult<TValue>? y)
+            {
+                if (ReferenceEquals(x, y))
+                {
+                    return true;
+                }
+
+                if (x is null || y is null || x.GetType() != y.GetType())
+                {
+                    return false;
+                }
+
+                var successesAreEqual = x.Successes.SequenceEqual(y.Successes, SuccessComparer);
+
+                var failuresAreEqual = x.Failures.SequenceEqual(y.Failures, FailureComparer);
+
+                return successesAreEqual && failuresAreEqual;
+            }
+
+            /// <remarks>Do not use <see cref="ParseResult{TValue}"/> objects as dictionary keys.</remarks>
+            /// <returns>0</returns>
+            /// <inheritdoc/>
+            public int GetHashCode(ParseResult<TValue> obj) => 0;
+        }
+    }
 
     public static class ParseResult
     {
