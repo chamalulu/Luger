@@ -256,20 +256,20 @@ Returning none from a `Maybe<T>`-returning function is equally simple as it is
 the default state; `return default;`.
 
 As a side note, even though it has nothing to do with operators, since C# 12
-`Maybe<T>` with state None can be assigned, and returned, as an empty
-collection expression.
+`Maybe<T>` with state None can be assigned, and returned, with an empty
+collection initializer.
 
-Assigning with an empty collection expression is only useful for being explicit
-about the state since its result is just the default state.
+Assigning with an empty collection initializer is only useful for being
+explicit about the state since its result is just the default state.
 
 `return [];` is recommended over `return default;` or `return Maybe.None<T>()`
 because of clarity.
 
-Singleton collection expressions are not supported since they would require an
+Singleton collection initializers are not supported since they would require an
 awkward Add method which only works for None instances and only provide a more
 cumbersome syntax over the implicit cast from T.
 
-Multi-element collection expressions are not supported for obvious reasons.
+Multi-element collection initializers are not supported for obvious reasons.
 
 ## Factories
 
