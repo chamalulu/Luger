@@ -133,16 +133,16 @@ public class MaybeTests
     {
         var invoked = false;
 
-        _ = FromNullable(maybeX) | Factory;
-
-        Assert.Equal(expected, invoked);
-        return;
-
-        int Factory()
+        int factory()
         {
             invoked = true;
             return 0;
         }
+
+        _ = FromNullable(maybeX) | factory;
+
+        Assert.Equal(expected, invoked);
+        return;
     }
 
     [Theory]
@@ -219,9 +219,7 @@ public class MaybeTests
 
     static Maybe<int> ParseInt(string s)
 
-        => int.TryParse(s, out var i)
-            ? Some(i)
-            : default;
+        => int.TryParse(s, out var i) ? Some(i) : [];
 
     [Theory]
     [InlineData(null, null)]
@@ -391,4 +389,14 @@ public class MaybeTests
     [Fact]
     public void JsonDeserializeMaybeArray() =>
         Assert.True(JsonSerializer.Deserialize<Maybe<int[]>>("[41,42]") is [[41, 42]]);
+
+    [Fact]
+    // This test is simpler than it looks. Actually :).
+    // The whole body compiles to asserting a new (I.e. default) Maybe<int> has no elements.
+    public void CollectionInitializeNone()
+    {
+        Maybe<int> none = [];
+
+        Assert.True(none is []);
+    }
 }
