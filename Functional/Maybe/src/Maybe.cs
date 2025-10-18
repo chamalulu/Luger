@@ -67,11 +67,8 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     readonly bool _isSome;
     readonly T _value;
 
-    Maybe(T value)
+    internal Maybe(T value)
     {
-        // The following guard is necessary when T is a reference type. :(
-        ArgumentNullException.ThrowIfNull(value);
-
         _isSome = true;
         _value = value;
     }
@@ -123,11 +120,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// </exception>
     [EditorBrowsable(EditorBrowsableState.Never)]
     [PublicAPI]
-    public T this[int index]
-
-        => _isSome && index == 0
-            ? _value
-            : throw new InvalidOperationException();
+    public T this[int index] => _isSome && index == 0 ? _value : throw new InvalidOperationException();
 
     static readonly EqualityComparer<T> ValueEqualityComparer = EqualityComparer<T>.Default;
 
@@ -145,11 +138,9 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// values; otherwise, reference equality or default value type equality is used to compare some values.
     /// </remarks>
     [PublicAPI]
-    public bool Equals(Maybe<T> other)
-
-        => _isSome
-            ? other._isSome && ValueEqualityComparer.Equals(_value, other._value)
-            : !other._isSome;
+    public bool Equals(Maybe<T> other) => _isSome
+        ? other._isSome && ValueEqualityComparer.Equals(_value, other._value)
+        : !other._isSome;
 
     /// <summary>
     /// Possibly boxing equality comparison. Delegates to <see cref="object.Equals(object?)"/> in some case.
@@ -350,15 +341,13 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
 /// </remarks>
 public static class Maybe
 {
-    /// <summary>
-    /// Factory method for <see cref="Maybe{T}"/> with state none
-    /// </summary>
+    /// <summary>Factory method for <see cref="Maybe{T}"/> with state none.</summary>
+    /// <remarks>If target type is known, prefer using empty collection initializer.</remarks>
     [PublicAPI]
-    public static Maybe<T> None<T>() where T : notnull => default;
+    public static Maybe<T> None<T>() where T : notnull => [];
 
-    /// <summary>
-    /// Factory method for <see cref="Maybe{T}"/> with state some <paramref name="value"/>
-    /// </summary>
+    /// <summary>Factory method for <see cref="Maybe{T}"/> with state some <paramref name="value"/>.</summary>
+    /// <remarks>If target type is known, prefer using implicit cast from <typeparamref name="T"/>.</remarks>
     [PublicAPI]
     public static Maybe<T> Some<T>(T value) where T : notnull => value;
 
@@ -377,11 +366,10 @@ public static class Maybe
     [PublicAPI]
     public static Maybe<TResult> Apply<TArg, TResult>(this Maybe<Func<TArg, TResult>> maybeFunc, Maybe<TArg> maybeArg)
         where TArg : notnull
-        where TResult : notnull
-
-        => maybeFunc is [var func] && maybeArg is [var arg]
-            ? Some(func(arg))
-            : None<TResult>();
+        where TResult : notnull =>
+        maybeFunc is [var func] && maybeArg is [var arg]
+            ? new Maybe<TResult>(func(arg))
+            : [];
 
     /// <summary>
     /// Sequential composition of <paramref name="func"/> to <paramref name="source"/> in monad of
@@ -398,11 +386,10 @@ public static class Maybe
     [PublicAPI]
     public static Maybe<TResult> Bind<TSource, TResult>(this Maybe<TSource> source, Func<TSource, Maybe<TResult>> func)
         where TSource : notnull
-        where TResult : notnull
-
-        => source is [var s]
+        where TResult : notnull =>
+        source is [var s]
             ? func(s)
-            : None<TResult>();
+            : [];
 
     /// <summary>
     /// Filters a <see cref="Maybe{T}"/> value based on a predicate function.
@@ -415,11 +402,10 @@ public static class Maybe
     /// </returns>
     [PublicAPI]
     public static Maybe<TSource> Filter<TSource>(this Maybe<TSource> source, Func<TSource, bool> predicate)
-        where TSource : notnull
-
-        => source is [var s] && predicate(s)
+        where TSource : notnull =>
+        source is [var s] && predicate(s)
             ? source
-            : None<TSource>();
+            : [];
 
     /// <summary>
     /// Application of <paramref name="func"/> to <paramref name="source"/> in functor of <see cref="Maybe{T}"/>.
@@ -435,11 +421,10 @@ public static class Maybe
     [PublicAPI]
     public static Maybe<TResult> Map<TSource, TResult>(this Maybe<TSource> source, Func<TSource, TResult> func)
         where TSource : notnull
-        where TResult : notnull
-
-        => source is [var s]
-            ? Some(func(s))
-            : None<TResult>();
+        where TResult : notnull =>
+        source is [var s]
+            ? new Maybe<TResult>(func(s))
+            : [];
 
     /// <summary>
     /// Projects the value of <see cref="Maybe{T}"/> into a new form.
@@ -467,13 +452,10 @@ public static class Maybe
     /// <see cref="Maybe.Select{TSource, TResult}(Maybe{TSource}, Func{TSource, TResult})"/> delegates directly to it.
     /// </remarks>
     [PublicAPI]
-    public static Maybe<TResult> Select<TSource, TResult>(
-        this Maybe<TSource> source,
-        Func<TSource, TResult> selector)
+    public static Maybe<TResult> Select<TSource, TResult>(this Maybe<TSource> source, Func<TSource, TResult> selector)
         where TSource : notnull
-        where TResult : notnull
-
-        => source.Map(selector);
+        where TResult : notnull =>
+        source.Map(selector);
 
     /// <summary>
     /// Projects some value of <see cref="Maybe{T}"/> to another <see cref="Maybe{T}"/>, and invokes a result selector
@@ -524,11 +506,10 @@ public static class Maybe
         Func<TSource, TNext, TResult> resultSelector)
         where TSource : notnull
         where TNext : notnull
-        where TResult : notnull
-
-        => source is [var s] && selector(s) is [var n]
-            ? Some(resultSelector(s, n))
-            : None<TResult>();
+        where TResult : notnull =>
+        source is [var s] && selector(s) is [var n]
+            ? new Maybe<TResult>(resultSelector(s, n))
+            : [];
 
     /// <summary>
     /// Traverse some value of <see cref="Maybe{T}"/> with an asynchronous function.
@@ -546,11 +527,10 @@ public static class Maybe
         this Maybe<TSource> source,
         Func<TSource, Task<TResult>> func)
         where TSource : notnull
-        where TResult : notnull
-
-        => source is [var s]
-            ? Some(await func(s))
-            : None<TResult>();
+        where TResult : notnull =>
+        source is [var s]
+            ? new Maybe<TResult>(await func(s))
+            : [];
 
     /// <summary>
     /// Code style extension to use Try-style method syntax with a value of <see cref="Maybe{T}"/>
@@ -605,9 +585,8 @@ public static class Maybe
     /// </remarks>
     [PublicAPI]
     public static Maybe<TSource> Where<TSource>(this Maybe<TSource> source, Func<TSource, bool> predicate)
-        where TSource : notnull
-
-        => source.Filter(predicate);
+        where TSource : notnull =>
+        source.Filter(predicate);
 
     /* FromNullable, FromReference, ToNullable and ToReference may seem a bit redundant. Their implementations w.r.t.
      * ...Nullable vs. ...Reference are syntactically equivalent (except for the type parameter constraints).
@@ -629,11 +608,8 @@ public static class Maybe
     /// <param name="value">Nullable value to convert</param>
     /// <returns>A <see cref="Maybe{T}"/> with <paramref name="value"/> if it has one; otherwise none.</returns>
     [PublicAPI]
-    public static Maybe<T> FromNullable<T>(T? value) where T : struct
-
-        => value is { } v
-            ? Some(v)
-            : None<T>();
+    public static Maybe<T> FromNullable<T>(T? value) where T : struct =>
+        value.HasValue ? new Maybe<T>(value.Value) : [];
 
     /// <summary>
     /// Conversion from nullable reference type <typeparamref name="T"/>? to <see cref="Maybe{T}"/>
@@ -642,11 +618,8 @@ public static class Maybe
     /// <param name="value">Nullable reference to convert</param>
     /// <returns>A <see cref="Maybe{T}"/> with <paramref name="value"/> if it has one; otherwise none.</returns>
     [PublicAPI]
-    public static Maybe<T> FromReference<T>(T? value) where T : class
-
-        => value is { } v
-            ? Some(v)
-            : None<T>();
+    public static Maybe<T> FromReference<T>(T? value) where T : class =>
+        value is not null ? new Maybe<T>(value) : [];
 
     /// <summary>
     /// Conversion from <see cref="Maybe{T}"/> where <typeparamref name="T"/> is a value type to
@@ -656,9 +629,7 @@ public static class Maybe
     /// <param name="value"><see cref="Maybe{T}"/> to convert</param>
     /// <returns>A <see cref="Nullable{T}"/> with <paramref name="value"/> in some case.</returns>
     [PublicAPI]
-    public static T? ToNullable<T>(this Maybe<T> value) where T : struct
-
-        => value is [var t] ? t : null;
+    public static T? ToNullable<T>(this Maybe<T> value) where T : struct => value is [var t] ? t : null;
 
     /// <summary>
     /// Conversion from <see cref="Maybe{T}"/> where <typeparamref name="T"/> is a non-nullable reference type to
@@ -670,9 +641,7 @@ public static class Maybe
     /// A nullable reference to value of <paramref name="value"/> in some case; otherwise <see langword="null"/>.
     /// </returns>
     [PublicAPI]
-    public static T? ToReference<T>(this Maybe<T> value) where T : class
-
-        => value is [var t] ? t : null;
+    public static T? ToReference<T>(this Maybe<T> value) where T : class => value is [var t] ? t : null;
 
     /// <summary>
     /// Returns some only element of the input sequence, or none if the sequence is empty. This method throws an
@@ -690,8 +659,8 @@ public static class Maybe
             return list switch
             {
                 // Allocation free in happy path
-                [] => None<T>(),
-                [var element] => Some(element),
+                [] => [],
+                [var element] => new Maybe<T>(element),
                 _ => throw new InvalidOperationException()
             };
         }
@@ -703,15 +672,12 @@ public static class Maybe
         {
             var element = enumerator.Current;
 
-            if (enumerator.MoveNext())
-            {
-                throw new InvalidOperationException();
-            }
-
-            return Some(element);
+            return enumerator.MoveNext()
+                ? throw new InvalidOperationException()
+                : new Maybe<T>(element);
         }
 
-        return None<T>();
+        return [];
     }
 
     /// <summary>
@@ -744,12 +710,12 @@ public static class Maybe
         if (source is IList<T> list)
         {
             // Allocation free
-            return list is [var element, ..] ? Some(element) : None<T>();
+            return list is [var element, ..] ? new Maybe<T>(element) : [];
         }
 
         using var enumerator = source.GetEnumerator();
 
-        return enumerator.MoveNext() ? Some(enumerator.Current) : None<T>();
+        return enumerator.MoveNext() ? new Maybe<T>(enumerator.Current) : [];
     }
 
     /// <summary>
