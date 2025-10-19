@@ -59,8 +59,12 @@ namespace Luger.Functional;
 [DebuggerStepThrough, JsonConverter(typeof(MaybeConverterFactory))]
 public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerable<T> where T : notnull
 {
-    /* I've tried using T? as inner state, but it gets nasty as it is either a T or a Nullable<T> at runtime depending
-     * on whether T is a reference type or value type.
+    /* I've tried using T? as inner state, but it doesn't work. A similar problem is illustrated here
+     * (https://github.com/dotnet/roslyn/issues/53139).
+     * The short story is; Nullability is less bad since C# 8, but still subtly broken.
+     * A field of type T? where T is not constrained to reference or value type (here only notnull) will be considered
+     * a nullable reference type T? if the constructed type parameter T is a reference type but, strangely,
+     * a non-nullable value type T if the constructed type parameter T is a value type. Madness.
      * The nullability stuff in C# could need some reworking but since that would certainly become backwards
      * incompatible maybe C# just has to bite the bullet and leave strong typing to modern languages.
      */
@@ -330,7 +334,11 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// Implicit cast from <typeparamref name="T"/> to <see cref="Maybe{T}"/>
     /// </summary>
     [PublicAPI]
-    public static implicit operator Maybe<T>(T value) => new(value);
+    public static implicit operator Maybe<T>(T value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        return new Maybe<T>(value);
+    }
 }
 
 /// <summary>
