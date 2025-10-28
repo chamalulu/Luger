@@ -425,13 +425,13 @@ Instead of the expression `source is [var s]` such code can use `source.Try(out 
 ### Nullable interop
 
 ```csharp
-T? ToNullable<T>(Maybe<T> value) where T : struct
+T? ToNullable<T>(this Maybe<T> value) where T : struct
 ```
 
 Convert the `Maybe<T>` value to a `Nullable<T>` value.
 
 ```csharp
-T? ToReference<T>(Maybe<T> value) where T : class
+T? ToReference<T>(this Maybe<T> value) where T : class
 ```
 
 Convert the `Maybe<T>` value to a nullable reference.

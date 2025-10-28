@@ -3,34 +3,26 @@ using System.Text.Json.Serialization;
 
 namespace Luger.Functional;
 
-/// <summary>
-/// Json converter factory for <see cref="Maybe{T}"/>.
-/// </summary>
+/// <summary>Json converter factory for <see cref="Maybe{T}"/>.</summary>
 /// <remarks>
-/// <b>Serialization</b>
-/// <para>
-/// Values will be serialized as their inner value if some, or as Null if none.
-/// </para>
-/// <para>
-/// To avoid Null values on properties, use <see cref="JsonIgnoreAttribute"/> with <see cref="JsonIgnoreCondition"/> set
-/// to <see cref="JsonIgnoreCondition.WhenWritingDefault"/> or <see cref="JsonSerializerOptions"/> with
-/// <see cref="JsonSerializerOptions.DefaultIgnoreCondition"/> set to
-/// <see cref="JsonIgnoreCondition.WhenWritingDefault"/>.
-/// </para>
-/// <b>Deserialization</b>
-/// <para>
-/// Objects, Arrays, Strings, Numbers and Booleans will be deserialized as Some inner value.
-/// </para>
-/// <para>
-/// Null (or a missing property) will be deserialized as None.
-/// </para>
+///     <b>Serialization</b>
+///     <para>Values will be serialized as their inner value if some, or as Null if none.</para>
+///     <para>
+///         To avoid Null values on properties, use <see cref="JsonIgnoreAttribute"/> with
+///         <see cref="JsonIgnoreCondition"/> set to <see cref="JsonIgnoreCondition.WhenWritingDefault"/> or
+///         <see cref="JsonSerializerOptions"/> with <see cref="JsonSerializerOptions.DefaultIgnoreCondition"/> set to
+///         <see cref="JsonIgnoreCondition.WhenWritingDefault"/>.
+///     </para>
+///     <b>Deserialization</b>
+///     <para>Objects, Arrays, Strings, Numbers and Booleans will be deserialized as Some inner value.</para>
+///     <para>Null (or a missing property) will be deserialized as None.</para>
 /// </remarks>
 public class MaybeConverterFactory : JsonConverterFactory
 {
     /// <summary>Determines whether the converter instance can convert the specified object type.</summary>
     /// <returns>
-    /// <see langword="true"/> if the specified type is a closed constructed type of <see cref="Maybe{T}"/>; otherwise,
-    /// <see langword="false"/>.
+    ///     <see langword="true"/> if the specified type is a closed constructed type of <see cref="Maybe{T}"/>;
+    ///     otherwise, <see langword="false"/>.
     /// </returns>
     /// <inheritdoc />
     public override bool CanConvert(Type typeToConvert) =>
