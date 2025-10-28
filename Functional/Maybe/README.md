@@ -1,35 +1,30 @@
 # Luger.Functional.Maybe
 
-`Luger.Functional.Maybe<T>` is a composable version of `System.Nullable<T>` for
-value types and non-nullable reference types.
+`Luger.Functional.Maybe<T>` is a composable version of `System.Nullable<T>` for value types and non-nullable reference
+types.
 
 The value of `Maybe<T>` can be in one of two main states; some or none.
 
 Some is analogous to a `Nullable<T>` or a nullable reference with a value.
 
-None is analogous to a `Nullable<T>` or a nullable reference without a value,
-i.e. the infamous `null`.
+None is analogous to a `Nullable<T>` or a nullable reference without a value, i.e. the infamous `null`.
 
 ## Why?
 
-The primary reason for using values of `Maybe<T>` instead of `Nullable<T>` or
-nullable reference types is safety. C# is a relatively type safe language but
-`null` is one piece of the language design where it breaks.
+The primary reason for using values of `Maybe<T>` instead of `Nullable<T>` or nullable reference types is safety. C# is
+a relatively type safe language but `null` is one piece of the language design where it breaks.
 
-`null` has no type. A function returning `null` instead of a value of its return
-type is essentially dishonest.
+`null` has no type. A function returning `null` instead of a value of its return type is essentially dishonest.
 
-The problems with `null` are explained in, sometimes humorous and sometimes
-painful, detail all around the interwebs. I'll not bother you with it here.
+The problems with `null` are explained in, sometimes humorous and sometimes painful, detail all around the interwebs.
+I'll not bother you with it here.
 
-Instead, here are a couple of examples of usage together with the traditional C#
-approach.
+Instead, here are a couple of examples of usage together with the traditional C# approach.
 
 ### Handling "null" return value
 
-In a lot of C# code `null` is returned from a function to signal when the happy
-path did not work out. In such cases the author of calling code must remember to
-implement null-check or their code may throw an exception.
+In a lot of C# code `null` is returned from a function to signal when the happy path did not work out. In such cases the
+author of calling code must remember to implement null-check or their code may throw an exception.
 
 ```csharp
 Thing FindThing(ThingId id) {...}
@@ -51,13 +46,11 @@ void consuming_code()
 }
 ```
 
-The possibility of `FindThing` returning `null` is not expressed by its
-signature. The author of consuming code must read its implementation or
-documentation, neither of which may be available, to find out.
+The possibility of `FindThing` returning `null` is not expressed by its signature. The author of consuming code must
+read its implementation or documentation, neither of which may be available, to find out.
 
-In contrast, using `Maybe<T>` informs the author of consuming code that there is
-a possibility of not finding a thing and to handle the thing found the return
-value must be matched against.
+In contrast, using `Maybe<T>` informs the author of consuming code that there is a possibility of not finding a thing
+and to handle the thing found the return value must be matched against.
 
 ```csharp
 Maybe<Thing> FindThing(ThingId id) {...}
@@ -77,18 +70,16 @@ void consuming_code()
 }
 ```
 
-~~Here, `thing` is only in scope within the happy path where a thing was found and
-the calling code does not risk dereferencing a `null` value.~~
+~~Here, `thing` is only in scope within the happy path where a thing was found and the calling code does not risk
+dereferencing a `null` value.~~
 
-Here, even though `thing` is in scope in the `else` block, the compiler should
-give you an error
-([CS0165](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/cs0165))
-about it being unassigned if you try to access it in the `else` block.
+Here, even though `thing` is in scope in the `else` block, the compiler should give you an error ([CS0165](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/cs0165)) about
+it being unassigned if you try to access it in the `else` block.
 
 ### Composing computations of "null"
 
-It is common to have computations composed from a series of steps where each
-step depend on results from previous steps and may result in an unhappy outcome.
+It is common to have computations composed from a series of steps where each step depend on results from previous steps
+and may result in an unhappy outcome.
 
 ```csharp
 Result Computation(Input input)
@@ -111,19 +102,18 @@ Result Computation(Input input)
 }
 ```
 
-I've seen attempts to clean this up by letting the `Step#` functions handle
-`null` inputs and just pass `null` on as their result.
+I've seen attempts to clean this up by letting the `Step#` functions handle `null` inputs and just pass `null` on as
+their result.
 
 ```csharp
 Result Computation(Input input) => Step3(Step2(Step1(input)));
 ```
 
-The main problem with this, besides being ugly, is that now all the `Step#`
-functions have dishonest signatures not only with regard to return value but
-also their parameter.
+The main problem with this, besides being ugly, is that now all the `Step#` functions have dishonest signatures not only
+with regard to return value but also their parameter.
 
-Instead, if the steps return `Maybe<T>` we can use its composability to
-implement the computation as a quite simple and elegant expression.
+Instead, if the steps return `Maybe<T>` we can use its composability to implement the computation as a quite simple and
+elegant expression.
 
 ```csharp
 Maybe<Result> Computation(Input input)
@@ -144,23 +134,19 @@ Maybe<Result> Computation(Input input)
         .SelectMany(r1r2 => Step3(r1r2.r2), (r1r2, r3) => r3);
 ```
 
-Or, if one dislikes LINQ query syntax, one can bind this, admittedly simple,
-process explicitly.
+Or, if one dislikes LINQ query syntax, one can bind this, admittedly simple, process explicitly.
 
 ```csharp
 Maybe<Result> Computation(Input input) => Step1(Input).Bind(Step2).Bind(Step3);
 ```
 
-This style of composition of sequentially dependent computation is called
-monadic and is possible to implement for monadic types like `Maybe<T>` as they
-implement `Bind` (and `SelectMany` for the LINQ query syntax support).
+This style of composition of sequentially dependent computation is called monadic and is possible to implement for
+monadic types like `Maybe<T>` as they implement `Bind` (and `SelectMany` for the LINQ query syntax support).
 
-When inputs to a computation are sequentially independent their composition can
-also be performed in an applicative style. This is possible for types which
-are applicative functors (which `Maybe<T>` is) as they implement `Apply`.
+When inputs to a computation are sequentially independent their composition can also be performed in an applicative
+style. This is possible for types which are applicative functors (which `Maybe<T>` is) as they implement `Apply`.
 
-A trivial example is the following computation of the sum of two `Maybe<int>`
-inputs.
+A trivial example is the following computation of the sum of two `Maybe<int>` inputs.
 
 ```csharp
 Maybe<int> Sum(Maybe<int> maybeX, Maybe<int> maybeY)
@@ -173,8 +159,7 @@ Maybe<int> Sum(Maybe<int> maybeX, Maybe<int> maybeY)
 
 ## Pattern matching
 
-You can pattern match against values of `Maybe<T>` by using C# 11
-[List Patterns](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/operators/patterns#list-patterns)
+You can pattern match against values of `Maybe<T>` by using C# 11 [List Patterns](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/operators/patterns#list-patterns)
 
 ```csharp
 Console.WriteLine(maybeT is [var t] ? $"Got some {t}!" : "Got none.");
@@ -183,19 +168,16 @@ Console.WriteLine(maybeT is [] ? "Got none." : "Got some!");
 
 ## Equality
 
-`Maybe<T>` implements `IEquatable<Maybe<T>>` and overrides
-`object.Equals(object?)`.
+`Maybe<T>` implements `IEquatable<Maybe<T>>` and overrides `object.Equals(object?)`.
 
 The comparison works in the same way as equality comparison in `Nullable<T>`.
 
 ## Delegation of formatting to underlying type
 
-`Maybe<T>` implements `IFormattable` which `Maybe<T>.ToString()` and
-`Maybe<T>.ToString(string?)` delegates to.
+`Maybe<T>` implements `IFormattable` which `Maybe<T>.ToString()` and `Maybe<T>.ToString(string?)` delegates to.
 
-`IFormattable.ToString(string?, IFormatProvider?)` delegates to the same method
-on the value if `T` is `IFormattable`; otherwise `object.ToString()` is used to
-produce the value representation.
+`IFormattable.ToString(string?, IFormatProvider?)` delegates to the same method on the value if `T` is `IFormattable`;
+otherwise `object.ToString()` is used to produce the value representation.
 
 Some is represented as `"[<value>]"`.
 
@@ -203,35 +185,53 @@ None is represented as `"[]"`.
 
 ## Playing nice with `System.Linq.Enumerable`
 
-`Maybe<T>` implements `IEnumerable<T>`. The enumerator will yield zero or one
-element for none or some respectively.
+`Maybe<T>` implements `IEnumerable<T>`. The enumerator will yield zero or one element for none or some respectively.
 
-This enables `Maybe<T>` to be functionally bound (flattened) together with any
-`IEnumerable<T>`.
+This enables `Maybe<T>` to be functionally bound (flattened) together with any `IEnumerable<T>`.
 
 ```csharp
 var flattened = from x in xs from t in funcMaybe(x) select t; // some results from funcMaybe(x) are filtered
 ```
 
+From C# 12, this also enables creating a None value by using empty collection initializer syntax.
+
+## Implementing `IList<T>` as discretely as possible
+
+For a long time I have avoided implementing `IList<T>`. `Maybe<T>` is not a list. It's not even a very short list.
+And it's definitely not mutable.
+
+In v2.2.0, `Maybe<T>` implements `IList<T>` to enjoy some interface check optimizations found in both the BCL and
+3<sup>rd</sup> party libraries.
+
+Counting elements or materializing can avoid instantiating, enumerating (0 or 1 elements) and disposing an enumerator. A
+virtual call to `ICollection<T>.Count` or `ICollection<T>.CopyTo` is cheaper.
+
+The reason for implementing `IList<T>` and not only `ICollection<T>` is that some optimizations check for `IList<T>`
+even though `ICollection<T>` would suffice.
+
+To avoid littering the public interface of `Maybe<T>` with nonsense mutating methods and setters, most collection
+interfaces members have explicit implementations. The getters of `ICollection<T>.Count` and `IList<T>` indexer have
+implicit implementations to support C# 11 list pattern. The getter of `IList<T>` indexer also have an explicit
+implementation since the exception semantics differ between `Maybe<T>` and `IList<T>`.
+
+The implicit implementation of `IEnumerable<T>.GetEnumerator` has been marked obsolete and will be removed in version 3,
+whenever that is.
+
 ## Operators
 
-`Maybe<T>` implements truth (`true`, `false`) and logical conjunction (`&`) and
-disjunction (`|`) operators.
+`Maybe<T>` implements truth (`true`, `false`) and logical conjunction (`&`) and disjunction (`|`) operators.
 
-The combination also provides conditional logical operators (`&&`, `||`). This
-enables chaining of `Maybe<T>` values in logical expressions.
+The combination also provides conditional logical operators (`&&`, `||`). This enables chaining of `Maybe<T>` values in
+logical expressions.
 
 Using the conditional operators enables lazy evaluation as expected.
 
-The disjunction (`|`) operator is also implemented between `Maybe<T>` and `T`.
-This is useful to provide a fallback value, much like
-`Nullable<T>.GetValueOrDefault(T)`
+The disjunction (`|`) operator is also implemented between `Maybe<T>` and `T`. This is useful to provide a fallback
+value, much like `Nullable<T>.GetValueOrDefault(T)`.
 
-Since C# cannot handle conditional logical operators of operands of different
-types, another overload of the disjunction operator is introduced in v1.1.0 to
-help with lazy evaluation of fallback value. It provides functionality much like
-`maybeX || getZ()` would, where `getZ` is a function providing the fallback
-value.
+Since C# cannot handle conditional logical operators of operands of different types, another overload of the disjunction
+operator is introduced in v1.1.0 to help with lazy evaluation of fallback value. It provides functionality much like
+`maybeX || getZ()` would, where `getZ` is a function providing the fallback value.
 
 Some illustrations;
 
@@ -239,35 +239,30 @@ Some illustrations;
 
 `maybeX | maybeY` evaluates to `maybeX` if it is some; otherwise `maybeY`.
 
-`maybeX && getMaybeY()` evaluates to the result of `getMaybeY()` if `maybeX` is
-some; otherwise `getMaybeY` is not invoked and the result is none.
+`maybeX && getMaybeY()` evaluates to the result of `getMaybeY()` if `maybeX` is some; otherwise `getMaybeY` is not
+invoked and the result is none.
 
-`maybeX || getMaybeY()` evaluates to `maybeX` if it is some; otherwise
-the result of `getMaybeY()`.
+`maybeX || getMaybeY()` evaluates to `maybeX` if it is some; otherwise the result of `getMaybeY()`.
 
 `maybeX | y` evaluates to the value of `maybeX` if it is some; otherwise `y`.
 
-`maybeX | getY` where `getY` is a function returning a value of `T` evaluates to
-the value of `maybeX` if it is some; otherwise the result of `getY()`.
+`maybeX | getY` where `getY` is a function returning a value of `T` evaluates to the value of `maybeX` if it is some;
+otherwise the result of `getY()`.
 
-`Maybe<T>` implements implicit cast operator from `T`.
-Thus, returning some value from a `Maybe<T>`-returning function is no effort.
-Returning none from a `Maybe<T>`-returning function is equally simple as it is
-the default state; `return default;`.
+`Maybe<T>` implements implicit cast operator from `T`. Thus, returning some value from a `Maybe<T>`-returning function
+is no effort. Returning none from a `Maybe<T>`-returning function is equally simple as it is the default state;
+`return default;`.
 
-As a side note, even though it has nothing to do with operators, since C# 12
-`Maybe<T>` with state None can be assigned, and returned, with an empty
-collection initializer.
+As a side note, even though it has nothing to do with operators, since C# 12 `Maybe<T>` with state None can be assigned,
+and returned, with an empty collection initializer.
 
-Assigning with an empty collection initializer is only useful for being
-explicit about the state since its result is just the default state.
+Assigning with an empty collection initializer is only useful for being explicit about the state since its result is
+just the default state.
 
-`return [];` is recommended over `return default;` or `return Maybe.None<T>()`
-because of clarity.
+`return [];` is recommended over `return default;` or `return Maybe.None<T>()` because of clarity.
 
-Singleton collection initializers are not supported since they would require an
-awkward Add method which only works for None instances and only provide a more
-cumbersome syntax over the implicit cast from T.
+Singleton collection initializers are not supported since they would require an awkward Add method which only works for
+None instances and only provide a more cumbersome syntax over the implicit cast from T.
 
 Multi-element collection initializers are not supported for obvious reasons.
 
@@ -285,8 +280,7 @@ Produce the none value. Equivalent to `default(Maybe<T>)`.
 Maybe<T> Some<T>(T value) where T : notnull
 ```
 
-Produce a some value for the given `value`. Equivalent to implicit cast
-from `T` to `Maybe<T>`.
+Produce a some value for the given `value`. Equivalent to implicit cast from `T` to `Maybe<T>`.
 
 ```csharp
 Maybe<T> FromNullable<T>(T? value) where T : struct
@@ -314,9 +308,8 @@ Maybe<TResult> Apply<TArg, TResult>(
 
 Apply a lifted function to a lifted parameter.
 
-The unary `Apply` corresponds to the infix operator `<*>` of Applicative in
-Haskell. If you need to apply higher arity functions you'll have to curry them
-yourself.
+The unary `Apply` corresponds to the infix operator `<*>` of Applicative in Haskell. If you need to apply higher arity
+functions you'll have to curry them yourself.
 
 ### Bind
 
@@ -326,8 +319,8 @@ Maybe<TResult> Bind<TSource, TResult>(
     Func<TSource, Maybe<TResult>> func)
 ```
 
-Monadic composition of the computation of `Maybe<TSource>` over the application
-of a `Maybe<TResult>`-returning function.
+Monadic composition of the computation of `Maybe<TSource>` over the application of a `Maybe<TResult>`-returning
+function.
 
 `Bind` corresponds to the infix operator `>>=` of Monad in Haskell.
 
@@ -338,9 +331,8 @@ Maybe<TResult> SelectMany<TSource, TNext, TResult>(
     Func<TSource, TNext, TResult> resultSelector)
 ```
 
-Project the value of `Maybe<TSource>` to a `Maybe<TNext>` and invoke a result
-selector function on the pair to produce the result.  Provided for support of
-LINQ query syntax. The expression
+Project the value of `Maybe<TSource>` to a `Maybe<TNext>` and invoke a result selector function on the pair to produce
+the result.  Provided for support of LINQ query syntax. The expression
 
 ```csharp
 from s in source
@@ -354,9 +346,8 @@ is precompiled into
 source.SelectMany(selector, resultSelector)
 ```
 
-The difference between `Bind` and `SelectMany` is that the latter takes a binary
-projection function as a parameter and as such can chain calls instead of
-encapsulating calls in nested closures.
+The difference between `Bind` and `SelectMany` is that the latter takes a binary projection function as a parameter and
+as such can chain calls instead of encapsulating calls in nested closures.
 
 ### Filter
 
@@ -374,8 +365,7 @@ Maybe<TSource> Where<TSource>(
     Func<TSource, bool> predicate)
 ```
 
-Do exactly the same as `Filter` but provided for support of LINQ query syntax.
-The expression
+Do exactly the same as `Filter` but provided for support of LINQ query syntax. The expression
 
 ```csharp
 from s in source
@@ -397,8 +387,7 @@ Maybe<TResult> Map<TSource, TResult>(
     Func<TSource, TResult> func)
 ```
 
-Map a lifted value of `TSource` by given function to a lifted value of
-`TResult`.
+Map a lifted value of `TSource` by given function to a lifted value of `TResult`.
 
 `Map` corresponds to the infix operator `<$>` of Functor in Haskell.
 
@@ -408,9 +397,8 @@ Maybe<TResult> Select<TSource, TResult>(
     Func<TSource, TResult> selector)
 ```
 
-Project the value of `Maybe<TSource>` into a new form. This is exactly the same
-functionality as `Map` above but is provided for support of LINQ query syntax.
-The expression
+Project the value of `Maybe<TSource>` into a new form. This is exactly the same functionality as `Map` above but is
+provided for support of LINQ query syntax. The expression
 
 ```csharp
 from s in source
@@ -429,11 +417,10 @@ source.Select(selector)
 bool Try<TSource>(this Maybe<TSource> source, out TSource value)
 ```
 
-Provides `Try`-style method syntax to extract the value of `Maybe<TSource>` for
-consuming code which is not able to use C# 11 list pattern matching.
+Provides `Try`-style method syntax to extract the value of `Maybe<TSource>` for consuming code which is not able to use
+C# 11 list pattern matching.
 
-Instead of the expression `source is [var s]` such code can use
-`source.Try(out var s)`.
+Instead of the expression `source is [var s]` such code can use `source.Try(out var s)`.
 
 ### Nullable interop
 
@@ -458,12 +445,10 @@ Maybe<T> MaybeSingle<T>(this IEnumerable<T> source) where T : notnull
 ```csharp
 Maybe<T> MaybeSingle<T>(this IEnumerable<T> source, Func<T, bool> predicate) where T : notnull
 ```
-`Maybe<T>`-returning versions of `System.Linq.Enumerable.SingleOrDefault`
-overloads.
+`Maybe<T>`-returning versions of `System.Linq.Enumerable.SingleOrDefault` overloads.
 
-Instead of returning `default<T>` on empty input sequence they return `None<T>`.
-They throw an `InvalidOperationException` on multiple elements just like their
-BCL counterparts.
+Instead of returning `default<T>` on empty input sequence they return `None<T>`. They throw an
+`InvalidOperationException` on multiple elements just like their BCL counterparts.
 
 ```csharp
 Maybe<T> MaybeFirst<T>(this IEnumerable<T> source) where T : notnull
@@ -472,7 +457,6 @@ Maybe<T> MaybeFirst<T>(this IEnumerable<T> source) where T : notnull
 ```csharp
 Maybe<T> MaybeFirst<T>(this IEnumerable<T> source, Func<T, bool> predicate) where T : notnull
 ```
-`Maybe<T>`-returning versions of `System.Linq.Enumerable.FirstOrDefault`
-overloads.
+`Maybe<T>`-returning versions of `System.Linq.Enumerable.FirstOrDefault` overloads.
 
 Instead of returning `default<T>` on empty input sequence they return `None<T>`.
