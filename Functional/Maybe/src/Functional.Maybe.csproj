@@ -21,12 +21,12 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Versioning">
-    <VersionPrefix>2.1.0</VersionPrefix>
+    <VersionPrefix>2.2.0</VersionPrefix>
     <!-- Set empty suffix when API is stable -->
     <VersionSuffix></VersionSuffix>
     <PackageReleaseNotes>
-      Remove obsolete Apply overloads.
-      Change exception type in index property.
+      Implement IList&lt;T&gt; to enjoy some interface check optimizations.
+      Mark GetEnumerator() obsolete.
     </PackageReleaseNotes>
   </PropertyGroup>
 

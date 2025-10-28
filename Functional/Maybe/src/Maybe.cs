@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 using JetBrains.Annotations;
+
 namespace Luger.Functional;
 
 /// <summary>
@@ -43,21 +44,51 @@ namespace Luger.Functional;
 /// </code>
 /// </para>
 /// <para>
+/// Implementing <see cref="IEnumerable{T}"/> also enables using empty collection initializer syntax in C# 12.
+/// </para>
+/// <para>
+/// <see cref="Maybe{T}"/> implements <see cref="ICollection{T}"/>. Of the members, only the getter of
+/// <see cref="ICollection{T}.Count"/> have an implicit implementation to support C# 11 list pattern.
+/// </para>
+/// <para>
+/// <see cref="ICollection{T}.Contains"/>, <see cref="ICollection{T}.CopyTo"/> and
+/// <see cref="ICollection{T}.IsReadOnly"/> have explicit implementations.
+/// </para>
+/// <para>
+/// <see cref="ICollection{T}.Add"/>, <see cref="ICollection{T}.Clear"/> and <see cref="ICollection{T}.Remove"/> throw
+/// <see cref="NotSupportedException"/>.
+/// </para>
+/// <para>
+/// <see cref="Maybe{T}"/> implements <see cref="IList{T}"/>. Of the members, only the getter of the
+/// <see cref="IList{T}.this">indexer</see> have an implicit implementation to support C# 11 list pattern.
+/// (It also has an explicit implementation because of different exception semantics between <see cref="Maybe{T}"/> and
+/// <see cref="IList{T}"/>.)
+/// </para>
+/// <para>
+/// <see cref="IList{T}.IndexOf"/> and the getter of the <see cref="IList{T}.this">indexer</see> have explicit
+/// implementations.
+/// </para>
+/// <para>
+/// <see cref="IList{T}.Insert"/>, <see cref="IList{T}.RemoveAt"/> and the setter of the
+/// <see cref="IList{T}.this">indexer</see> throw <see cref="NotSupportedException"/>.
+/// </para>
+/// <para>
 /// <see cref="Maybe{T}"/> implements truth (<see langword="true"/>, <see langword="false"/>) and logical conjunction
 /// (<see langword="&amp;"/>) and disjunction (<see langword="|"/>) operators. This combination also provides
 /// conditional logical operators (<see langword="&amp;&amp;"/>, <see langword="||"/>). This enables chaining of
-/// <see cref="Maybe{T}"/> values in logical expressions.<br/>
-/// Using the conditional operators enables on-demand evaluation as expected.<br/>
+/// <see cref="Maybe{T}"/> values in logical expressions. Using the conditional operators enables on-demand evaluation
+/// as expected.
 /// </para>
 /// <para>
-/// <see cref="Maybe{T}"/> implements implicit cast operator from <typeparamref name="T"/>.<br/>
-/// Thus, returning some value from a <see cref="Maybe{T}"/>-returning function is no effort.<br/>
-/// Returning none from a <see cref="Maybe{T}"/>-returning function is equally simple as it is the default state;
-/// <c>return default;</c>.
+/// <see cref="Maybe{T}"/> implements implicit cast operator from <typeparamref name="T"/>. Thus, returning some value
+/// from a <see cref="Maybe{T}"/>-returning function is no effort. Returning none from a
+/// <see cref="Maybe{T}"/>-returning function is also simple as it is the default state and from C# 12 also supports
+/// empty collection initializer syntax. <c>return Maybe.None&lt;T&gt;();</c>, <c>return default;</c> and
+/// <c>return [];</c> are equivalent.
 /// </para>
 /// </remarks>
 [DebuggerStepThrough, JsonConverter(typeof(MaybeConverterFactory))]
-public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerable<T> where T : notnull
+public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IList<T> where T : notnull
 {
     /* I've tried using T? as inner state, but it doesn't work. A similar problem is illustrated here
      * (https://github.com/dotnet/roslyn/issues/53139).
@@ -66,7 +97,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
      * a nullable reference type T? if the constructed type parameter T is a reference type but, strangely,
      * a non-nullable value type T if the constructed type parameter T is a value type. Madness.
      * The nullability stuff in C# could need some reworking but since that would certainly become backwards
-     * incompatible maybe C# just has to bite the bullet and leave strong typing to modern languages.
+     * incompatible maybe C# just has to leave sound typing to modern languages.
      */
     readonly bool _isSome;
     readonly T _value;
@@ -76,6 +107,24 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
         _isSome = true;
         _value = value;
     }
+
+    static readonly EqualityComparer<T> ValueEqualityComparer = EqualityComparer<T>.Default;
+
+    void ICollection<T>.Add(T item) => throw new NotSupportedException();
+
+    void ICollection<T>.Clear() => throw new NotSupportedException();
+
+    bool ICollection<T>.Contains(T item) => _isSome && ValueEqualityComparer.Equals(_value, item);
+
+    void ICollection<T>.CopyTo(T[] array, int arrayIndex)
+    {
+        if (_isSome)
+        {
+            array[arrayIndex] = _value;
+        }
+    }
+
+    bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
     /// <summary>
     /// Gets the number of elements contained in the <see cref="Maybe{T}"/>
@@ -88,6 +137,14 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     [EditorBrowsable(EditorBrowsableState.Advanced)]
     [PublicAPI]
     public int Count => _isSome ? 1 : 0;
+
+    bool ICollection<T>.IsReadOnly => true;
+
+    int IList<T>.IndexOf(T item) => _isSome && ValueEqualityComparer.Equals(_value, item) ? 0 : -1;
+
+    void IList<T>.Insert(int index, T item) => throw new NotSupportedException();
+
+    void IList<T>.RemoveAt(int index) => throw new NotSupportedException();
 
     /// <summary>
     /// Gets the element at the specified <paramref name="index"/>
@@ -126,7 +183,11 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     [PublicAPI]
     public T this[int index] => _isSome && index == 0 ? _value : throw new InvalidOperationException();
 
-    static readonly EqualityComparer<T> ValueEqualityComparer = EqualityComparer<T>.Default;
+    T IList<T>.this[int index]
+    {
+        get => _isSome && index == 0 ? _value : throw new ArgumentOutOfRangeException(nameof(index));
+        set => throw new NotSupportedException();
+    }
 
     /// <summary>
     /// Non-boxing equality comparison. Delegates to <see cref="EqualityComparer{T}.Equals(T, T)"/> of
@@ -169,15 +230,15 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     {
         bool _moved;
 
-        public readonly T Current => maybe._value;
+        readonly T IEnumerator<T>.Current => maybe._value;
 
-        readonly object IEnumerator.Current => Current;
+        readonly object IEnumerator.Current => maybe._value;
 
-        public readonly void Dispose() { }
+        readonly void IDisposable.Dispose() { }
 
-        public bool MoveNext() => !_moved && maybe._isSome && (_moved = true);
+        bool IEnumerator.MoveNext() => !_moved && maybe._isSome && (_moved = true);
 
-        public void Reset() => _moved = false;
+        void IEnumerator.Reset() => _moved = false;
     }
 
     /// <summary>
@@ -187,9 +248,14 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>, IFormattable, IEnumerabl
     /// An enumerator yielding the value in some case; otherwise not yielding any value.
     /// </returns>
     [PublicAPI]
+    [Obsolete(
+        "The implicit implementation of GetEnumerator() will be removed in v3." +
+        " Use the explicit implementation IEnumerable<T>.GetEnumerator() if you need to.")]
     public IEnumerator<T> GetEnumerator() => new Enumerator(this);
 
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => new Enumerator(this);
+
+    IEnumerator IEnumerable.GetEnumerator() => new Enumerator(this);
 
     /// <remarks>
     /// Some is represented as "[&lt;value&gt;]".<br/>
@@ -455,9 +521,8 @@ public static class Maybe
     /// <code>
     /// source.Select(selector)
     /// </code>
-    /// This is exactly the same functionality as
-    /// <see cref="Maybe.Map{TSource, TResult}(Maybe{TSource}, Func{TSource, TResult})"/> and so
-    /// <see cref="Maybe.Select{TSource, TResult}(Maybe{TSource}, Func{TSource, TResult})"/> delegates directly to it.
+    /// This is exactly the same functionality as <see cref="Map"/> and so <see cref="Select"/> delegates directly to
+    /// it.
     /// </remarks>
     [PublicAPI]
     public static Maybe<TResult> Select<TSource, TResult>(this Maybe<TSource> source, Func<TSource, TResult> selector)
@@ -596,15 +661,15 @@ public static class Maybe
         where TSource : notnull =>
         source.Filter(predicate);
 
-    /* FromNullable, FromReference, ToNullable and ToReference may seem a bit redundant. Their implementations w.r.t.
-     * ...Nullable vs. ...Reference are syntactically equivalent (except for the type parameter constraints).
+    /* FromNullable, FromReference, ToNullable and ToReference may seem a bit redundant. The implementations of
+     * ToNullable and ToReference are even syntactically equivalent (except for the type parameter constraints).
      * The reason for separate implementations for value types and reference types is that the handling of nullability
      * is very different at runtime and trying to be generic about it (using notnull type constraint) makes the C#
      * compiler very confused indeed.
-     * Nullable value types are implemented with the strongly typed Nullable<T> struct and a lot of special handling in
-     * the compiler. At runtime T and T? are very distinct w.r.t. value types.
-     * Nullable reference types are implemented by an attribute and some compile time rules. At runtime T and T? are
-     * in practice the same w.r.t. reference types.
+     * Nullable value types are implemented with the strongly typed, but otherwise rather useless, Nullable<T> struct
+     * and a lot of special handling in the compiler. At runtime T and T? are very distinct w.r.t. value types.
+     * Nullable reference types are implemented by some attributes and a lot of static code analysis. At runtime T and
+     * T? are in practice the same w.r.t. reference types.
      * To avoid a lot of squiggly lines in the IDE, confused warnings and type parameter inference bugs I choose to
      * handle value types and reference types separately here.
      */
@@ -656,7 +721,7 @@ public static class Maybe
     /// exception if there is more than one element in the sequence.
     /// </summary>
     /// <typeparam name="T">The type of elements of <paramref name="source"/></typeparam>
-    /// <param name="source">An<see cref="IEnumerable{T}"/> to return the single element of.</param>
+    /// <param name="source">An <see cref="IEnumerable{T}"/> to return the single element of.</param>
     /// <returns>Some only element of the input sequence, or none if the sequence contains no elements.</returns>
     /// <exception cref="InvalidOperationException">The input sequence contains more than one element.</exception>
     [PublicAPI]
@@ -666,7 +731,7 @@ public static class Maybe
         {
             return list switch
             {
-                // Allocation free in happy path
+                // Allocation free in happy paths
                 [] => [],
                 [var element] => new Maybe<T>(element),
                 _ => throw new InvalidOperationException()
